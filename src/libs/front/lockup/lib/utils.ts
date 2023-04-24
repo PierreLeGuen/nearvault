@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import BN from "bn.js";
-import { BinaryReader } from "near-api-js/lib/utils/serialize";
+import { type BinaryReader } from "near-api-js/lib/utils/serialize";
 
-import { TransferInformation, VestingInformation } from "../types/types";
+import {
+  type TransferInformation,
+  type VestingInformation,
+} from "../types/types";
 
 export const saturatingSub = (a: BN, b: BN) => {
   const res = a.sub(b);
@@ -60,7 +63,7 @@ export const getStartLockupTimestamp = (
  */
 export const getVestingInformation = (
   reader: BinaryReader
-): VestingInformation | null => {
+): VestingInformation | undefined => {
   const vestingType = reader.readU8();
   switch (vestingType) {
     case 1:
@@ -79,7 +82,7 @@ export const getVestingInformation = (
         terminationStatus: reader.readU8(),
       };
     default:
-      return null; // TODO
+      return undefined; // TODO
   }
 };
 

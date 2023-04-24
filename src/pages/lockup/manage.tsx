@@ -4,12 +4,16 @@ import { useState } from "react";
 import Layout from "~/components/layout";
 import { useWalletSelector } from "~/context/wallet";
 import { viewLockupAccount } from "~/libs/front/lockup/lib/lockup";
+import { type AccountLockup } from "~/libs/front/lockup/types/types";
 import { calculateLockup } from "~/libs/lockup";
 import { type NextPageWithLayout } from "../_app";
+
 const ManageLockup: NextPageWithLayout = () => {
   const [account, setAccount] = useState("");
   const [accountError, setAccountError] = useState("");
   const { selector } = useWalletSelector();
+  const [lockupInformation, setLockupInformation] =
+    useState<AccountLockup | null>(null);
 
   const getLockupInformation = async (account: string) => {
     const { network } = selector.options;
@@ -17,10 +21,11 @@ const ManageLockup: NextPageWithLayout = () => {
 
     try {
       console.log("getLockupInformation", account);
-      const l = calculateLockup(account, "lockup.near");
+      const l = calculateLockup(prepareAccountId(account), "lockup.near");
 
       const r = await viewLockupAccount(l, provider);
       console.log(r);
+      setLockupInformation(r);
       // r?
     } catch {
       setAccountError("Account not found");
@@ -60,6 +65,7 @@ const ManageLockup: NextPageWithLayout = () => {
         </span>
       </label>
       {accountError && <p className="text-red-500">{accountError}</p>}
+      {lockupInformation && <p>{showLockupInfo(lockupInformation)}</p>}
     </div>
   );
 };
@@ -84,143 +90,38 @@ function prepareAccountId(data: string) {
   return Buffer.from(publicKey).toString("hex");
 }
 
-// async function lookup(inputAccId: string, options: nearAPI.ConnectConfig) {
-//   const near = await nearAPI.connect(options);
-//   let accountId = prepareAccountId(inputAccId);
-
-//   let lockupAccountId = "",
-//     lockupAccountBalance = 0,
-//     ownerAccountBalance = 0,
-//     lockupReleaseStartTimestamp = new BN(0),
-//     lockupState = null,
-//     lockedAmount = 0;
-
-//   try {
-//     let account = await near.account(accountId);
-//     let state = await account.state();
-//     ownerAccountBalance = state.amount;
-//     ({ lockupAccountId, lockupAccountBalance, lockupState } =
-//       await lookupLockup(near, accountId));
-//   } catch (e) {}
-// }
-
-// interface LockupBalance {
-//   lockupAccountId: string;
-// }
-
-// async function lookupLockup(near: nearAPI.Near, accountId: string) {
-//   near.co;
-//   const lockupAccountId = calculateLockup(accountId, "lockup.near");
-//   try {
-//     const lockupAccount = await near.account(lockupAccountId);
-//     const lockupAccountBalance: unknown = await lockupAccount.viewFunction({
-//       contractId: lockupAccountId,
-//       methodName: "get_balance",
-//       args: {},
-//     });
-//     const lockupState = await viewLockupState(near.connection, lockupAccountId);
-//     // More details: https://github.com/near/core-contracts/pull/136
-//     lockupState.hasBrokenTimestamp = [
-//       "3kVY9qcVRoW3B5498SMX6R3rtSLiCdmBzKs7zcnzDJ7Q",
-//       "DiC9bKCqUHqoYqUXovAnqugiuntHWnM3cAc7KrgaHTu",
-//     ].includes((await lockupAccount.state()).code_hash);
-//     return { lockupAccountId, lockupAccountBalance, lockupState };
-//   } catch (error) {
-//     console.log(error);
-//     return {
-//       lockupAccountId: `${lockupAccountId}${DOES_NOT_EXIST}`,
-//       lockupAmount: 0,
-//     };
-//   }
-// }
-
-// export interface QueryResult {
-//   block_hash: string;
-//   block_height: number;
-//   proof: unknown[];
-//   values: Value[];
-// }
-
-// export interface Value {
-//   key: string;
-//   proof: unknown[];
-//   value: string;
-// }
-
-// // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-// async function viewLockupState(
-//   connection: nearAPI.Connection,
-//   contractId: string
-// ) {
-//   const result: unknown = await connection.provider.query({
-//     request_type: "view_state",
-//     finality: "final",
-//     account_id: contractId,
-//     prefix_base64: "U1RBVEU=",
-//   });
-//   const res: QueryResult = result as QueryResult;
-//   const value = Buffer.from(res?.values[0]?.value ?? "", "base64");
-//   const reader = new nearAPI.utils.serialize.BinaryReader(value);
-//   const owner = reader.readString();
-//   const lockupAmount = reader.readU128();
-//   let terminationWithdrawnTokens = reader.readU128().toString();
-//   let lockupDuration = reader.readU64().toString();
-//   let releaseDuration = readOption(
-//     reader,
-//     () => reader.read_u64().toString(),
-//     "0"
-//   );
-//   let lockupTimestamp = readOption(
-//     reader,
-//     () => reader.read_u64().toString(),
-//     "0"
-//   );
-//   let tiType = reader.read_u8();
-//   let transferInformation;
-//   if (tiType === 0) {
-//     transferInformation = {
-//       transfers_timestamp: reader.read_u64(),
-//     };
-//   } else {
-//     transferInformation = {
-//       transfer_poll_account_id: reader.read_string(),
-//     };
-//   }
-//   let vestingType = reader.read_u8();
-//   let vestingInformation;
-//   switch (vestingType) {
-//     case 1:
-//       vestingInformation = {
-//         vestingHash: reader.read_array(() => reader.read_u8()),
-//       };
-//       break;
-//     case 2:
-//       let start = reader.read_u64();
-//       let cliff = reader.read_u64();
-//       let end = reader.read_u64();
-//       vestingInformation = { start, cliff, end };
-//       break;
-//     case 3:
-//       let unvestedAmount = reader.read_u128();
-//       let terminationStatus = reader.read_u8();
-//       vestingInformation = { unvestedAmount, terminationStatus };
-//       break;
-//     default:
-//       vestingInformation = "TODO";
-//       break;
-//   }
-
-//   return {
-//     owner,
-//     lockupAmount: new BN(lockupAmount),
-//     terminationWithdrawnTokens: new BN(terminationWithdrawnTokens),
-//     lockupDuration: new BN(lockupDuration),
-//     releaseDuration: new BN(releaseDuration),
-//     lockupTimestamp: new BN(lockupTimestamp),
-//     transferInformation,
-//     vestingInformation,
-//   };
-// }
+const showLockupInfo = (lockupInfo: AccountLockup) => {
+  return (
+    <div className="grid">
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Account ID</div>
+        <div>TODO</div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Lockup ID</div>
+        <div>{lockupInfo.lockupAccountId}</div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Total Balance</div>
+        <div>{lockupInfo.ownerAccountBalance.toString()}</div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Owners Balance</div>
+        <div>{lockupInfo.ownerAccountBalance.toString()}</div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Liquid amount (unlocked + rewards)</div>
+        <div>{lockupInfo.liquidAmount.toString()}</div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Vesting</div>
+        <div>
+          {lockupInfo.lockupState?.vestingInformation?.start?.toString() ?? ""}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 ManageLockup.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>;

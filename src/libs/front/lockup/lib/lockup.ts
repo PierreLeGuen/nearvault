@@ -1,11 +1,13 @@
 import BN from "bn.js";
-import { Provider, type CodeResult } from "near-api-js/lib/providers/provider";
+import {
+  type Provider,
+  type CodeResult,
+} from "near-api-js/lib/providers/provider";
 import { BinaryReader } from "near-api-js/lib/utils/serialize";
 
 import {
   type AccountLockup,
   type BlockReference,
-  type ConnectOptions,
   type LockupState,
   type ViewAccount,
   type ViewAccountQuery,
@@ -21,7 +23,6 @@ import {
   getVestingInformation,
   readOption,
 } from "./utils";
-import { ConnectConfig, Near, connect } from "near-api-js";
 
 /**
  * View state of lockup account
@@ -188,8 +189,7 @@ export const viewLockupAccount = async (
     console.log(lockupState);
 
     if (lockupState) {
-      const { releaseDuration, vestingInformation, ...restLockupState } =
-        lockupState;
+      const { releaseDuration, vestingInformation } = lockupState;
       const lockupReleaseStartTimestamp = getStartLockupTimestamp(
         lockupState.lockupDuration,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -216,7 +216,8 @@ export const viewLockupAccount = async (
           lockupReleaseStartTimestamp.divn(1000000).toNumber()
         ),
         lockupState: {
-          ...restLockupState,
+          //   ...restLockupState,
+          ...lockupState,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           releaseDuration: formatReleaseDuration(releaseDuration!),
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
