@@ -6,7 +6,7 @@ import { useState } from "react";
 const Sidebar: React.FC = () => {
   return (
     <div className="sticky h-screen w-64 p-3 shadow">
-      <div className="mb-4 flex items-center justify-center">
+      <div className="mb-4 mt-4 flex items-center justify-center">
         <svg
           id="Layer_1"
           data-name="Layer 1"

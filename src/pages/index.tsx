@@ -2,7 +2,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import React, { ReactElement } from "react";
 import Layout from "~/components/layout";
-import { api } from "~/utils/api";
+import { api } from "~/libs/api";
 import { type NextPageWithLayout } from "./_app";
 
 const Home: NextPageWithLayout = () => {

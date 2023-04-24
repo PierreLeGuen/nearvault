@@ -3,7 +3,7 @@ import { type NextPageWithLayout } from "../_app";
 
 const CreateLockup: NextPageWithLayout = () => {
   return (
-    <div>
+    <div className="prose">
       <h1>Create Lockup</h1>
     </div>
   );
