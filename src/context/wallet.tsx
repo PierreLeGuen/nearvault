@@ -25,6 +25,7 @@ import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 // import { setupNeth } from "@near-wallet-selector/neth";
 // import { setupOptoWallet } from "@near-wallet-selector/opto-wallet";
 import Loading from "../components/loading";
+import { useNearContext } from "./near";
 
 declare global {
   interface Window {
@@ -51,9 +52,11 @@ export const WalletSelectorContextProvider: React.FC<{
   const [accounts, setAccounts] = useState<Array<AccountState>>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const { network } = useNearContext();
+
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
-      network: "mainnet",
+      network: network,
       debug: true,
       modules: [
         setupMyNearWallet(),
@@ -110,7 +113,7 @@ export const WalletSelectorContextProvider: React.FC<{
     setSelector(_selector);
     setModal(_modal);
     setLoading(false);
-  }, []);
+  }, [network]);
 
   useEffect(() => {
     init().catch((err) => {

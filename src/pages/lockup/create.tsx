@@ -1,4 +1,4 @@
-import Layout from "~/components/layout";
+import { getSidebarLayout } from "~/components/layout";
 import { type NextPageWithLayout } from "../_app";
 
 const CreateLockup: NextPageWithLayout = () => {
@@ -9,8 +9,5 @@ const CreateLockup: NextPageWithLayout = () => {
   );
 };
 
-CreateLockup.getLayout = function getLayout(page) {
-  return <Layout>{page}</Layout>;
-};
-
+CreateLockup.getLayout = getSidebarLayout;
 export default CreateLockup;

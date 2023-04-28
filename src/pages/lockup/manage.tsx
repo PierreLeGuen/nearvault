@@ -1,24 +1,25 @@
+import BN from "bn.js";
 import bs58 from "bs58";
-import { providers } from "near-api-js";
+import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
-import Layout from "~/components/layout";
-import { useWalletSelector } from "~/context/wallet";
+import { getSidebarLayout } from "~/components/layout";
+import { useNearContext } from "~/context/near";
 import { viewLockupAccount } from "~/libs/front/lockup/lib/lockup";
-import { type AccountLockup } from "~/libs/front/lockup/types/types";
+import {
+  type AccountLockup,
+  type VestingInformation,
+} from "~/libs/front/lockup/types/types";
 import { calculateLockup } from "~/libs/lockup";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
   const [account, setAccount] = useState("");
   const [accountError, setAccountError] = useState("");
-  const { selector } = useWalletSelector();
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
+  const provider = useNearContext().archival_provider;
 
   const getLockupInformation = async (account: string) => {
-    const { network } = selector.options;
-    const provider = new providers.JsonRpcProvider({ url: network.nodeUrl });
-
     try {
       console.log("getLockupInformation", account);
       const l = calculateLockup(prepareAccountId(account), "lockup.near");
@@ -65,7 +66,7 @@ const ManageLockup: NextPageWithLayout = () => {
         </span>
       </label>
       {accountError && <p className="text-red-500">{accountError}</p>}
-      {lockupInformation && <p>{showLockupInfo(lockupInformation)}</p>}
+      {lockupInformation && <div>{showLockupInfo(lockupInformation)}</div>}
     </div>
   );
 };
@@ -91,40 +92,139 @@ function prepareAccountId(data: string) {
 }
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
+  const getVestingDetails = (vesting: VestingInformation | undefined) => {
+    console.log("getVestingDetails", vesting);
+
+    if (!vesting) {
+      return (
+        <>
+          <h2 className="prose">Vesting schedule</h2>
+          <div>No vesting schedule</div>
+        </>
+      );
+    }
+
+    if (vesting.vestingHash) {
+      return (
+        <>
+          <h2 className="prose">Vesting schedule</h2>
+          <div className="grid grid-cols-3">
+            <div className="col-span-1">Vesting Schedule</div>
+            <div className="text-red-500">Private vesting</div>
+          </div>
+        </>
+      );
+    }
+
+    if (!vesting.start || !vesting.end) {
+      console.error("Invalid vesting schedule", vesting);
+
+      return;
+    }
+
+    const start = new Date(vesting.start.divn(1000000).toNumber());
+    const end = new Date(vesting.end.divn(1000000).toNumber());
+    let cliff: Date | null = null;
+    if (vesting.cliff) {
+      cliff = new Date(vesting.cliff.divn(1000000).toNumber());
+    }
+    return (
+      <>
+        <h2 className="prose">Vesting schedule</h2>
+
+        <div className="grid grid-cols-3">
+          <div className="col-span-1">Start</div>
+          <div>{start.toLocaleString()}</div>
+        </div>
+        {cliff && (
+          <div className="grid grid-cols-3">
+            <div className="col-span-1">Cliff</div>
+            <div> {cliff.toLocaleString()}</div>
+          </div>
+        )}
+        <div className="grid grid-cols-3">
+          <div className="col-span-1">End</div>
+          <div>{end.toLocaleString()}</div>
+        </div>
+      </>
+    );
+  };
+
+  const getLinearVestingDetails = (
+    start: BN | undefined,
+    duration: BN | undefined
+  ) => {
+    if (!start || !duration || duration.isZero()) {
+      return (
+        <>
+          <h2 className="prose">Linear vesting</h2>
+          <div>No linear release</div>
+        </>
+      );
+    }
+    console.log("getLinearVestingDetails", start);
+    console.log(duration.toString());
+
+    const startDate = new Date(start.divn(1000000).toNumber());
+
+    //  add duration to start date, duration is in days
+    const endDate = new Date(
+      startDate.getTime() + duration.toNumber() * 24 * 60 * 60 * 1000
+    );
+
+    return (
+      <>
+        <h2 className="prose">Linear vesting</h2>
+        <div className="grid grid-cols-3">
+          <div className="col-span-1">Start</div>
+          <div>{startDate.toLocaleString()}</div>
+        </div>
+        <div className="grid grid-cols-3">
+          <div className="col-span-1">End</div>
+          <div>{endDate.toLocaleString()}</div>
+        </div>
+      </>
+    );
+  };
+
   return (
-    <div className="grid">
+    <div className="mt-4 grid">
       <div className="grid grid-cols-3">
         <div className="col-span-1">Account ID</div>
-        <div>TODO</div>
+        <div>{lockupInfo.lockupState.owner}</div>
       </div>
       <div className="grid grid-cols-3">
         <div className="col-span-1">Lockup ID</div>
         <div>{lockupInfo.lockupAccountId}</div>
       </div>
       <div className="grid grid-cols-3">
-        <div className="col-span-1">Total Balance</div>
-        <div>{lockupInfo.ownerAccountBalance.toString()}</div>
+        <div className="col-span-1">Lockup Amount</div>
+        <div>
+          {formatNearAmount(lockupInfo.lockupState.lockupAmount.toString(), 2) +
+            " Ⓝ"}
+        </div>
       </div>
       <div className="grid grid-cols-3">
-        <div className="col-span-1">Owners Balance</div>
-        <div>{lockupInfo.ownerAccountBalance.toString()}</div>
+        <div className="col-span-1">Locked Balance</div>
+        <div>
+          {formatNearAmount(lockupInfo.lockedAmount.toString(), 2) + " Ⓝ"}
+        </div>
       </div>
       <div className="grid grid-cols-3">
         <div className="col-span-1">Liquid amount (unlocked + rewards)</div>
-        <div>{lockupInfo.liquidAmount.toString()}</div>
-      </div>
-      <div className="grid grid-cols-3">
-        <div className="col-span-1">Vesting</div>
         <div>
-          {lockupInfo.lockupState?.vestingInformation?.start?.toString() ?? ""}
+          {formatNearAmount(lockupInfo.liquidAmount.toString(), 2) + " Ⓝ"}
         </div>
       </div>
+      {getVestingDetails(lockupInfo.lockupState.vestingInformation)}
+      {getLinearVestingDetails(
+        lockupInfo.lockupState.lockupTimestamp,
+        lockupInfo.lockupState.releaseDuration
+      )}
     </div>
   );
 };
 
-ManageLockup.getLayout = function getLayout(page) {
-  return <Layout>{page}</Layout>;
-};
+ManageLockup.getLayout = getSidebarLayout;
 
 export default ManageLockup;

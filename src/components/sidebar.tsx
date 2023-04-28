@@ -2,10 +2,11 @@ import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useState } from "react";
+import { useNearContext } from "~/context/near";
 
 const Sidebar: React.FC = () => {
   return (
-    <div className="sticky h-screen w-64 p-3 shadow">
+    <div className="sticky flex h-screen w-64 flex-col p-3 shadow">
       <div className="mb-4 mt-4 flex items-center justify-center">
         <svg
           id="Layer_1"
@@ -22,6 +23,8 @@ const Sidebar: React.FC = () => {
         </svg>
       </div>
       <TreasurySection />
+      <div className="flex-grow"></div>
+      <CurrentNetwork />
     </div>
   );
 };
@@ -64,6 +67,17 @@ const TreasurySection: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const CurrentNetwork = () => {
+  const { network } = useNearContext();
+
+  return (
+    <div className="prose flex items-center justify-center">
+      <div className="text-xs text-gray-500">Current network:</div>
+      <div className="prose ml-1 text-xs text-gray-500">{network}</div>
     </div>
   );
 };
