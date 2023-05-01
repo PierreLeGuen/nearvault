@@ -43,14 +43,10 @@ const ManageLockup: NextPageWithLayout = () => {
             type="text"
             className="w-full rounded"
             placeholder="NEAR account or lockup"
-            value={account || ""}
-            onChange={(e) => {
-              setAccount(e.target.value);
-              setAccountError("");
-            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                void getLockupInformation(account);
+                setAccountError("");
+                void getLockupInformation(e.currentTarget.value);
               }
             }}
           />
@@ -95,6 +91,21 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
   const getVestingDetails = (vesting: VestingInformation | undefined) => {
     console.log("getVestingDetails", vesting);
 
+    if (
+      lockupInfo.lockupState.vestingInformation?.terminationStatus ||
+      lockupInfo.lockupState.terminationWithdrawnTokens.toString() !== "0"
+    ) {
+      return (
+        <>
+          <h2 className="prose">Vesting schedule</h2>
+          <div className="grid grid-cols-3">
+            <div className="col-span-1">Vesting Schedule</div>
+            <div className="text-red-500">Lockup terminated</div>
+          </div>
+        </>
+      );
+    }
+
     if (!vesting) {
       return (
         <>
@@ -134,17 +145,32 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
 
         <div className="grid grid-cols-3">
           <div className="col-span-1">Start</div>
-          <div>{start.toLocaleString()}</div>
+          <div>
+            {new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "full",
+              timeStyle: "long",
+            }).format(start)}
+          </div>
         </div>
         {cliff && (
           <div className="grid grid-cols-3">
             <div className="col-span-1">Cliff</div>
-            <div> {cliff.toLocaleString()}</div>
+            <div>
+              {new Intl.DateTimeFormat("en-GB", {
+                dateStyle: "full",
+                timeStyle: "long",
+              }).format(cliff)}
+            </div>
           </div>
         )}
         <div className="grid grid-cols-3">
           <div className="col-span-1">End</div>
-          <div>{end.toLocaleString()}</div>
+          <div>
+            {new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "full",
+              timeStyle: "long",
+            }).format(end)}
+          </div>
         </div>
       </>
     );
@@ -177,11 +203,21 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         <h2 className="prose">Linear vesting</h2>
         <div className="grid grid-cols-3">
           <div className="col-span-1">Start</div>
-          <div>{startDate.toLocaleString()}</div>
+          <div>
+            {new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "full",
+              timeStyle: "long",
+            }).format(startDate)}
+          </div>
         </div>
         <div className="grid grid-cols-3">
           <div className="col-span-1">End</div>
-          <div>{endDate.toLocaleString()}</div>
+          <div>
+            {new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "full",
+              timeStyle: "long",
+            }).format(endDate)}
+          </div>
         </div>
       </>
     );
