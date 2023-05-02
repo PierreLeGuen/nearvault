@@ -14,6 +14,9 @@ export type LockupState = {
   readonly transferInformation: TransferInformation;
   readonly vestingInformation?: VestingInformation;
   readonly hasBrokenTimestamp: boolean;
+  readonly stakingPoolWhitelistAccountId: string;
+  readonly stakingInfo?: StakingInformation;
+  readonly foundationAccount: string;
 };
 
 export type AccountLockup = {
@@ -32,6 +35,12 @@ export type AccountLockup = {
 export type TransferInformation = {
   readonly transfers_timestamp?: BN;
   readonly transfer_poll_account_id?: string;
+};
+
+export type StakingInformation = {
+  readonly staking_pool_account_id?: BN;
+  readonly status?: string;
+  readonly deposit_amount?: BN;
 };
 
 export type VestingInformation = {

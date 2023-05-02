@@ -18,10 +18,12 @@ import { getLockedTokenAmount } from "./balance";
 import {
   formatReleaseDuration,
   formatVestingInfo,
+  getStakingInformation,
   getStartLockupTimestamp,
   getTransferInformation,
   getVestingInformation,
-  readOption,
+  readNumberOption,
+  readStringOption,
 } from "./utils";
 
 /**
@@ -64,8 +66,8 @@ export const viewLockupState = async (
   const lockupAmount = reader.readU128().toString();
   const terminationWithdrawnTokens = reader.readU128().toString();
   const lockupDuration = reader.readU64().toString();
-  const releaseDuration = readOption(reader);
-  const lockupTimestamp = readOption(reader);
+  const releaseDuration = readNumberOption(reader);
+  const lockupTimestamp = readNumberOption(reader);
   // More details: https://github.com/near/core-contracts/pull/136
   const hasBrokenTimestamp = [
     "3kVY9qcVRoW3B5498SMX6R3rtSLiCdmBzKs7zcnzDJ7Q",
@@ -74,6 +76,9 @@ export const viewLockupState = async (
 
   const transferInformation = getTransferInformation(reader);
   const vestingInformation = getVestingInformation(reader);
+  const stakingPoolWhitelistAccountId = reader.readString();
+  const stakingInfo = getStakingInformation(reader);
+  const foundationAccount = readStringOption(reader);
 
   return {
     owner,
@@ -86,6 +91,9 @@ export const viewLockupState = async (
     transferInformation,
     vestingInformation,
     hasBrokenTimestamp,
+    stakingPoolWhitelistAccountId,
+    stakingInfo,
+    foundationAccount,
   };
 };
 

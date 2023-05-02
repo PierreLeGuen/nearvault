@@ -4,6 +4,7 @@ import BN from "bn.js";
 import { type BinaryReader } from "near-api-js/lib/utils/serialize";
 
 import {
+  type StakingInformation,
   type TransferInformation,
   type VestingInformation,
 } from "../types/types";
@@ -13,9 +14,14 @@ export const saturatingSub = (a: BN, b: BN) => {
   return res.gte(new BN(0)) ? res : new BN(0);
 };
 
-export const readOption = (reader: BinaryReader): string => {
+export const readNumberOption = (reader: BinaryReader): string => {
   const x = reader.readU8();
   return x === 1 ? reader.readU64().toString() : "0";
+};
+
+export const readStringOption = (reader: BinaryReader): string => {
+  const x = reader.readU8();
+  return x === 1 ? reader.readString() : "";
 };
 
 /**
@@ -102,6 +108,28 @@ export const getTransferInformation = (
   } else {
     return {
       transfer_poll_account_id: reader.readString(),
+    };
+  }
+};
+
+/**
+ *
+ * @param reader {@link BinaryReader}.
+ * @returns one of {@link TransferInformation}.
+ */
+export const getStakingInformation = (
+  reader: BinaryReader
+): StakingInformation | undefined => {
+  const tiType = reader.readU8();
+  console.log("tiType", tiType);
+
+  if (tiType === 0) {
+    return undefined;
+  } else {
+    return {
+      staking_pool_account_id: reader.readU128(),
+      status: reader.readString(),
+      deposit_amount: reader.readU128(),
     };
   }
 };
