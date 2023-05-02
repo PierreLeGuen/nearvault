@@ -59,6 +59,9 @@ const getUnvestedAmount = (
       ) {
         return new BN(0);
       } else {
+        if (!vestingInformation.end) {
+          throw new Error("Vesting schedule is invalid");
+        }
         const timeLeft = vestingInformation.end.sub(blockTimestamp);
         const totalTime = vestingInformation.end.sub(vestingInformation.start);
         return lockupAmount.mul(timeLeft).div(totalTime);
@@ -86,7 +89,7 @@ export const getLockedTokenAmount = (lockupState: LockupState) => {
 
   const lockupTimestamp = BN.max(
     phase2Time.add(lockupState.lockupDuration),
-    lockupState.lockupTimestamp
+    lockupState.lockupTimestamp!
   );
 
   if (lockupState.blockTimestamp.lt(lockupTimestamp)) {
@@ -97,15 +100,15 @@ export const getLockedTokenAmount = (lockupState: LockupState) => {
   }
 
   const unreleasedAmount = getUnreleasedAmount(
-    lockupState.releaseDuration,
-    lockupState.lockupTimestamp,
+    lockupState.releaseDuration!,
+    lockupState.lockupTimestamp!,
     lockupState.hasBrokenTimestamp,
     lockupState.blockTimestamp,
     lockupState.lockupAmount
   );
 
   const unvestedAmount = getUnvestedAmount(
-    lockupState?.vestingInformation,
+    lockupState.vestingInformation!,
     lockupState.blockTimestamp,
     lockupState.lockupAmount
   );
