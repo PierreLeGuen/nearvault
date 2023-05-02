@@ -48,9 +48,7 @@ export function useNearContext() {
   const context = useContext(NearContext);
 
   if (!context) {
-    throw new Error(
-      "useWalletSelector must be used within a WalletSelectorContextProvider"
-    );
+    throw new Error("useNearContext must be used within a NearContextProvider");
   }
 
   return context;

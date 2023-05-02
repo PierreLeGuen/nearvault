@@ -9,6 +9,10 @@ config.autoAddCss = false;
 import { type NextPage } from "next";
 import { type Session } from "next-auth";
 import { type ReactElement, type ReactNode } from "react";
+import { NearContextProvider } from "~/context/near";
+import { WalletSelectorContextProvider } from "~/context/wallet";
+
+import "@near-wallet-selector/modal-ui/styles.css";
 import "~/styles/globals.css";
 
 export type NextPageWithLayout<P = unknown, IP = P> = NextPage<P, IP> & {
@@ -27,7 +31,13 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
 
   const layout = getLayout ? getLayout(pageContent) : pageContent;
 
-  return <SessionProvider session={session}>{layout}</SessionProvider>;
+  return (
+    <SessionProvider session={session}>
+      <NearContextProvider>
+        <WalletSelectorContextProvider>{layout}</WalletSelectorContextProvider>
+      </NearContextProvider>
+    </SessionProvider>
+  );
 }
 
 export default api.withTRPC(MyApp);

@@ -48,9 +48,15 @@ const getUnvestedAmount = (
       return vestingInformation.unvestedAmount;
     } else if (vestingInformation.start) {
       // we have schedule
-      if (blockTimestamp.lt(vestingInformation.cliff)) {
+      if (
+        vestingInformation.cliff &&
+        blockTimestamp.lt(vestingInformation.cliff)
+      ) {
         return lockupAmount;
-      } else if (blockTimestamp.gte(vestingInformation.end)) {
+      } else if (
+        vestingInformation.end &&
+        blockTimestamp.gte(vestingInformation.end)
+      ) {
         return new BN(0);
       } else {
         const timeLeft = vestingInformation.end.sub(blockTimestamp);

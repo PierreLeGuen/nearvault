@@ -1,6 +1,6 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 
-import React, { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import Layout from "~/components/layout";
 import { api } from "~/libs/api";
 import { type NextPageWithLayout } from "./_app";
@@ -16,8 +16,6 @@ const Home: NextPageWithLayout = () => {
 };
 
 Home.getLayout = function getLayout(page: ReactElement) {
-  // counter state
-
   return <Layout>{page}</Layout>;
 };
 

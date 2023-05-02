@@ -1,8 +1,9 @@
-import BN from "bn.js";
+import type BN from "bn.js";
 import bs58 from "bs58";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/layout";
+import { MyDialog } from "~/components/modal-cancel-lockup";
 import { useNearContext } from "~/context/near";
 import { viewLockupAccount } from "~/libs/front/lockup/lib/lockup";
 import {
@@ -18,6 +19,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
   const provider = useNearContext().archival_provider;
+  const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
 
   const getLockupInformation = async (account: string) => {
     try {
@@ -62,7 +64,18 @@ const ManageLockup: NextPageWithLayout = () => {
         </span>
       </label>
       {accountError && <p className="text-red-500">{accountError}</p>}
-      {lockupInformation && <div>{showLockupInfo(lockupInformation)}</div>}
+      {lockupInformation && (
+        <>
+          <div>{showLockupInfo(lockupInformation)}</div>
+          <div>
+            {cancelLockup(
+              lockupInformation,
+              cancelLockupModalIsOpen,
+              cancelSetIsOpen
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -86,6 +99,28 @@ function prepareAccountId(data: string) {
   }
   return Buffer.from(publicKey).toString("hex");
 }
+
+const cancelLockup = (
+  lockup: AccountLockup,
+  modalIsOpen: boolean,
+  modalFn: (a: boolean) => void
+) => {
+  console.log("cancelLockup", lockup);
+  return (
+    <div className="mt-4">
+      <button
+        className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
+        onClick={() => {
+          console.log("cancelLockup", lockup);
+          modalFn(true);
+        }}
+      >
+        Cancel lockup
+        {modalIsOpen && MyDialog(modalIsOpen, modalFn)}
+      </button>
+    </div>
+  );
+};
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
   const getVestingDetails = (vesting: VestingInformation | undefined) => {
@@ -145,7 +180,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
 
         <div className="grid grid-cols-3">
           <div className="col-span-1">Start</div>
-          <div>
+          <div className="col-span-2">
             {new Intl.DateTimeFormat("en-GB", {
               dateStyle: "full",
               timeStyle: "long",
@@ -155,7 +190,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         {cliff && (
           <div className="grid grid-cols-3">
             <div className="col-span-1">Cliff</div>
-            <div>
+            <div className="col-span-2">
               {new Intl.DateTimeFormat("en-GB", {
                 dateStyle: "full",
                 timeStyle: "long",
@@ -165,7 +200,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         )}
         <div className="grid grid-cols-3">
           <div className="col-span-1">End</div>
-          <div>
+          <div className="col-span-2">
             {new Intl.DateTimeFormat("en-GB", {
               dateStyle: "full",
               timeStyle: "long",
@@ -203,7 +238,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         <h2 className="prose">Linear vesting</h2>
         <div className="grid grid-cols-3">
           <div className="col-span-1">Start</div>
-          <div>
+          <div className="col-span-2">
             {new Intl.DateTimeFormat("en-GB", {
               dateStyle: "full",
               timeStyle: "long",
@@ -212,7 +247,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         </div>
         <div className="grid grid-cols-3">
           <div className="col-span-1">End</div>
-          <div>
+          <div className="col-span-2">
             {new Intl.DateTimeFormat("en-GB", {
               dateStyle: "full",
               timeStyle: "long",
@@ -248,8 +283,18 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
       </div>
       <div className="grid grid-cols-3">
         <div className="col-span-1">Liquid amount (unlocked + rewards)</div>
-        <div>
+        <div className="col-span-2">
           {formatNearAmount(lockupInfo.liquidAmount.toString(), 2) + " Ⓝ"}
+        </div>
+      </div>
+      <div className="grid grid-cols-3">
+        <div className="col-span-1">Is staking allowed?</div>
+        <div className="col-span-2">
+          {lockupInfo.lockupState.stakingPoolWhitelistAccountId === "system" ? (
+            <>No</>
+          ) : (
+            <>Yes</>
+          )}
         </div>
       </div>
       {getVestingDetails(lockupInfo.lockupState.vestingInformation)}
