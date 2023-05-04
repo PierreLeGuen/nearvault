@@ -5,12 +5,11 @@ import { useState } from "react";
 import { getSidebarLayout } from "~/components/layout";
 import { MyDialog } from "~/components/modal-cancel-lockup";
 import { useNearContext } from "~/context/near";
-import { viewLockupAccount } from "~/libs/front/lockup/lib/lockup";
+import { calculateLockup, viewLockupAccount } from "~/libs/lockup/lockup";
 import {
   type AccountLockup,
   type VestingInformation,
-} from "~/libs/front/lockup/types/types";
-import { calculateLockup } from "~/libs/lockup";
+} from "~/libs/lockup/types";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
@@ -29,7 +28,6 @@ const ManageLockup: NextPageWithLayout = () => {
       const r = await viewLockupAccount(l, provider);
       console.log(r);
       setLockupInformation(r);
-      // r?
     } catch {
       setAccountError("Account not found");
     }

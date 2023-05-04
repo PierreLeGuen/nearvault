@@ -7,7 +7,7 @@ import {
   type StakingInformation,
   type TransferInformation,
   type VestingInformation,
-} from "../types/types";
+} from "./types";
 
 export const saturatingSub = (a: BN, b: BN) => {
   const res = a.sub(b);

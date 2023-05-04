@@ -12,7 +12,7 @@ import {
   type ViewAccount,
   type ViewAccountQuery,
   type ViewStateResult,
-} from "../types/types";
+} from "./types";
 
 import { getLockedTokenAmount } from "./balance";
 import {
@@ -25,6 +25,8 @@ import {
   readNumberOption,
   readStringOption,
 } from "./utils";
+
+import { createHash } from "crypto";
 
 /**
  * View state of lockup account
@@ -238,3 +240,14 @@ export const viewLockupAccount = async (
   }
   return null;
 };
+
+export function calculateLockup(
+  accountId: string,
+  topLevelAccId: string
+): string {
+  const h = Buffer.from(
+    createHash("sha256").update(accountId).digest("hex")
+  ).subarray(0, 40);
+
+  return `${h.toString()}.${topLevelAccId}`;
+}

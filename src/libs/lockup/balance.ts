@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { type LockupState, type VestingInformation } from "../types/types";
+import { type LockupState, type VestingInformation } from "./types";
 
 import { getStartLockupTimestamp, saturatingSub } from "./utils";
 
