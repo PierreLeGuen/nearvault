@@ -45,6 +45,7 @@ export const WalletSelectorContextProvider: React.FC<{
   const [loading, setLoading] = useState<boolean>(true);
 
   const { network } = useNearContext();
+  console.log("REReNDERING");
 
   const init = useCallback(async () => {
     console.log(network);
@@ -93,6 +94,7 @@ export const WalletSelectorContextProvider: React.FC<{
         // }),
       ],
     });
+
     const _modal = setupModal(_selector, {
       contractId: "lockup.near",
     });

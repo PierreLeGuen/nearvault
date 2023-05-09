@@ -2,6 +2,7 @@ import type BN from "bn.js";
 import { type ConnectConfig } from "near-api-js/lib/connect";
 import { type KeyStore } from "near-api-js/lib/key_stores/keystore";
 import { type QueryResponseKind } from "near-api-js/lib/providers/provider";
+import * as nearAPI from "near-api-js";
 
 export type LockupState = {
   readonly owner: string;
@@ -12,7 +13,7 @@ export type LockupState = {
   readonly lockupTimestamp?: BN;
   readonly blockTimestamp: BN;
   readonly transferInformation: TransferInformation;
-  readonly vestingInformation?: VestingInformation;
+  readonly vestingInformation?: FromStateVestingInformation;
   readonly hasBrokenTimestamp: boolean;
   readonly stakingPoolWhitelistAccountId: string;
   readonly stakingInfo?: StakingInformation;
@@ -43,7 +44,7 @@ export type StakingInformation = {
   readonly deposit_amount?: BN;
 };
 
-export type VestingInformation = {
+export type FromStateVestingInformation = {
   readonly vestingHash?: readonly unknown[];
   readonly start?: BN;
   readonly cliff?: BN;
@@ -98,3 +99,21 @@ export type ConnectOptions = Omit<
     readonly [key: string]: string | number;
   };
 };
+
+// Code herE: https://github.com/near/core-contracts/blob/215d4ed2edb563c47edd961555106b74275c4274/lockup/src/getters.rs#L7
+export interface LockupContract extends nearAPI.Contract {
+  get_owner_account_id(): Promise<string>;
+  get_staking_pool_account_id(): Promise<string>;
+  get_vesting_information(): Promise<FromStateVestingInformation | "None">;
+  get_termination_status(): Promise<number>;
+}
+
+export function init(
+  account: nearAPI.Account,
+  contractName: string
+): LockupContract {
+  return new nearAPI.Contract(account, contractName, {
+    changeMethods: [],
+    viewMethods: ["get_vesting_information", "get_termination_status"],
+  }) as LockupContract;
+}
