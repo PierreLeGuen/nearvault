@@ -1,14 +1,15 @@
 import type BN from "bn.js";
 import bs58 from "bs58";
+import { connect, multisig } from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { CancelLockupDialog } from "~/components/CancelLockupDialog";
 import { getSidebarLayout } from "~/components/layout";
-import { MyDialog } from "~/components/modal-cancel-lockup";
 import { useNearContext } from "~/context/near";
 import { calculateLockup, viewLockupAccount } from "~/libs/lockup/lockup";
 import {
   type AccountLockup,
-  type VestingInformation,
+  type FromStateVestingInformation,
 } from "~/libs/lockup/types";
 import { type NextPageWithLayout } from "../_app";
 
@@ -19,6 +20,29 @@ const ManageLockup: NextPageWithLayout = () => {
     useState<AccountLockup | null>(null);
   const provider = useNearContext().archival_provider;
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
+
+  const store = useContext(StoreContext);
+  const slice = useStore(store, selector);
+  useEffect(() => {
+    const getKeys = async () => {
+      const c = await connect({
+        networkId: "mainnet",
+        nodeUrl: "https://rpc.mainnet.near.org",
+      });
+      const m = new multisig.AccountMultisig(
+        c.connection,
+        "foundation.near",
+        {}
+      );
+      const ks = await m.getAccessKeys();
+      console.log(ks);
+
+      ks.map((k) => {
+        console.log(k.public_key);
+      });
+    };
+    void getKeys();
+  }, []);
 
   const getLockupInformation = async (account: string) => {
     try {
@@ -114,14 +138,17 @@ const cancelLockup = (
         }}
       >
         Cancel lockup
-        {modalIsOpen && MyDialog(modalIsOpen, modalFn)}
+        {modalIsOpen &&
+          CancelLockupDialog(modalIsOpen, modalFn, lockup.lockupAccountId)}
       </button>
     </div>
   );
 };
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
-  const getVestingDetails = (vesting: VestingInformation | undefined) => {
+  const getVestingDetails = (
+    vesting: FromStateVestingInformation | undefined
+  ) => {
     console.log("getVestingDetails", vesting);
 
     if (

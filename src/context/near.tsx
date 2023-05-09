@@ -10,6 +10,7 @@ import {
 
 interface NearContextType {
   network: "mainnet" | "testnet";
+  switchNetwork: () => void;
   archivalNodeUrl: string;
   archival_provider: Provider;
 }
@@ -30,8 +31,17 @@ export const NearContextProvider: React.FC<{
   }, [network]);
 
   const value = useMemo(() => {
+    const switchNetwork = () => {
+      if (network === "mainnet") {
+        setNetwork("testnet");
+      } else {
+        setNetwork("mainnet");
+      }
+    };
+
     return {
       network,
+      switchNetwork,
       archivalNodeUrl,
       archival_provider: new providers.JsonRpcProvider({
         url: archivalNodeUrl,

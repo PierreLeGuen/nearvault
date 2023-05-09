@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { type LockupState, type VestingInformation } from "./types";
+import { type LockupState, type FromStateVestingInformation } from "./types";
 
 import { getStartLockupTimestamp, saturatingSub } from "./utils";
 
@@ -38,7 +38,7 @@ const getUnreleasedAmount = (
 };
 
 const getUnvestedAmount = (
-  vestingInformation: VestingInformation,
+  vestingInformation: FromStateVestingInformation,
   blockTimestamp: BN,
   lockupAmount: BN
 ) => {

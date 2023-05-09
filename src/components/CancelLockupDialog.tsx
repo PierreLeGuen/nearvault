@@ -1,9 +1,23 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 
-export const MyDialog = (
+import type Transport from "@ledgerhq/hw-transport-webhid";
+import { Account, connect } from "near-api-js";
+import { PublicKey } from "near-api-js/lib/utils";
+import { createClient } from "~/libs/ledger";
+import { vestingTermination } from "~/libs/lockup/termination";
+
+export interface LedgerClient {
+  transport: Transport;
+  getVersion: () => Promise<string>;
+  getPublicKey: (path?: string) => Promise<Buffer>;
+  sign: (transactionData: Buffer, path?: string) => Promise<Buffer>;
+}
+
+export const CancelLockupDialog = (
   isOpen: boolean,
-  setIsOpen: (isOpen: boolean) => void
+  setIsOpen: (isOpen: boolean) => void,
+  lockupId: string
 ) => {
   console.log("MyDialog", isOpen, setIsOpen);
 
@@ -55,7 +69,56 @@ export const MyDialog = (
                     <button
                       type="button"
                       className="inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => {
+                        createClient()
+                          .then((cl) => {
+                            connect({
+                              networkId: "mainnet",
+                              nodeUrl: "https://rpc.mainnet.near.org",
+                              signer: {
+                                async getPublicKey() {
+                                  await cl.getVersion();
+
+                                  return await cl.getPublicKey(
+                                    "44'/397'/0'/0'/0'"
+                                  );
+                                },
+                                async signMessage(message) {
+                                  await cl.getVersion();
+                                  const signature = await cl.sign(
+                                    message,
+                                    PublicKey.from("TODO").toString()
+                                  );
+                                  return {
+                                    signature,
+                                    publicKey: PublicKey.from("TODO"),
+                                  };
+                                },
+                              },
+                            })
+                              .then((c) => {
+                                console.log("c", c);
+                                vestingTermination(
+                                  new Account(c.connection, "foundation.near"),
+                                  lockupId,
+                                  "foundation.near",
+                                  "terminate_vesting"
+                                )
+                                  .then((r) => {
+                                    console.log("r", r);
+                                  })
+                                  .catch((e) => {
+                                    console.log("e", e);
+                                  });
+                              })
+                              .catch((e) => {
+                                console.log("e", e);
+                              });
+                          })
+                          .catch((e) => {
+                            console.log("e", e);
+                          });
+                      }}
                     >
                       Continue
                     </button>

@@ -1,19 +1,21 @@
-import { SessionProvider } from "next-auth/react";
-import { type AppProps } from "next/app";
-
 import { config } from "@fortawesome/fontawesome-svg-core";
-import "@fortawesome/fontawesome-svg-core/styles.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
+import { NearContextProvider } from "~/context/near";
+import { WalletSelectorContextProvider } from "~/context/wallet";
 import { api } from "~/libs/api";
-config.autoAddCss = false;
 
 import { type NextPage } from "next";
 import { type Session } from "next-auth";
+import { type AppProps } from "next/app";
 import { type ReactElement, type ReactNode } from "react";
-import { NearContextProvider } from "~/context/near";
-import { WalletSelectorContextProvider } from "~/context/wallet";
 
+import "@fortawesome/fontawesome-svg-core/styles.css";
 import "@near-wallet-selector/modal-ui/styles.css";
+import { createContext, createStore } from "zustand";
 import "~/styles/globals.css";
+
+config.autoAddCss = false;
 
 export type NextPageWithLayout<P = unknown, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -24,6 +26,11 @@ type AppPropsWithLayout = AppProps & {
   session: Session;
 };
 
+const queryClient = new QueryClient();
+
+const StoreContext = createContext();
+const store = createStore();
+
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   const { getLayout } = Component;
 
@@ -33,9 +40,15 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
 
   return (
     <SessionProvider session={session}>
-      <NearContextProvider>
-        <WalletSelectorContextProvider>{layout}</WalletSelectorContextProvider>
-      </NearContextProvider>
+      <StoreContext.Provider value={store}>
+        <QueryClientProvider client={queryClient}>
+          <NearContextProvider>
+            <WalletSelectorContextProvider>
+              {layout}
+            </WalletSelectorContextProvider>
+          </NearContextProvider>
+        </QueryClientProvider>
+      </StoreContext.Provider>
     </SessionProvider>
   );
 }

@@ -6,7 +6,7 @@ import { type BinaryReader } from "near-api-js/lib/utils/serialize";
 import {
   type StakingInformation,
   type TransferInformation,
-  type VestingInformation,
+  type FromStateVestingInformation,
 } from "./types";
 
 export const saturatingSub = (a: BN, b: BN) => {
@@ -26,10 +26,12 @@ export const readStringOption = (reader: BinaryReader): string => {
 
 /**
  *
- * @param info {@link VestingInformation}.
+ * @param info {@link FromStateVestingInformation}.
  * @returns string | null.
  */
-export const formatVestingInfo = (info: VestingInformation): string | null => {
+export const formatVestingInfo = (
+  info: FromStateVestingInformation
+): string | null => {
   if (!info?.start) return null; // TODO
   const start = new Date(info.start.divn(1000000).toNumber());
   const cliff = new Date(info.cliff!.divn(1000000).toNumber());
@@ -65,11 +67,11 @@ export const getStartLockupTimestamp = (
 /**
  *
  * @param reader {@link BinaryReader}.
- * @returns one of {@link VestingInformation} or null.
+ * @returns one of {@link FromStateVestingInformation} or null.
  */
 export const getVestingInformation = (
   reader: BinaryReader
-): VestingInformation | undefined => {
+): FromStateVestingInformation | undefined => {
   const vestingType = reader.readU8();
   switch (vestingType) {
     case 1:
