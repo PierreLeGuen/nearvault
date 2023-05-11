@@ -1,11 +1,20 @@
-
 import { create } from "zustand";
 import { type CounterState, createCounterSlice } from "./slices/counter";
 import { type WalletState, createWalletSlice } from "./slices/wallet";
+import { persist, devtools } from "zustand/middleware";
 
-const useStore = create<CounterState & WalletState>()((...a) => ({
-  ...createCounterSlice(...a),
-  ...createWalletSlice(...a),
-}));
+export type IStore = CounterState & WalletState;
 
-export default useStore;
+const usePersistingStore = create<IStore>()(
+  devtools(
+    persist(
+      (...a) => ({
+        ...createCounterSlice(...a),
+        ...createWalletSlice(...a),
+      }),
+      { name: "store" }
+    )
+  )
+);
+
+export default usePersistingStore;

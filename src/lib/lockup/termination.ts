@@ -1,8 +1,9 @@
-import { Account, multisig } from "near-api-js";
 import { init } from "./types";
 import { functionCall } from "near-api-js/lib/transaction";
 import { Gas } from "near-units";
 import { BN } from "bn.js";
+import { AccountMultisig } from "../multisig/account_multisig";
+import { type Account } from "near-api-js";
 
 export async function vestingTermination(
   caller: Account,
@@ -18,10 +19,6 @@ export async function vestingTermination(
   const lockupVestingInformation =
     await lockupContract.get_vesting_information();
 
-  console.log("here");
-
-  console.log(lockupVestingInformation);
-
   if (lockupVestingInformation === "None") {
     alert(
       `The lockup ${lockupId} does not have a vesting schedule (either terminated before or never had one)`
@@ -36,13 +33,13 @@ export async function vestingTermination(
       );
       return;
     }
-    const m = new multisig.AccountMultisig(
+    const multisigWrapper = new AccountMultisig(
       caller.connection,
-      "foundation.near",
+      "multisig.pierre-dev.near",
       {}
     );
 
-    await m.signAndSendTransaction({
+    await multisigWrapper.signAndSendTransaction({
       receiverId: lockupId,
       actions: [
         functionCall(

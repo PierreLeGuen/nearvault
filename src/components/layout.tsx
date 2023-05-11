@@ -2,10 +2,6 @@ import { type ReactNode } from "react";
 import { useWalletSelector } from "~/context/wallet";
 import Sidebar from "./sidebar";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
 const Layout: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {

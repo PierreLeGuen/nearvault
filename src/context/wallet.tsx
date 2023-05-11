@@ -16,6 +16,8 @@ import { distinctUntilChanged, map } from "rxjs";
 
 import { setupLedger } from "@near-wallet-selector/ledger";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
+import { PublicKey } from "near-api-js/lib/utils";
+import usePersistingStore from "~/store/useStore";
 import Loading from "../components/loading";
 import { useNearContext } from "./near";
 
@@ -45,11 +47,10 @@ export const WalletSelectorContextProvider: React.FC<{
   const [loading, setLoading] = useState<boolean>(true);
 
   const { network } = useNearContext();
-  console.log("REReNDERING");
+
+  const store = usePersistingStore();
 
   const init = useCallback(async () => {
-    console.log(network);
-
     const _selector = await setupWalletSelector({
       network: network,
       debug: true,
@@ -130,7 +131,10 @@ export const WalletSelectorContextProvider: React.FC<{
       )
       .subscribe((nextAccounts) => {
         console.log("Accounts Update", nextAccounts);
-
+        const pk = nextAccounts.find((account) => account.active)?.publicKey;
+        if (pk) {
+          store.setPublicKey(PublicKey.from(pk));
+        }
         setAccounts(nextAccounts);
       });
 

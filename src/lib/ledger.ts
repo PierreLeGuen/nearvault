@@ -1,6 +1,7 @@
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import { Signer } from "near-api-js";
 import { PublicKey } from "near-api-js/lib/utils";
+import { type IStore } from "~/store/useStore";
 
 function bip32PathToBytes(path: string) {
   const parts = path.split("/");
@@ -47,9 +48,12 @@ export async function createClient() {
         networkId,
         bip32PathToBytes(path)
       );
-      return Buffer.from(response.subarray(0, -2));
+      return PublicKey.from(Buffer.from(response.subarray(0, -2)).toString());
     },
-    async sign(transactionData: Uint8Array, path: string): Promise<Uint8Array> {
+    async sign(
+      transactionData: Uint8Array,
+      path: string | null
+    ): Promise<Uint8Array> {
       // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
       const version = await this.getVersion();
       console.info("Ledger app version:", version);
@@ -81,53 +85,47 @@ export async function createClient() {
   };
 }
 
-const defaultHooks = {
-  onBeforeSignTx: () => {},
-  onAfterSignTx: () => {},
-};
-
 export class LedgerSigner extends Signer {
-  client: null;
-  hooks: any;
-  useWalletContext: any;
+  client: {
+    getVersion(): Promise<string>;
+    sign(transactionData: Uint8Array, path: string | null): Promise<Uint8Array>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transport: any;
+    getPublicKey(path: string): Promise<PublicKey>;
+  } | null;
+  store: IStore;
 
-  constructor(useWalletContext) {
+  constructor(store: IStore) {
     super();
     this.client = null;
-    this.hooks = defaultHooks;
-    this.useWalletContext = useWalletContext;
+    this.store = store;
   }
 
-  setHooks(hooks) {
-    this.hooks = { ...this.hooks, ...hooks };
-  }
-
-  resetHooks() {
-    this.hooks = defaultHooks;
-  }
-
+  // eslint-disable-next-line @typescript-eslint/require-await
   async getPublicKey() {
-    return PublicKey.from(this.getStoreState().general.user.publicKey);
+    if (!this.store.publicKey) {
+      throw new Error("No public key");
+    }
+    return PublicKey.from(this.store.publicKey);
   }
 
-  async signMessage(message) {
+  async signMessage(message: Uint8Array) {
     try {
-      const transport = await TransportWebHID.create();
-      this.client = await createClient(transport);
+      console.log("signMessage, createClient");
+      this.client = await createClient();
 
-      this.hooks.onBeforeSignTx();
-      const signature = await this.client.sign(message);
+      const signature = await this.client.sign(message, null);
       const publicKey = await this.getPublicKey();
-      this.hooks.onAfterSignTx();
 
       return {
         signature,
         publicKey,
       };
     } catch (error) {
-      error.fromLedgerSigner = true;
       throw error;
     } finally {
+      console.log("signMessage, close transport");
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
       await this.client?.transport?.close();
     }
   }
