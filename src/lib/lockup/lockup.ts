@@ -236,7 +236,7 @@ export const viewLockupAccount = async (
       };
     }
   } catch (error) {
-    console.error(error);
+    throw error;
   }
   return null;
 };

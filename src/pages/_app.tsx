@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { NearContextProvider } from "~/context/near";
 import { WalletSelectorContextProvider } from "~/context/wallet";
-import { api } from "~/libs/api";
+import { api } from "~/lib/api";
 
 import { type NextPage } from "next";
 import { type Session } from "next-auth";
@@ -12,7 +12,6 @@ import { type ReactElement, type ReactNode } from "react";
 
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import "@near-wallet-selector/modal-ui/styles.css";
-import { createContext, createStore } from "zustand";
 import "~/styles/globals.css";
 
 config.autoAddCss = false;
@@ -28,9 +27,6 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-const StoreContext = createContext();
-const store = createStore();
-
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   const { getLayout } = Component;
 
@@ -40,15 +36,13 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
 
   return (
     <SessionProvider session={session}>
-      <StoreContext.Provider value={store}>
-        <QueryClientProvider client={queryClient}>
-          <NearContextProvider>
-            <WalletSelectorContextProvider>
-              {layout}
-            </WalletSelectorContextProvider>
-          </NearContextProvider>
-        </QueryClientProvider>
-      </StoreContext.Provider>
+      <QueryClientProvider client={queryClient}>
+        <NearContextProvider>
+          <WalletSelectorContextProvider>
+            {layout}
+          </WalletSelectorContextProvider>
+        </NearContextProvider>
+      </QueryClientProvider>
     </SessionProvider>
   );
 }

@@ -1,16 +1,17 @@
 import type BN from "bn.js";
 import bs58 from "bs58";
-import { connect, multisig } from "near-api-js";
+import { connect } from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CancelLockupDialog } from "~/components/CancelLockupDialog";
 import { getSidebarLayout } from "~/components/layout";
 import { useNearContext } from "~/context/near";
-import { calculateLockup, viewLockupAccount } from "~/libs/lockup/lockup";
+import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
   type AccountLockup,
   type FromStateVestingInformation,
-} from "~/libs/lockup/types";
+} from "~/lib/lockup/types";
+import usePersistingStore, { type IStore } from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
@@ -20,40 +21,42 @@ const ManageLockup: NextPageWithLayout = () => {
     useState<AccountLockup | null>(null);
   const provider = useNearContext().archival_provider;
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
+  const store = usePersistingStore();
 
-  const store = useContext(StoreContext);
-  const slice = useStore(store, selector);
   useEffect(() => {
     const getKeys = async () => {
       const c = await connect({
         networkId: "mainnet",
         nodeUrl: "https://rpc.mainnet.near.org",
       });
-      const m = new multisig.AccountMultisig(
-        c.connection,
-        "foundation.near",
-        {}
-      );
-      const ks = await m.getAccessKeys();
-      console.log(ks);
+      // const m = new multisig.AccountMultisig(
+      //   c.connection,
+      //   "foundation.near",
+      //   {}
+      // );
+      // const ks = await m.getAccessKeys();
+      // console.log(ks);
 
-      ks.map((k) => {
-        console.log(k.public_key);
-      });
+      // ks.map((k) => {
+      //   console.log(k.public_key);
+      // });
     };
     void getKeys();
   }, []);
 
   const getLockupInformation = async (account: string) => {
     try {
-      console.log("getLockupInformation", account);
       const l = calculateLockup(prepareAccountId(account), "lockup.near");
-
       const r = await viewLockupAccount(l, provider);
-      console.log(r);
       setLockupInformation(r);
-    } catch {
-      setAccountError("Account not found");
+    } catch (e) {
+      if (e) {
+        setAccountError(
+          `Error while retrieving account, err: ${JSON.stringify(e)}`
+        );
+      } else {
+        setAccountError("Account not found");
+      }
     }
   };
 
@@ -67,6 +70,9 @@ const ManageLockup: NextPageWithLayout = () => {
             type="text"
             className="w-full rounded"
             placeholder="NEAR account or lockup"
+            onChange={(e) => {
+              setAccount(e.currentTarget.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 setAccountError("");
@@ -77,8 +83,8 @@ const ManageLockup: NextPageWithLayout = () => {
           <button
             className="ml-4 rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
             onClick={() => {
-              void getLockupInformation(account);
               setAccountError("");
+              void getLockupInformation(account);
             }}
           >
             View
@@ -93,7 +99,8 @@ const ManageLockup: NextPageWithLayout = () => {
             {cancelLockup(
               lockupInformation,
               cancelLockupModalIsOpen,
-              cancelSetIsOpen
+              cancelSetIsOpen,
+              store
             )}
           </div>
         </>
@@ -125,9 +132,9 @@ function prepareAccountId(data: string) {
 const cancelLockup = (
   lockup: AccountLockup,
   modalIsOpen: boolean,
-  modalFn: (a: boolean) => void
+  modalFn: (a: boolean) => void,
+  store: IStore
 ) => {
-  console.log("cancelLockup", lockup);
   return (
     <div className="mt-4">
       <button
@@ -139,7 +146,12 @@ const cancelLockup = (
       >
         Cancel lockup
         {modalIsOpen &&
-          CancelLockupDialog(modalIsOpen, modalFn, lockup.lockupAccountId)}
+          CancelLockupDialog(
+            modalIsOpen,
+            modalFn,
+            lockup.lockupAccountId,
+            store
+          )}
       </button>
     </div>
   );
@@ -149,8 +161,6 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
   const getVestingDetails = (
     vesting: FromStateVestingInformation | undefined
   ) => {
-    console.log("getVestingDetails", vesting);
-
     if (
       lockupInfo.lockupState.vestingInformation?.terminationStatus ||
       lockupInfo.lockupState.terminationWithdrawnTokens.toString() !== "0"
@@ -248,8 +258,6 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
         </>
       );
     }
-    console.log("getLinearVestingDetails", start);
-    console.log(duration.toString());
 
     const startDate = new Date(start.divn(1000000).toNumber());
 
