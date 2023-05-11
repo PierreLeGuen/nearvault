@@ -1,11 +1,13 @@
 import { type ReactNode } from "react";
 import { useWalletSelector } from "~/context/wallet";
+import usePersistingStore from "~/store/useStore";
 import Sidebar from "./sidebar";
 
 const Layout: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
-  const { modal, accounts, accountId } = useWalletSelector();
+  const { modal } = useWalletSelector();
+  const store = usePersistingStore();
 
   const handleSignIn = () => {
     modal.show();
@@ -17,7 +19,7 @@ const Layout: React.FC<{
       <div className="flex flex-1 flex-col">
         <div className="flex flex-row px-8 py-2 shadow-md">
           <div className="flex flex-1"></div>
-          {accounts.length > 0 && (
+          {store.accountId && (
             // TODO: switch account, disconnect, ...
             <button
               className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -25,10 +27,10 @@ const Layout: React.FC<{
                 handleSignIn();
               }}
             >
-              Ⓝ {accountId}
+              Ⓝ {store.accountId}
             </button>
           )}
-          {accounts.length === 0 && (
+          {!store.accountId && (
             <button
               className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               onClick={() => {
