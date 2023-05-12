@@ -3,8 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useState } from "react";
 import { useNearContext } from "~/context/near";
+import OffchainProfile from "./OffchainProfile";
 
-const Sidebar: React.FC = () => {
+const Sidebar = () => {
   return (
     <div className="sticky flex h-screen w-64 flex-col p-3 shadow">
       <div className="mb-4 mt-4 flex items-center justify-center">
@@ -24,12 +25,13 @@ const Sidebar: React.FC = () => {
       </div>
       <TreasurySection />
       <div className="flex-grow"></div>
+      <OffchainProfile />
       <CurrentNetwork />
     </div>
   );
 };
 
-const TreasurySection: React.FC = () => {
+const TreasurySection = () => {
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpanded = () => {

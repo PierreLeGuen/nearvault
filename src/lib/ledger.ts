@@ -130,10 +130,7 @@ export class LedgerSigner extends Signer {
     }
   }
 
-  createKey(
-    accountId: string,
-    networkId?: string | undefined
-  ): Promise<PublicKey> {
+  createKey(): Promise<PublicKey> {
     throw new Error("Method not implemented.");
   }
 }
