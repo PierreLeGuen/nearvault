@@ -2,9 +2,10 @@ import type BN from "bn.js";
 import bs58 from "bs58";
 import { connect } from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { CancelLockupDialog } from "~/components/CancelLockupDialog";
-import { getSidebarLayout } from "~/components/layout";
+import { getSidebarLayout } from "~/components/Layout";
 import { useNearContext } from "~/context/near";
 import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
@@ -15,6 +16,8 @@ import usePersistingStore, { type IStore } from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
+  useSession({ required: true });
+
   const [account, setAccount] = useState("");
   const [accountError, setAccountError] = useState("");
   const [lockupInformation, setLockupInformation] =

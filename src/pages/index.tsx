@@ -1,23 +1,33 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 
-import React, { type ReactElement } from "react";
-import Layout from "~/components/layout";
+import Link from "next/link";
+import React from "react";
+import OffchainProfile from "~/components/OffchainProfile";
+import getWelcomeLayout from "~/components/WelcomeLayout";
 import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "./_app";
 
 const Home: NextPageWithLayout = () => {
+  const { data: sessionData } = useSession();
   const hello = api.example.hello.useQuery({ text: "from tRPC" });
+
+  if (sessionData) {
+    return (
+      <Link href={"/lockup/manage"}>
+        Hi {sessionData?.user.name || ""}, click here to access the app
+      </Link>
+    );
+  }
 
   return (
     <>
-      <div>Content {hello.data?.greeting}</div>
+      <div>You need to be signed in to access this app</div>
+      <OffchainProfile />
     </>
   );
 };
 
-Home.getLayout = function getLayout(page: ReactElement) {
-  return <Layout>{page}</Layout>;
-};
+Home.getLayout = getWelcomeLayout;
 
 export default Home;
 
