@@ -2,7 +2,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import Link from "next/link";
 import React from "react";
-import OffchainProfile from "~/components/OffchainProfile";
+import OffchainProfile from "~/components/Sidebar/OffchainProfile";
 import getWelcomeLayout from "~/components/WelcomeLayout";
 import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "./_app";

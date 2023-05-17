@@ -18,7 +18,7 @@ import { setupLedger } from "@near-wallet-selector/ledger";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import { PublicKey } from "near-api-js/lib/utils";
 import usePersistingStore from "~/store/useStore";
-import Loading from "../components/loading";
+import Loading from "../components/Loading";
 import { useNearContext } from "./near";
 
 declare global {
@@ -146,7 +146,7 @@ export const WalletSelectorContextProvider: React.FC<{
       subscription.unsubscribe();
       onHideSubscription.remove();
     };
-  }, [selector, modal]);
+  }, [selector, modal, store]);
 
   const walletSelectorContextValue = useMemo<WalletSelectorContextValue>(
     () => ({
