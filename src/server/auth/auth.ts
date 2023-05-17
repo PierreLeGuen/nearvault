@@ -36,6 +36,30 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  events: {
+    createUser: async ({ user }) => {
+      try {
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            teams: {
+              create: {
+                team: {
+                  create: {
+                    name: "My Team",
+                  },
+                },
+              },
+            },
+          },
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    },
+  },
   callbacks: {
     session: ({ session, user }) => ({
       ...session,

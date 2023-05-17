@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { useWalletSelector } from "~/context/wallet";
 import usePersistingStore from "~/store/useStore";
-import Sidebar from "./Sidebar";
+import Sidebar from "./Sidebar/Sidebar";
 
 const Layout: React.FC<{
   children: ReactNode;
