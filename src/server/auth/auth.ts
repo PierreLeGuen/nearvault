@@ -48,7 +48,7 @@ export const authOptions: NextAuthOptions = {
               create: {
                 team: {
                   create: {
-                    name: "My Team",
+                    name: user?.name ? `${user?.name}'s Team` : "My Team",
                   },
                 },
               },

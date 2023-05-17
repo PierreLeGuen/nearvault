@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
@@ -29,4 +30,57 @@ export const teamsRouter = createTRPCRouter({
       },
     });
   }),
+
+  createTeam: protectedProcedure
+    .input(z.object({ teamName: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const newTeam = await ctx.prisma.team.create({
+        data: {
+          name: input.teamName,
+        },
+      });
+
+      await ctx.prisma.userTeam.create({
+        data: {
+          user: {
+            connect: {
+              id: ctx.session.user.id,
+            },
+          },
+          team: {
+            connect: {
+              id: newTeam.id,
+            },
+          },
+        },
+      });
+
+      return newTeam;
+    }),
+
+  getWalletsForTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not part of this team.",
+        });
+      }
+
+      return await ctx.prisma.wallet.findMany({
+        where: {
+          teamId: input.teamId,
+        },
+      });
+    }),
 });
