@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useState } from "react";
 import { useNearContext } from "~/context/near";
+import ApprovalSection from "./ApprovalSection";
 import OffchainProfile from "./OffchainProfile";
 import TeamsMenu from "./TeamsMenu";
 
@@ -12,6 +13,7 @@ const Sidebar = () => {
       <TeamsMenu />
       <div className="flex h-screen flex-col px-3 pb-3">
         <TreasurySection />
+        <ApprovalSection />
         <div className="flex-grow"></div>
         <OffchainProfile />
         <CurrentNetwork />

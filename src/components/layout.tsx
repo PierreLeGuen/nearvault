@@ -41,9 +41,7 @@ const Layout: React.FC<{
             </button>
           )}
         </div>
-        <div className="h-full bg-slate-100">
-          <div>{children}</div>
-        </div>
+        <div className="h-full bg-slate-100">{children}</div>
       </div>
     </div>
   );
