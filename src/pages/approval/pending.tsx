@@ -1,11 +1,13 @@
-import { Wallet } from "@prisma/client";
+import { type Wallet } from "@prisma/client";
 import * as naj from "near-api-js";
-import { Action } from "near-api-js/lib/transaction";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
-import MultisigViewContract, { MultisigRequest } from "~/lib/multisig/view";
+import MultisigViewContract, {
+  MultiSigRequestActionType,
+  type MultisigRequest,
+} from "~/lib/multisig/view";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -49,7 +51,20 @@ const PendingRequests: NextPageWithLayout = () => {
         const requests = await c.list_request_ids();
         const requestPromises = requests.map((id) =>
           c.get_request({ request_id: id }).then((request) => {
-            return request;
+            return {
+              ...request,
+              actions: request.actions.map((action) => {
+                if (action.type === MultiSigRequestActionType.FunctionCall) {
+                  return {
+                    ...action,
+                    args: JSON.parse(
+                      Buffer.from(action.args, "base64").toString("utf8")
+                    ) as string,
+                  };
+                }
+                return action;
+              }),
+            };
           })
         );
         tempPendingRequests.set(wallet, await Promise.all(requestPromises));
@@ -80,18 +95,7 @@ const PendingRequests: NextPageWithLayout = () => {
               <p className="text-xs">Receiver ID: {request.receiver_id}</p>
               <p className="mb-1 text-xs">Actions:</p>
               <ul className="text-xs">
-                {request.actions.map((action: Action, index) => {
-                  // TODO: it doesnt seem like this is working
-                  if (action.functionCall) {
-                    const decodedArgs = Buffer.from(
-                      action.functionCall.args.toString(),
-                      "base64"
-                    ).toString();
-                    action.functionCall.args = new Uint8Array(
-                      Buffer.from(decodedArgs)
-                    );
-                  }
-
+                {request.actions.map((action, index) => {
                   return (
                     <li key={index}>
                       <b>Action {index + 1}:</b>
