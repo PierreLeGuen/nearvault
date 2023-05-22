@@ -14,8 +14,10 @@ const Layout: React.FC<{
   };
 
   return (
-    <div className="relative flex min-h-screen flex-row">
-      <Sidebar />
+    <div className="relative flex min-h-screen flex-row overflow-visible">
+      <div className="relative w-64 overflow-visible">
+        <Sidebar />
+      </div>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-row px-8 py-2 shadow-md">
           <div className="flex flex-1"></div>
