@@ -9,12 +9,12 @@ import TeamsMenu from "./TeamsMenu";
 
 const Sidebar = () => {
   return (
-    <div className="sticky flex h-screen w-64 flex-col">
+    <div className="sticky top-0 flex h-screen  w-64 flex-col overflow-auto">
       <TeamsMenu />
       <div className="flex h-screen flex-col px-3 pb-3">
         <TreasurySection />
         <ApprovalSection />
-        <div className="flex-grow"></div>
+        <div className="mt-auto"></div>
         <OffchainProfile />
         <CurrentNetwork />
       </div>
