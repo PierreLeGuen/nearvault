@@ -3,6 +3,7 @@ import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { useSession } from "next-auth/react";
 import { Fragment, useState } from "react";
 import { api } from "~/lib/api";
+import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "./CreateTeamDialog";
 import LetterProfilePicture from "./LetterProfilePicture"; // Import the LetterProfilePicture component
 
@@ -15,27 +16,35 @@ export default function TeamsMenu() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data } = useSession({ required: true });
+
+  let { teams, currentTeam } = usePersistingStore();
+  const { setCurrentTeam } = usePersistingStore();
+
   const fetchTeams = () => {
-    const res = api.teams.getTeamsForUser.useQuery();
-    return res.data;
+    const res = api.teams.getTeamsForUser
+      .useQuery()
+      .data?.map((team) => team.team);
+    return res ?? null;
   };
 
-  const currentTeam = () => {
-    const res = api.teams.getTeamsForUser.useQuery();
-    // take first team as current
-    return res.data?.[0];
-  };
+  if (!teams || teams.length === 0) {
+    teams = fetchTeams();
+  }
+  if (!currentTeam) {
+    currentTeam = teams?.[0] ?? null;
+  }
 
-  const teams = fetchTeams();
-  const current = currentTeam();
+  // const teams = fetchTeams();
+  // const currentTeam = teams?.[0];
   const mail = data?.user.email;
+
   return (
     <>
       <Menu as="div" className="relative inline-block text-left">
         <div>
           <Menu.Button className="inline-flex w-full items-center gap-x-2 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50">
-            <LetterProfilePicture letter={current?.team.name[0] || "a"} />
-            {current?.team.name}
+            <LetterProfilePicture letter={currentTeam?.name || "L"} />
+            {currentTeam?.name || "Loading..."}
             <div className="flex-grow"></div>
             <ArrowsUpDownIcon className="h-4 w-4" />
           </Menu.Button>
@@ -50,32 +59,35 @@ export default function TeamsMenu() {
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <Menu.Items className="absolute left-0 right-0 z-10 m-auto mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             <div className="py-1">
               {mail && (
                 <div className="flex items-center px-4 py-2 text-xs">
                   {mail}
                 </div>
               )}
-              {teams?.map((userTeamMap) => (
-                <Menu.Item key={userTeamMap.teamId}>
+              {teams?.map((team) => (
+                <Menu.Item key={team.id}>
                   {({ active }) => (
-                    <a
-                      href="#"
+                    <button
                       className={classNames(
                         active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                        "flex items-center gap-2 px-4 py-2 text-sm"
+                        "flex w-full items-center gap-2 px-4 py-2 text-sm"
                       )}
+                      onClick={() => {
+                        setCurrentTeam(team);
+                      }}
                     >
                       {/* Render the LetterProfilePicture component before each team name */}
-                      <LetterProfilePicture
-                        letter={userTeamMap.team.name[0] || "a"}
-                      />
-                      {userTeamMap.team.name}
-                      {userTeamMap.team.id === userTeamMap.team.id && (
-                        <CheckIcon className="h-4 w-4 text-green-500" />
+                      <LetterProfilePicture letter={team.name[0] || "a"} />
+                      {team.name}
+                      {currentTeam?.id === team.id && (
+                        <>
+                          <div className="flex flex-grow"></div>
+                          <CheckIcon className="h-4 w-4 font-bold text-gray-900" />
+                        </>
                       )}
-                    </a>
+                    </button>
                   )}
                 </Menu.Item>
               ))}

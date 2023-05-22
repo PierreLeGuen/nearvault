@@ -57,6 +57,40 @@ export const teamsRouter = createTRPCRouter({
 
       return newTeam;
     }),
+  addWalletForTeam: protectedProcedure
+    .input(z.object({ walletAddress: z.string(), teamId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to add a wallet to
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to add a wallet to this team.",
+        });
+      }
+
+      // Create the new wallet
+      const newWallet = await ctx.prisma.wallet.create({
+        data: {
+          walletAddress: input.walletAddress,
+          team: {
+            connect: {
+              id: input.teamId,
+            },
+          },
+        },
+      });
+
+      return newWallet;
+    }),
 
   getWalletsForTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))
