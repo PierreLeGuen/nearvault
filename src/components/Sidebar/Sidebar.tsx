@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useNearContext } from "~/context/near";
 import ApprovalSection from "./ApprovalSection";
-import OffchainProfile from "./OffchainProfile";
+import PaymentsSection from "./PaymentsSection";
 import TeamsMenu from "./TeamsMenu";
 
 const Sidebar = () => {
@@ -13,9 +13,10 @@ const Sidebar = () => {
       <TeamsMenu />
       <div className="flex h-screen flex-col px-3 pb-3">
         <TreasurySection />
+        <PaymentsSection />
         <ApprovalSection />
         <div className="flex-grow"></div>
-        <OffchainProfile />
+        {/* <OffchainProfile /> */}
         <CurrentNetwork />
       </div>
     </div>
