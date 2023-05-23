@@ -1,3 +1,4 @@
+import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { type Wallet } from "@prisma/client";
 import * as naj from "near-api-js";
 import { useSession } from "next-auth/react";
@@ -106,6 +107,30 @@ const PendingRequests: NextPageWithLayout = () => {
                   );
                 })}
               </ul>
+              <div className="my-2 flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log(`Approving request ${index + 1}`);
+                    // TODO
+                  }}
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                >
+                  <CheckIcon className="mr-2 h-4 w-4" />
+                  <span>Approve</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log(`Rejecting request ${index + 1}`);
+                    // TODO
+                  }}
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                >
+                  <XMarkIcon className="mr-2 h-4 w-4" />
+                  <span>Reject</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
