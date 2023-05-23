@@ -1,6 +1,6 @@
 import { Menu, Transition } from "@headlessui/react";
 import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Fragment, useState } from "react";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
@@ -154,6 +154,7 @@ export default function TeamsMenu() {
                         active ? "bg-gray-100 text-gray-900" : "text-gray-700",
                         "flex w-full items-center px-4 py-2 text-left text-sm"
                       )}
+                      onClick={() => void signOut()}
                     >
                       Sign out
                     </button>
