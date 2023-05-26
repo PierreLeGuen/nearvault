@@ -41,7 +41,7 @@ const Layout: React.FC<{
             </button>
           )}
         </div>
-        <div className="h-full bg-slate-100">{children}</div>
+        <div className="flex h-full flex-grow bg-slate-100">{children}</div>
       </div>
     </div>
   );
