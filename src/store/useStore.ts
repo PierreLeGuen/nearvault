@@ -1,10 +1,12 @@
 import { create } from "zustand";
+import { persist, devtools } from "zustand/middleware";
+
 import { type CounterState, createCounterSlice } from "./slices/counter";
 import { type WalletState, createWalletSlice } from "./slices/wallet";
-import { persist, devtools } from "zustand/middleware";
 import { type TeamsState, createTeamsSlice } from "./slices/teams";
+import { type NearState, createNearSlice } from "./slices/near";
 
-export type IStore = CounterState & WalletState & TeamsState;
+export type IStore = CounterState & WalletState & TeamsState & NearState;
 
 const usePersistingStore = create<IStore>()(
   devtools(
@@ -13,6 +15,7 @@ const usePersistingStore = create<IStore>()(
         ...createCounterSlice(...a),
         ...createWalletSlice(...a),
         ...createTeamsSlice(...a),
+        ...createNearSlice(...a),
       }),
       { name: "store" }
     )

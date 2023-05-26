@@ -1,5 +1,5 @@
 import { providers } from "near-api-js";
-import { Provider } from "near-api-js/lib/providers";
+import { type Provider } from "near-api-js/lib/providers";
 import {
   createContext,
   useContext,

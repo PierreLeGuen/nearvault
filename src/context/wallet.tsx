@@ -130,7 +130,7 @@ export const WalletSelectorContextProvider: React.FC<{
         distinctUntilChanged()
       )
       .subscribe((nextAccounts) => {
-        console.log("Accounts Update", nextAccounts);
+        // console.log("Accounts Update", nextAccounts);
         const pk = nextAccounts.find((account) => account.active)?.publicKey;
         if (pk) {
           store.setPublicKey(PublicKey.from(pk));
