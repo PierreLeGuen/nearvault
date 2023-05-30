@@ -12,7 +12,7 @@ type Pool = {
   fees: Percentage;
 };
 
-const AllAvailablePools = (): JSX.Element => {
+const AllAvailablePools = () => {
   const { newNearConnection } = usePersistingStore();
   const [pools, setPools] = useState<Map<PoolId, Pool>>(new Map());
   const [searchInput, setSearchInput] = useState<string>("");
