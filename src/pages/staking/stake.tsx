@@ -70,7 +70,7 @@ const Stake: NextPageWithLayout = () => {
   }
 
   return (
-    <div className=" flex w-36 flex-grow flex-col p-4">
+    <div className="flex w-36 flex-grow flex-col p-4">
       <div className="max-w-lg">
         <h1 className="text-xl font-semibold">Stake</h1>
         <div className="mt-4 w-full">
