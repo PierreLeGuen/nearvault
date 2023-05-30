@@ -25,9 +25,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
   const { isLoading, isError, data } = useQuery<WalletData[], Error>(
     ["allStakedPools", currentTeam?.id || "", wallets],
     async (): Promise<WalletData[]> => {
-      console.log(wallets);
-
-      // Ensures a Promise<WalletData[]> is always returned
       const promises = wallets.map(async (wallet) => {
         try {
           const res = await fetch(
@@ -38,7 +35,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
           const stakedPools = [];
 
           for (const pool of data) {
-            // console.log(pool);
             const c = initStakingContract(
               await n.account(""),
               pool.validator_id
@@ -46,7 +42,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
             const s = await c.get_account_total_balance({
               account_id: wallet.walletDetails.walletAddress,
             });
-            // console.log(s);
 
             stakedPools.push({
               deposit: s,
@@ -60,7 +55,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
               stakedPools,
             };
           } else {
-            // console.log("No staked pools found for wallet", wallet);
+            console.log("No staked pools found for wallet", wallet);
           }
         } catch (e) {
           console.error(e);
@@ -68,12 +63,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
       });
       const p = await Promise.all(promises);
       return p.filter((walletData) => walletData !== undefined) as WalletData[];
-    },
-    {
-      onSuccess(poolsFromApi) {
-        // console.log("onSuccess");
-        // console.log(poolsFromApi);
-      },
     }
   );
 
@@ -89,9 +78,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
 
   return (
     <div className="flex flex-col">
-      {`wallets: ${JSON.stringify(wallets)}`}
-
-      {`data: ${JSON.stringify(data)}`}
       {dataFiltered.map((walletData) => (
         <div key={walletData.wallet.walletDetails.id}>
           <h2>{walletData.wallet.prettyName}</h2>
