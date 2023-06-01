@@ -59,14 +59,24 @@ model User {
 }
 
 model Team {
-    id      String     @id @default(cuid())
-    name    String
-    wallets Wallet[]
-    users   UserTeam[]
+    id          String        @id @default(cuid())
+    name        String
+    wallets     Wallet[]
+    users       UserTeam[]
+    Beneficiary Beneficiary[]
 }
 
 model Wallet {
     id            String @id @default(cuid())
+    walletAddress String
+    teamId        String
+    team          Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model Beneficiary {
+    id            String @id @default(cuid())
+    firstName     String
+    lastName      String
     walletAddress String
     teamId        String
     team          Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
