@@ -17,8 +17,8 @@ import { distinctUntilChanged, map } from "rxjs";
 import { setupLedger } from "@near-wallet-selector/ledger";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import { PublicKey } from "near-api-js/lib/utils";
+import Loading from "~/components/loading";
 import usePersistingStore from "~/store/useStore";
-import Loading from "../components/Loading";
 import { useNearContext } from "./near";
 
 declare global {
@@ -48,7 +48,7 @@ export const WalletSelectorContextProvider: React.FC<{
 
   const { network } = useNearContext();
 
-  const store = usePersistingStore();
+  const { setPublicKey } = usePersistingStore();
 
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
@@ -124,16 +124,18 @@ export const WalletSelectorContextProvider: React.FC<{
       return;
     }
 
+    console.log("subsribing to accounts");
+
     const subscription = selector.store.observable
       .pipe(
         map((state) => state.accounts),
         distinctUntilChanged()
       )
       .subscribe((nextAccounts) => {
-        // console.log("Accounts Update", nextAccounts);
+        console.log("Accounts Update", nextAccounts);
         const pk = nextAccounts.find((account) => account.active)?.publicKey;
         if (pk) {
-          store.setPublicKey(PublicKey.from(pk));
+          setPublicKey(PublicKey.from(pk));
         }
         setAccounts(nextAccounts);
       });
@@ -146,7 +148,8 @@ export const WalletSelectorContextProvider: React.FC<{
       subscription.unsubscribe();
       onHideSubscription.remove();
     };
-  }, [selector, modal, store]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selector, modal]);
 
   const walletSelectorContextValue = useMemo<WalletSelectorContextValue>(
     () => ({
