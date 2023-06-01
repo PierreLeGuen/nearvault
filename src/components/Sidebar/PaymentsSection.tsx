@@ -26,6 +26,14 @@ const PaymentsSection = () => {
           <div>
             <Link
               className="cursor-pointer hover:text-blue-500"
+              href="/payments/transfers"
+            >
+              Transfers
+            </Link>
+          </div>
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
               href="/payments/escrow"
             >
               Escrow Payments
