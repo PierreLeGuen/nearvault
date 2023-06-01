@@ -57,6 +57,8 @@ export const teamsRouter = createTRPCRouter({
 
       return newTeam;
     }),
+
+  // WALLET ROUTES
   addWalletForTeam: protectedProcedure
     .input(z.object({ walletAddress: z.string(), teamId: z.string() }))
     .mutation(async ({ input, ctx }) => {
@@ -91,7 +93,6 @@ export const teamsRouter = createTRPCRouter({
 
       return newWallet;
     }),
-
   getWalletsForTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))
     .query(async ({ input, ctx }) => {
@@ -112,6 +113,77 @@ export const teamsRouter = createTRPCRouter({
       }
 
       return await ctx.prisma.wallet.findMany({
+        where: {
+          teamId: input.teamId,
+        },
+      });
+    }),
+
+  // BENEFICIARY ROUTES
+
+  addBeneficiaryForTeam: protectedProcedure
+    .input(
+      z.object({
+        walletAddress: z.string(),
+        teamId: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to add a beneficiary to this team.",
+        });
+      }
+
+      // Create the new wallet
+      const newWallet = await ctx.prisma.beneficiary.create({
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          walletAddress: input.walletAddress,
+          team: {
+            connect: {
+              id: input.teamId,
+            },
+          },
+        },
+      });
+
+      return newWallet;
+    }),
+  getBeneficiariesForTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not part of this team.",
+        });
+      }
+
+      return await ctx.prisma.beneficiary.findMany({
         where: {
           teamId: input.teamId,
         },

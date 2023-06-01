@@ -5,7 +5,7 @@ import {
 } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { initStakingContract } from "~/lib/staking/contract";
-import { WalletPretty } from "~/pages/staking/stake";
+import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 
 interface StakedPool {
@@ -39,12 +39,12 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
               await n.account(""),
               pool.validator_id
             );
-            const s = await c.get_account_total_balance({
+            const total_balance = await c.get_account_total_balance({
               account_id: wallet.walletDetails.walletAddress,
             });
 
             stakedPools.push({
-              deposit: s,
+              deposit: total_balance,
               validator_id: pool.validator_id,
             });
           }
