@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
+import CurrenciesDropDown from "~/components/Payments/CurrenciesDropDown";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
 import { api } from "~/lib/api";
 import {
@@ -24,7 +25,7 @@ interface LikelyTokens {
   list: string[];
 }
 
-interface Token extends FungibleTokenMetadata {
+export interface Token extends FungibleTokenMetadata {
   balance: string;
   account_id: string;
 }
@@ -135,6 +136,7 @@ const Transfers: NextPageWithLayout = () => {
         const t = await Promise.all(tokensPromises);
         const w = t.filter((x) => x !== undefined) as Token[];
         setTokens(w);
+        setCurrentToken(undefined);
       },
     }
   );
@@ -164,10 +166,25 @@ const Transfers: NextPageWithLayout = () => {
           selectedBeneficiary={toBenef}
           setSelectedBeneficiary={setToBenef}
         />
-        <span>
-          {JSON.stringify(tokens?.list)}
+        <div>Select token</div>
+        <div>
+          <CurrenciesDropDown
+            tokens={tokens}
+            currentToken={currentToken}
+            setCurrentToken={setCurrentToken}
+          />
+        </div>
+        <div>Enter amount</div>
+        <div>
           <input type="text" placeholder="Enter amount" />
-        </span>
+        </div>
+        <button
+          onClick={() => {
+            console.log("TODO");
+          }}
+        >
+          Create treansfer request
+        </button>
       </div>
     </>
   );
