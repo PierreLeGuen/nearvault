@@ -148,7 +148,6 @@ export const teamsRouter = createTRPCRouter({
         });
       }
 
-      // Create the new wallet
       const newWallet = await ctx.prisma.beneficiary.create({
         data: {
           firstName: input.firstName,
