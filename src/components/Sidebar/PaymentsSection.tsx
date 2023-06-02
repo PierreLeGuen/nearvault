@@ -47,6 +47,23 @@ const PaymentsSection = () => {
               Recurring Payments
             </Link>
           </div>
+          <hr />
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
+              href="/beneficiary/add"
+            >
+              Add Beneficiary
+            </Link>
+          </div>
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
+              href="/beneficiary/manage"
+            >
+              Manage Beneficiaries
+            </Link>
+          </div>
         </div>
       )}
     </div>
