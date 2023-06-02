@@ -44,25 +44,27 @@ const Add: NextPageWithLayout = () => {
   return (
     <div>
       <h1>Manage Beneficiaries</h1>
-      {benefs?.map((b) => (
-        <div className="flex flex-row items-center gap-3" key={b.id}>
-          <div>
-            {b.firstName} {b.lastName}: {b.walletAddress}
+      <div className="flex flex-col gap-2">
+        {benefs?.map((b) => (
+          <div className="flex flex-row items-center gap-3" key={b.id}>
+            <div>
+              {b.firstName} {b.lastName}: {b.walletAddress}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteBeneficiary(b);
+                }}
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-2 py-1 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+              >
+                <XMarkIcon className="h-4 w-4" />
+                <span>Remove</span>
+              </button>
+            </div>
           </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => {
-                deleteBeneficiary(b);
-              }}
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-            >
-              <XMarkIcon className="h-4 w-4" />
-              <span>Remove</span>
-            </button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
