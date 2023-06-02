@@ -188,4 +188,53 @@ export const teamsRouter = createTRPCRouter({
         },
       });
     }),
+  deleteBeneficiaryForTeam: protectedProcedure
+    .input(
+      z.object({
+        beneficiaryId: z.string(),
+        teamId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message:
+            "You are not authorized to delete a beneficiary from this team.",
+        });
+      }
+
+      const beneficiary = await ctx.prisma.beneficiary.findUnique({
+        where: {
+          id: input.beneficiaryId,
+        },
+      });
+
+      if (!beneficiary) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Beneficiary not found",
+        });
+      }
+
+      await ctx.prisma.beneficiary.delete({
+        where: {
+          id: input.beneficiaryId,
+        },
+      });
+
+      return {
+        message: "Beneficiary successfully deleted",
+      };
+    }),
 });
