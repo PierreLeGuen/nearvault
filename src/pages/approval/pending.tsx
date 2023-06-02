@@ -43,32 +43,36 @@ const PendingRequests: NextPageWithLayout = () => {
       }
       const tempPendingRequests = new Map();
       for (const wallet of wallets) {
-        const nearConnection = await naj.connect(connectionConfig);
-        const walletConnection = new naj.WalletConnection(nearConnection, "");
-        const c = MultisigViewContract(
-          walletConnection.account(),
-          wallet.walletAddress
-        );
-        const requests = await c.list_request_ids();
-        const requestPromises = requests.map((id) =>
-          c.get_request({ request_id: id }).then((request) => {
-            return {
-              ...request,
-              actions: request.actions.map((action) => {
-                if (action.type === MultiSigRequestActionType.FunctionCall) {
-                  return {
-                    ...action,
-                    args: JSON.parse(
-                      Buffer.from(action.args, "base64").toString("utf8")
-                    ) as string,
-                  };
-                }
-                return action;
-              }),
-            };
-          })
-        );
-        tempPendingRequests.set(wallet, await Promise.all(requestPromises));
+        try {
+          const nearConnection = await naj.connect(connectionConfig);
+          const walletConnection = new naj.WalletConnection(nearConnection, "");
+          const c = MultisigViewContract(
+            walletConnection.account(),
+            wallet.walletAddress
+          );
+          const requests = await c.list_request_ids();
+          const requestPromises = requests.map((id) =>
+            c.get_request({ request_id: id }).then((request) => {
+              return {
+                ...request,
+                actions: request.actions.map((action) => {
+                  if (action.type === MultiSigRequestActionType.FunctionCall) {
+                    return {
+                      ...action,
+                      args: JSON.parse(
+                        Buffer.from(action.args, "base64").toString("utf8")
+                      ) as string,
+                    };
+                  }
+                  return action;
+                }),
+              };
+            })
+          );
+          tempPendingRequests.set(wallet, await Promise.all(requestPromises));
+        } catch (e) {
+          console.log(e);
+        }
       }
       setPendingRequests(tempPendingRequests);
     };
