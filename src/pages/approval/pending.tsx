@@ -4,6 +4,7 @@ import * as naj from "near-api-js";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
+import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import MultisigViewContract, {
   MultiSigRequestActionType,
@@ -12,8 +13,12 @@ import MultisigViewContract, {
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
+type ApproveOrReject = "approve" | "reject";
+
 const PendingRequests: NextPageWithLayout = () => {
   useSession({ required: true });
+  const wallet = useWalletSelector();
+
   const { currentTeam } = usePersistingStore();
   const [pendingRequests, setPendingRequests] = useState<
     Map<Wallet, Array<MultisigRequest>>
@@ -26,6 +31,39 @@ const PendingRequests: NextPageWithLayout = () => {
   const wallets =
     api.teams.getWalletsForTeam.useQuery({ teamId: currentTeam.id }).data ??
     null;
+
+  const approveOrRejectRequest = async (
+    multisig_wallet: Wallet,
+    request: MultisigRequest,
+    kind: ApproveOrReject
+  ) => {
+    console.log(request);
+
+    if (!request.request_id) {
+      throw new Error("No request id");
+    }
+
+    wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
+    const w = await wallet.selector.wallet();
+    const res = await w.signAndSendTransaction({
+      receiverId: multisig_wallet.walletAddress,
+      actions: [
+        {
+          type: "FunctionCall",
+          params: {
+            gas: "300000000000000",
+            deposit: "0",
+            methodName: kind === "approve" ? "confirm" : "delete_request",
+            args: {
+              request_id: request.request_id,
+            },
+          },
+        },
+      ],
+    });
+
+    console.log(res);
+  };
 
   useEffect(() => {
     const connectionConfig = {
@@ -50,11 +88,12 @@ const PendingRequests: NextPageWithLayout = () => {
             walletConnection.account(),
             wallet.walletAddress
           );
-          const requests = await c.list_request_ids();
-          const requestPromises = requests.map((id) =>
-            c.get_request({ request_id: id }).then((request) => {
+          const request_ids = await c.list_request_ids();
+          const requestPromises = request_ids.map((request_id) =>
+            c.get_request({ request_id: request_id }).then((request) => {
               return {
                 ...request,
+                request_id,
                 actions: request.actions.map((action) => {
                   if (action.type === MultiSigRequestActionType.FunctionCall) {
                     return {
@@ -96,7 +135,9 @@ const PendingRequests: NextPageWithLayout = () => {
               key={index}
               className="mb-1 rounded border-2 border-gray-200 p-1"
             >
-              <h4 className="mb-1 text-xs font-bold">Request {index + 1}:</h4>
+              <h4 className="mb-1 text-xs font-bold">
+                Request {request.request_id}:
+              </h4>
               <p className="text-xs">Receiver ID: {request.receiver_id}</p>
               <p className="mb-1 text-xs">Actions:</p>
               <ul className="text-xs">
@@ -115,8 +156,10 @@ const PendingRequests: NextPageWithLayout = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    console.log(`Approving request ${index + 1}`);
-                    // TODO
+                    console.log(`Approving request ${JSON.stringify(request)}`);
+                    approveOrRejectRequest(wallet, request, "approve").catch(
+                      console.error
+                    );
                   }}
                   className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
                 >
@@ -127,7 +170,9 @@ const PendingRequests: NextPageWithLayout = () => {
                   type="button"
                   onClick={() => {
                     console.log(`Rejecting request ${index + 1}`);
-                    // TODO
+                    approveOrRejectRequest(wallet, request, "reject").catch(
+                      console.error
+                    );
                   }}
                   className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                 >
