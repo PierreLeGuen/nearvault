@@ -45,6 +45,7 @@ const PendingRequests: NextPageWithLayout = () => {
 
     wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
     const w = await wallet.selector.wallet();
+
     const res = await w.signAndSendTransaction({
       receiverId: multisig_wallet.walletAddress,
       actions: [
@@ -62,7 +63,26 @@ const PendingRequests: NextPageWithLayout = () => {
       ],
     });
 
-    console.log(res);
+    console.log("deleting request");
+
+    if (kind === "reject") {
+      // Make a copy of the Map
+      const updatedRequests = new Map(pendingRequests);
+
+      // Get the current wallet's requests
+      const walletRequests = updatedRequests.get(multisig_wallet);
+
+      // Filter out the rejected request
+      const remainingRequests = walletRequests!.filter(
+        (r) => r.request_id !== request.request_id
+      );
+
+      // Update the Map
+      updatedRequests.set(multisig_wallet, remainingRequests);
+
+      // Update the state
+      setPendingRequests(updatedRequests);
+    }
   };
 
   useEffect(() => {
@@ -76,6 +96,8 @@ const PendingRequests: NextPageWithLayout = () => {
     };
 
     const fetchPendingRequests = async () => {
+      console.log("Fetching pending requests");
+
       if (!wallets) {
         return;
       }
@@ -89,6 +111,7 @@ const PendingRequests: NextPageWithLayout = () => {
             wallet.walletAddress
           );
           const request_ids = await c.list_request_ids();
+          request_ids.sort((a, b) => Number(b) - Number(a));
           const requestPromises = request_ids.map((request_id) =>
             c.get_request({ request_id: request_id }).then((request) => {
               return {
@@ -138,7 +161,7 @@ const PendingRequests: NextPageWithLayout = () => {
               <h4 className="mb-1 text-xs font-bold">
                 Request {request.request_id}:
               </h4>
-              <p className="text-xs">Receiver ID: {request.receiver_id}</p>
+              <p className="">Receiver ID: {request.receiver_id}</p>
               <p className="mb-1 text-xs">Actions:</p>
               <ul className="text-xs">
                 {request.actions.map((action, index) => {
