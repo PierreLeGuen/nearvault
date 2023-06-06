@@ -5,6 +5,7 @@ import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
 import CurrenciesDropDown from "~/components/Payments/CurrenciesDropDown";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import {
   FungibleTokenMetadata,
@@ -31,6 +32,8 @@ export interface Token extends FungibleTokenMetadata {
 }
 
 const Transfers: NextPageWithLayout = () => {
+  const walletSelector = useWalletSelector();
+
   const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
 
   const [fromWallet, setFromWallet] = useState<WalletPretty>();
@@ -141,6 +144,58 @@ const Transfers: NextPageWithLayout = () => {
     }
   );
 
+  const createTransferRequest = async () => {
+    if (!fromWallet || !toBenef || !currentToken || !amount) {
+      console.log("Missing data: ", fromWallet, toBenef, currentToken, amount);
+      return;
+    }
+
+    const w = await walletSelector.selector.wallet();
+    const availableSigners = await w.getAccounts();
+    if (
+      availableSigners.find(
+        (a) => a.accountId == fromWallet.walletDetails.walletAddress
+      ) === undefined
+    ) {
+      console.log("Not found!");
+      console.log(JSON.stringify(await w.getAccounts()));
+
+      return;
+    }
+
+    walletSelector.selector.setActiveAccount(
+      fromWallet.walletDetails.walletAddress
+    );
+    const res = await w.signAndSendTransaction({
+      receiverId: fromWallet.walletDetails.walletAddress,
+      actions: [
+        {
+          type: "FunctionCall",
+          params: {
+            gas: "300000000000000",
+            deposit: "0",
+            methodName: "add_request",
+            args: {
+              request: {
+                receiver_id: "usdt.tether-token.near",
+                actions: [
+                  {
+                    type: "FunctionCall",
+                    method_name: "ft_transfer",
+                    args: "eyJhbW91bnQiOiI1MDAwMDAwMDAiLCJyZWNlaXZlcl9pZCI6Im5mLXBheW91dHMubmVhciJ9",
+                    deposit: "1",
+                    gas: "200000000000000",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    });
+    console.log(res);
+  };
+
   if (
     isLoading ||
     !teamsWallet ||
@@ -176,11 +231,26 @@ const Transfers: NextPageWithLayout = () => {
         </div>
         <div>Enter amount</div>
         <div>
-          <input type="text" placeholder="Enter amount" />
+          <input
+            type="text"
+            placeholder="Enter amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+        <div>Transfer reason</div>
+        <div>
+          <input
+            type="text"
+            placeholder="Enter memo"
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
         </div>
         <button
           onClick={() => {
             console.log("TODO");
+            createTransferRequest().catch((e) => console.error(e));
           }}
         >
           Create treansfer request
