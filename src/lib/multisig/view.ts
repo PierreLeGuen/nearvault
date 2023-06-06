@@ -109,6 +109,7 @@ type MultiSigAction =
   | FunctionCallAction;
 
 export interface MultisigRequest {
+  request_id: number;
   receiver_id: string;
   actions: MultiSigAction[];
 }
