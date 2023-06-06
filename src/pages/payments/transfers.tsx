@@ -166,6 +166,8 @@ const Transfers: NextPageWithLayout = () => {
     walletSelector.selector.setActiveAccount(
       fromWallet.walletDetails.walletAddress
     );
+    const ftArgs = { amount: amount, receiver_id: toBenef.walletAddress };
+
     const res = await w.signAndSendTransaction({
       receiverId: fromWallet.walletDetails.walletAddress,
       actions: [
@@ -177,12 +179,12 @@ const Transfers: NextPageWithLayout = () => {
             methodName: "add_request",
             args: {
               request: {
-                receiver_id: "usdt.tether-token.near",
+                receiver_id: currentToken.account_id,
                 actions: [
                   {
                     type: "FunctionCall",
                     method_name: "ft_transfer",
-                    args: "eyJhbW91bnQiOiI1MDAwMDAwMDAiLCJyZWNlaXZlcl9pZCI6Im5mLXBheW91dHMubmVhciJ9",
+                    args: btoa(JSON.stringify(ftArgs)),
                     deposit: "1",
                     gas: "200000000000000",
                   },
