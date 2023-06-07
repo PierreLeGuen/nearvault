@@ -140,10 +140,15 @@ const Transfers: NextPageWithLayout = () => {
         const t = await Promise.all(tokensPromises);
         const w = t.filter((x) => x !== undefined) as Token[];
 
+        const acc = await (
+          await newNearConnection()
+        ).account(fromWallet.walletDetails.walletAddress);
+        const balance = await acc.getAccountBalance();
         const near = {
           symbol: "NEAR",
           name: "NEAR",
-          balance: "0", // TODO: get balance
+          balance: balance.available,
+          decimals: 24,
         } as Token;
 
         setTokens([near].concat(w));
@@ -203,8 +208,8 @@ const Transfers: NextPageWithLayout = () => {
       });
       console.log(res);
     } else {
-      // TODO: amount needs to be converted using ft metadata decimals
-      const ftArgs = { amount: amount, receiver_id: toBenef.walletAddress };
+      const a = amount + "0".repeat(currentToken.decimals);
+      const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
 
       const res = await w.signAndSendTransaction({
         receiverId: fromWallet.walletDetails.walletAddress,
@@ -269,6 +274,15 @@ const Transfers: NextPageWithLayout = () => {
             currentToken={currentToken}
             setCurrentToken={setCurrentToken}
           />
+        </div>
+        <div>
+          Available balance:{" "}
+          {currentToken
+            ? (
+                Number(currentToken.balance) /
+                Math.pow(10, currentToken.decimals)
+              ).toFixed(2)
+            : "0"}
         </div>
         <div>Enter amount</div>
         <div>
