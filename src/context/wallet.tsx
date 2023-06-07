@@ -31,7 +31,7 @@ declare global {
   }
 }
 
-interface WalletSelectorContextValue {
+export interface WalletSelectorContextValue {
   selector: WalletSelector;
   modal: WalletSelectorModal;
   accounts: Array<AccountState>;
