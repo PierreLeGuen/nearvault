@@ -1,5 +1,6 @@
-import { Beneficiary, Wallet } from "@prisma/client";
+import { type Beneficiary, type Wallet } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
+import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
@@ -8,8 +9,8 @@ import WalletsDropDown from "~/components/Staking/WalletsDropDown";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import {
-  FungibleTokenMetadata,
   initFungibleTokenContract,
+  type FungibleTokenMetadata,
 } from "~/lib/ft/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import usePersistingStore from "~/store/useStore";
@@ -138,7 +139,14 @@ const Transfers: NextPageWithLayout = () => {
 
         const t = await Promise.all(tokensPromises);
         const w = t.filter((x) => x !== undefined) as Token[];
-        setTokens(w);
+
+        const near = {
+          symbol: "NEAR",
+          name: "NEAR",
+          balance: "0", // TODO: get balance
+        } as Token;
+
+        setTokens([near].concat(w));
         setCurrentToken(undefined);
       },
     }
@@ -166,36 +174,67 @@ const Transfers: NextPageWithLayout = () => {
     walletSelector.selector.setActiveAccount(
       fromWallet.walletDetails.walletAddress
     );
-    const ftArgs = { amount: amount, receiver_id: toBenef.walletAddress };
 
-    const res = await w.signAndSendTransaction({
-      receiverId: fromWallet.walletDetails.walletAddress,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: "add_request",
-            args: {
-              request: {
-                receiver_id: currentToken.account_id,
-                actions: [
-                  {
-                    type: "FunctionCall",
-                    method_name: "ft_transfer",
-                    args: btoa(JSON.stringify(ftArgs)),
-                    deposit: "1",
-                    gas: "200000000000000",
-                  },
-                ],
+    if (currentToken.symbol === "NEAR") {
+      const nAmount = parseNearAmount(amount);
+      const res = await w.signAndSendTransaction({
+        receiverId: fromWallet.walletDetails.walletAddress,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: toBenef.walletAddress,
+                  actions: [
+                    {
+                      type: "Transfer",
+                      amount: nAmount,
+                    },
+                  ],
+                },
               },
             },
           },
-        },
-      ],
-    });
-    console.log(res);
+        ],
+      });
+      console.log(res);
+    } else {
+      // TODO: amount needs to be converted using ft metadata decimals
+      const ftArgs = { amount: amount, receiver_id: toBenef.walletAddress };
+
+      const res = await w.signAndSendTransaction({
+        receiverId: fromWallet.walletDetails.walletAddress,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: currentToken.account_id,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "ft_transfer",
+                      args: btoa(JSON.stringify(ftArgs)),
+                      deposit: "1",
+                      gas: "200000000000000",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      });
+      console.log(res);
+    }
   };
 
   if (
