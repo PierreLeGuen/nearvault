@@ -37,10 +37,10 @@ const Stake: NextPageWithLayout = () => {
         setAllWallets([]);
 
         for (const wallet of data) {
-          setAllWallets((prev) => [
-            ...prev,
-            { prettyName: wallet.walletAddress, walletDetails: wallet },
-          ]);
+          // setAllWallets((prev) => [
+          //   ...prev,
+          //   { prettyName: wallet.walletAddress, walletDetails: wallet },
+          // ]);
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
