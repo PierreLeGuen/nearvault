@@ -12,8 +12,13 @@ type Pool = {
   fees: Percentage;
 };
 
-const AllAvailablePools = () => {
+const AllAvailablePools = ({
+  onStakeClick,
+}: {
+  onStakeClick: (poolId: string) => Promise<void>;
+}) => {
   const { newNearConnection } = usePersistingStore();
+
   const [pools, setPools] = useState<Map<PoolId, Pool>>(new Map());
   const [searchInput, setSearchInput] = useState<string>("");
 
@@ -127,7 +132,12 @@ const AllAvailablePools = () => {
               </p>
             </div>
             {pool.status === "active" && (
-              <button className="rounded-md bg-blue-600 px-4 py-2 text-white">
+              <button
+                className="rounded-md bg-blue-600 px-4 py-2 text-white"
+                onClick={() => {
+                  void onStakeClick(pool.id);
+                }}
+              >
                 Stake
               </button>
             )}

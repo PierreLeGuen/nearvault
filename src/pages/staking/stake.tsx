@@ -1,10 +1,13 @@
 import { type Wallet } from "@prisma/client";
+import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import AllAvailablePools from "~/components/Staking/AllAvailablePools";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { calculateLockup } from "~/lib/lockup/lockup";
+import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -14,11 +17,58 @@ export interface WalletPretty {
 }
 
 const Stake: NextPageWithLayout = () => {
-  const [selectedWallet, setSelectedWallet] = useState<WalletPretty>();
+  const { newNearConnection, currentTeam } = usePersistingStore();
+  const walletSelector = useWalletSelector();
 
-  const { newNearConnection } = usePersistingStore();
-  const { currentTeam } = usePersistingStore();
+  const [selectedWallet, setSelectedWallet] = useState<WalletPretty>();
   const [allWallets, setAllWallets] = useState<WalletPretty[]>([]);
+  const [amount, setAmount] = useState<string>("");
+
+  const addRequestStakeToPool = async (poolId: string) => {
+    if (!selectedWallet) {
+      throw new Error("No wallet selected");
+    }
+
+    await assertCorrectMultisigWallet(
+      walletSelector,
+      selectedWallet.walletDetails.walletAddress
+    );
+    // deposit_and_stake
+    const w = await walletSelector.selector.wallet();
+
+    const ftArgs = {
+      amount: parseNearAmount(amount),
+    };
+
+    const res = await w.signAndSendTransaction({
+      receiverId: selectedWallet.walletDetails.walletAddress,
+      actions: [
+        {
+          type: "FunctionCall",
+          params: {
+            gas: "300000000000000",
+            deposit: "0",
+            methodName: "add_request",
+            args: {
+              request: {
+                receiver_id: poolId,
+                actions: [
+                  {
+                    type: "FunctionCall",
+                    method_name: "deposit_and_stake",
+                    args: btoa(JSON.stringify(ftArgs)),
+                    deposit: "0",
+                    gas: "200000000000000",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    });
+    console.log(res);
+  };
 
   const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
     {
@@ -86,10 +136,12 @@ const Stake: NextPageWithLayout = () => {
             className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
             type="text"
             placeholder="Enter amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
           />
         </div>
         <div>
-          <AllAvailablePools />
+          <AllAvailablePools onStakeClick={addRequestStakeToPool} />
         </div>
       </div>
     </div>
