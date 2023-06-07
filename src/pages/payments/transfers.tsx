@@ -13,6 +13,7 @@ import {
   type FungibleTokenMetadata,
 } from "~/lib/ft/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
+import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -163,22 +164,11 @@ const Transfers: NextPageWithLayout = () => {
       return;
     }
 
-    const w = await walletSelector.selector.wallet();
-    const availableSigners = await w.getAccounts();
-    if (
-      availableSigners.find(
-        (a) => a.accountId == fromWallet.walletDetails.walletAddress
-      ) === undefined
-    ) {
-      console.log("Not found!");
-      console.log(JSON.stringify(await w.getAccounts()));
-
-      return;
-    }
-
-    walletSelector.selector.setActiveAccount(
+    await assertCorrectMultisigWallet(
+      walletSelector,
       fromWallet.walletDetails.walletAddress
     );
+    const w = await walletSelector.selector.wallet();
 
     if (currentToken.symbol === "NEAR") {
       const nAmount = parseNearAmount(amount);
