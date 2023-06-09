@@ -55,7 +55,8 @@ const ManageTeamPage: NextPageWithLayout = () => {
         teamId: currentTeam.id,
       });
       setInvitationLink(getInvitationLink(data.id));
-    } catch (error) {
+    } catch (error: any) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
       setInviteMessage(`Error: ${error.message}`);
     } finally {
       setEmail("");

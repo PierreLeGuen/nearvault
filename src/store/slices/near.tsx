@@ -1,10 +1,10 @@
-import { connect, keyStores, type Near } from "near-api-js";
+import { connect, type Near } from "near-api-js";
 import { type StateCreator } from "zustand";
 
 export interface NearState {
   config: {
     networkId: "mainnet" | "testnet";
-    keyStore: keyStores.BrowserLocalStorageKeyStore;
+    // keyStore: keyStores.BrowserLocalStorageKeyStore;
     nodeUrl: string;
   };
   nearConnection: Near | undefined;
@@ -17,7 +17,7 @@ export interface NearState {
 export const createNearSlice: StateCreator<NearState> = (set, get) => ({
   config: {
     networkId: "mainnet",
-    keyStore: {},
+    // keyStore: new BrowserLocalStorageKeyStore(),
     nodeUrl: "https://rpc.mainnet.near.org",
   },
   nearConnection: undefined,
@@ -26,7 +26,7 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       set({
         config: {
           networkId: "testnet",
-          keyStore: new keyStores.BrowserLocalStorageKeyStore(),
+          // keyStore: new keyStores.BrowserLocalStorageKeyStore(),
           nodeUrl: "https://rpc.testnet.near.org",
         },
       });
@@ -34,7 +34,7 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       set({
         config: {
           networkId: "mainnet",
-          keyStore: new keyStores.BrowserLocalStorageKeyStore(),
+          // keyStore: new keyStores.BrowserLocalStorageKeyStore(),
           nodeUrl: "https://rpc.mainnet.near.org",
         },
       });
@@ -42,13 +42,17 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
     await get().newNearConnection();
   },
   assertNearConnection: async () => {
-    console.log(get());
-
-    if (get().nearConnection !== undefined) {
-      return get().nearConnection;
+    const b = get().nearConnection;
+    if (b !== undefined) {
+      return b;
     }
+
     await get().newNearConnection();
-    return get().nearConnection;
+    const c = get().nearConnection;
+    if (c === undefined) {
+      throw new Error("Failed to create NEAR connection");
+    }
+    return c;
   },
   newNearConnection: async () => {
     const nearConnection = await connect(get().config);
