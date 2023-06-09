@@ -286,4 +286,222 @@ export const teamsRouter = createTRPCRouter({
         message: "Beneficiary successfully deleted",
       };
     }),
+
+  getInvitationsForUser: protectedProcedure.query(async ({ ctx }) => {
+    // Fetch all team invitations for the logged-in user
+    return ctx.prisma.teamInvitation.findMany({
+      where: {
+        invitedUserId: ctx.session.user.id,
+      },
+      include: {
+        team: true,
+      },
+    });
+  }),
+
+  inviteToTeam: protectedProcedure
+    .input(
+      z.object({
+        invitedEmail: z.string(),
+        teamId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to invite a user to this team.",
+        });
+      }
+
+      const invitedUser = await ctx.prisma.user.findUnique({
+        where: {
+          email: input.invitedEmail,
+        },
+      });
+
+      let invitedUserId = null;
+
+      if (invitedUser) {
+        invitedUserId = invitedUser.id;
+      }
+
+      const newInvitation = await ctx.prisma.teamInvitation.create({
+        data: {
+          invitedEmail: input.invitedEmail,
+          invitedBy: {
+            connect: {
+              id: ctx.session.user.id,
+            },
+          },
+          invitedUser: invitedUserId
+            ? {
+                connect: {
+                  id: invitedUserId,
+                },
+              }
+            : undefined,
+          team: {
+            connect: {
+              id: input.teamId,
+            },
+          },
+        },
+      });
+
+      return newInvitation;
+    }),
+
+  deleteInvitation: protectedProcedure
+    .input(z.object({ invitationId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Fetch the invitation to be deleted
+      const invitation = await ctx.prisma.teamInvitation.findUnique({
+        where: {
+          id: input.invitationId,
+        },
+      });
+
+      if (!invitation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invitation not found.",
+        });
+      }
+
+      // Check if the logged-in user is the one who created the invitation
+      if (invitation.invitedById !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to delete this invitation.",
+        });
+      }
+
+      // Delete the invitation
+      await ctx.prisma.teamInvitation.delete({
+        where: {
+          id: input.invitationId,
+        },
+      });
+
+      return {
+        message: "Invitation successfully deleted",
+      };
+    }),
+
+  acceptOrRejectInvitation: protectedProcedure
+    .input(
+      z.object({
+        invitationId: z.string(),
+        status: z.enum(["ACCEPTED", "REJECTED"]),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Fetch the invitation to be updated
+      const invitation = await ctx.prisma.teamInvitation.findUnique({
+        where: {
+          id: input.invitationId,
+        },
+      });
+
+      if (!invitation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invitation not found.",
+        });
+      }
+      console.log(invitation);
+
+      // Check if the logged-in user is the invited user
+      if (invitation.invitedEmail !== ctx.session.user.email) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to update this invitation.",
+        });
+      }
+
+      // Check if the invitation has already been accepted or rejected
+      if (invitation.status !== "PENDING") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "You cannot modify an invitation that's been accepted or rejected.",
+        });
+      }
+
+      // Update the invitation status
+      const updatedInvitation = await ctx.prisma.teamInvitation.update({
+        where: {
+          id: input.invitationId,
+        },
+        data: {
+          status: input.status,
+          ...(input.status === "ACCEPTED" && { acceptedAt: new Date() }),
+          ...(input.status === "REJECTED" && { rejectedAt: new Date() }),
+        },
+      });
+
+      // If the status is "ACCEPTED", connect the user with the team in the UserTeam table
+      if (input.status === "ACCEPTED") {
+        await ctx.prisma.userTeam.create({
+          data: {
+            user: {
+              connect: {
+                id: ctx.session.user.id,
+              },
+            },
+            team: {
+              connect: {
+                id: invitation.teamId,
+              },
+            },
+          },
+        });
+      }
+
+      return updatedInvitation;
+    }),
+
+  getInvitationsForTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to get invitations for
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to view invitations of this team.",
+        });
+      }
+
+      // Fetch all team invitations for the specified team
+      return ctx.prisma.teamInvitation.findMany({
+        where: {
+          teamId: input.teamId,
+          status: "PENDING",
+        },
+        include: {
+          team: true,
+          invitedBy: true,
+          invitedUser: true,
+        },
+      });
+    }),
 });
