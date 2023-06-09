@@ -31,7 +31,7 @@ const PaymentsSection = () => {
               Transfers
             </Link>
           </div>
-          <div>
+          {/* <div>
             <Link
               className="cursor-pointer hover:text-blue-500"
               href="/payments/escrow"
@@ -46,7 +46,7 @@ const PaymentsSection = () => {
             >
               Recurring Payments
             </Link>
-          </div>
+          </div> */}
           <hr />
           <div>
             <Link
