@@ -168,6 +168,60 @@ export const teamsRouter = createTRPCRouter({
       });
     }),
 
+  deleteWalletForTeam: protectedProcedure
+    .input(z.object({ walletId: z.string(), teamId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to delete a wallet from
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to delete a wallet from this team.",
+        });
+      }
+
+      // Fetch the wallet to be deleted
+      const wallet = await ctx.prisma.wallet.findUnique({
+        where: {
+          id: input.walletId,
+        },
+      });
+
+      if (!wallet) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Wallet not found.",
+        });
+      }
+
+      // Check if the wallet belongs to the team
+      if (wallet.teamId !== input.teamId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The wallet does not belong to this team.",
+        });
+      }
+
+      // Delete the wallet
+      await ctx.prisma.wallet.delete({
+        where: {
+          id: input.walletId,
+        },
+      });
+
+      return {
+        message: "Wallet successfully deleted",
+      };
+    }),
+
   // BENEFICIARY ROUTES
 
   addBeneficiaryForTeam: protectedProcedure
