@@ -244,62 +244,75 @@ const Transfers: NextPageWithLayout = () => {
 
   return (
     <>
-      <div>
-        <div>From Wallet: DROPDOWN</div>
-        <WalletsDropDown
-          wallets={teamsWallet}
-          selectedWallet={fromWallet}
-          setSelectedWallet={setFromWallet}
-        />
-        <div>To Wallet: Beneficiaries</div>
-        <BeneficiariesDropDown
-          beneficiaries={beneficiaries}
-          selectedBeneficiary={toBenef}
-          setSelectedBeneficiary={setToBenef}
-        />
-        <div>Select token</div>
+      <div className="inline-flex gap-3">
         <div>
-          <CurrenciesDropDown
-            tokens={tokens}
-            currentToken={currentToken}
-            setCurrentToken={setCurrentToken}
+          <div>From Wallet:</div>
+          <WalletsDropDown
+            wallets={teamsWallet}
+            selectedWallet={fromWallet}
+            setSelectedWallet={setFromWallet}
           />
-        </div>
-        <div>
-          Available balance:{" "}
-          {currentToken
-            ? (
-                Number(currentToken.balance) /
-                Math.pow(10, currentToken.decimals)
-              ).toFixed(2)
-            : "0"}
-        </div>
-        <div>Enter amount</div>
-        <div>
-          <input
-            type="text"
-            placeholder="Enter amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+          <div>To Wallet: Beneficiaries</div>
+          <BeneficiariesDropDown
+            beneficiaries={beneficiaries}
+            selectedBeneficiary={toBenef}
+            setSelectedBeneficiary={setToBenef}
           />
+          <div>Select token</div>
+          <div>
+            <CurrenciesDropDown
+              tokens={tokens}
+              currentToken={currentToken}
+              setCurrentToken={setCurrentToken}
+            />
+          </div>
+          <div>
+            Available balance:{" "}
+            {currentToken
+              ? (
+                  Number(currentToken.balance) /
+                  Math.pow(10, currentToken.decimals)
+                ).toFixed(2)
+              : "0"}
+          </div>
+          <div>Enter amount</div>
+          <div>
+            <input
+              type="text"
+              placeholder="Enter amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+          <div>Transfer reason</div>
+          <div>
+            <input
+              type="text"
+              placeholder="Enter memo"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => {
+              createTransferRequest().catch((e) => console.error(e));
+            }}
+          >
+            Create treansfer request
+          </button>
         </div>
-        <div>Transfer reason</div>
+
         <div>
-          <input
-            type="text"
-            placeholder="Enter memo"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-          />
+          <div>Balances of {fromWallet?.prettyName}</div>
+          <div>
+            {tokens.map((t) => (
+              <div key={t.symbol}>
+                {t.symbol}:{" "}
+                {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
+              </div>
+            ))}
+          </div>
         </div>
-        <button
-          onClick={() => {
-            console.log("TODO");
-            createTransferRequest().catch((e) => console.error(e));
-          }}
-        >
-          Create treansfer request
-        </button>
       </div>
     </>
   );

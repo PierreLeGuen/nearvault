@@ -79,6 +79,21 @@ export const teamsRouter = createTRPCRouter({
         });
       }
 
+      // Check if the wallet already exists for the team
+      const existingWallet = await ctx.prisma.wallet.findFirst({
+        where: {
+          walletAddress: input.walletAddress,
+          teamId: input.teamId,
+        },
+      });
+
+      if (existingWallet) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The wallet already exists for this team.",
+        });
+      }
+
       // Create the new wallet
       const newWallet = await ctx.prisma.wallet.create({
         data: {
