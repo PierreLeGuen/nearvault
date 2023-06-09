@@ -38,7 +38,10 @@ const Transfers: NextPageWithLayout = () => {
 
   const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
 
-  const [fromWallet, setFromWallet] = useState<WalletPretty>();
+  const [fromWallet, setFromWallet] = useState<WalletPretty>({
+    prettyName: "",
+    walletDetails: { walletAddress: "", id: "", teamId: "" },
+  });
   const [toBenef, setToBenef] = useState<Beneficiary>();
 
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -81,7 +84,6 @@ const Transfers: NextPageWithLayout = () => {
           } catch (_) {}
         }
         setTeamsWallet(w);
-        setFromWallet(w[0]);
       },
     }
   );
@@ -94,7 +96,7 @@ const Transfers: NextPageWithLayout = () => {
   const { isLoading: isLoadingTokens } = useQuery(
     ["tokens", fromWallet],
     async () => {
-      if (!fromWallet) {
+      if (!fromWallet || fromWallet.walletDetails.walletAddress === "") {
         console.log("No from wallet yet");
         return {};
       }
@@ -108,7 +110,7 @@ const Transfers: NextPageWithLayout = () => {
     },
     {
       async onSuccess(data: LikelyTokens) {
-        if (!fromWallet) {
+        if (!fromWallet || fromWallet.walletDetails.walletAddress === "") {
           console.log("No from wallet yet");
           return;
         }

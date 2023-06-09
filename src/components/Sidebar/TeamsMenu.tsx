@@ -1,6 +1,7 @@
 import { Menu, Transition } from "@headlessui/react";
 import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { signOut, useSession } from "next-auth/react";
+import Link from "next/link";
 import { Fragment, useState } from "react";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
@@ -103,6 +104,19 @@ export default function TeamsMenu() {
                   >
                     Create team
                   </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <Link
+                    href={"/team/manage"}
+                    className={classNames(
+                      active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                      "flex w-full items-center px-4 py-2 text-sm"
+                    )}
+                  >
+                    Manage team
+                  </Link>
                 )}
               </Menu.Item>
               <hr className="my-1" />
