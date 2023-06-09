@@ -20,7 +20,6 @@ import { distinctUntilChanged, map } from "rxjs";
 import { setupLedger } from "@near-finance-near-wallet-selector/ledger";
 import { setupMyNearWallet } from "@near-finance-near-wallet-selector/my-near-wallet";
 import { PublicKey } from "near-api-js/lib/utils";
-import Loading from "~/components/Loading";
 import usePersistingStore from "~/store/useStore";
 import { useNearContext } from "./near";
 
@@ -126,7 +125,7 @@ export const WalletSelectorContextProvider: React.FC<{
   );
 
   if (loading) {
-    return <Loading />;
+    return <div>Loading</div>;
   }
 
   return (
