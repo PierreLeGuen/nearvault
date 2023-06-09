@@ -46,7 +46,7 @@ const PendingRequests: NextPageWithLayout = () => {
     wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
     const w = await wallet.selector.wallet();
 
-    const res = await w.signAndSendTransaction({
+    await w.signAndSendTransaction({
       receiverId: multisig_wallet.walletAddress,
       actions: [
         {
