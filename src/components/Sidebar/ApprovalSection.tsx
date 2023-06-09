@@ -31,6 +31,7 @@ const ApprovalSection = () => {
               Pending requests
             </Link>
           </div>
+          <hr />
           <div>
             <Link
               className="cursor-pointer hover:text-blue-500"

@@ -58,6 +58,40 @@ export const teamsRouter = createTRPCRouter({
       return newTeam;
     }),
 
+  getMembersForTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to get members for
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to view members of this team.",
+        });
+      }
+
+      // Get all user-teams with the specified team ID
+      const teamMembers = await ctx.prisma.userTeam.findMany({
+        where: {
+          teamId: input.teamId,
+        },
+        include: {
+          user: true, // Include user data in the result
+        },
+      });
+
+      // Return only the user data for each team member
+      return teamMembers.map((member) => member.user);
+    }),
+
   // WALLET ROUTES
   addWalletForTeam: protectedProcedure
     .input(z.object({ walletAddress: z.string(), teamId: z.string() }))
