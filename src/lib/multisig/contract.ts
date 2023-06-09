@@ -7,50 +7,130 @@ export type Base64VecU8 = string; // Assuming it is a Base64 encoded string
 export type AccountId = string; // Assuming it is a string
 export type RequestId = string; // Assuming it is a string
 
-export enum MultiSigRequestAction {
-  Transfer = "Transfer",
+export enum MultiSigRequestActionType {
   CreateAccount = "CreateAccount",
   DeployContract = "DeployContract",
   AddMember = "AddMember",
   DeleteMember = "DeleteMember",
   AddKey = "AddKey",
-  FunctionCall = "FunctionCall",
   SetNumConfirmations = "SetNumConfirmations",
   SetActiveRequestsLimit = "SetActiveRequestsLimit",
+  Transfer = "Transfer",
+  NearEscrowTransfer = "NearEscrowTransfer",
+  FTEscrowTransfer = "FTEscrowTransfer",
+  FunctionCall = "FunctionCall",
+}
+interface CreateAccountAction {
+  type: MultiSigRequestActionType.CreateAccount;
 }
 
-export interface FunctionCallPermission {
-  allowance: U128 | null;
-  receiver_id: AccountId;
+interface DeployContractAction {
+  type: MultiSigRequestActionType.DeployContract;
+  code: string; // Base64VecU8
+}
+
+interface AddMemberAction {
+  type: MultiSigRequestActionType.AddMember;
+  member: MultisigMember;
+}
+
+interface DeleteMemberAction {
+  type: MultiSigRequestActionType.DeleteMember;
+  member: MultisigMember;
+}
+
+interface AddKeyAction {
+  type: MultiSigRequestActionType.AddKey;
+  public_key: string; // PublicKey
+  permission?: FunctionCallPermission;
+}
+
+interface SetNumConfirmationsAction {
+  type: MultiSigRequestActionType.SetNumConfirmations;
+  num_confirmations: number;
+}
+
+interface SetActiveRequestsLimitAction {
+  type: MultiSigRequestActionType.SetActiveRequestsLimit;
+  active_requests_limit: number;
+}
+
+interface TransferAction {
+  type: MultiSigRequestActionType.Transfer;
+  amount: string; // U128
+}
+
+interface NearEscrowTransferAction {
+  type: MultiSigRequestActionType.NearEscrowTransfer;
+  receiver_id: string; // AccountId
+  amount: string; // U128
+  label: string;
+  is_cancellable: boolean;
+}
+
+interface FTEscrowTransferAction {
+  type: MultiSigRequestActionType.FTEscrowTransfer;
+  receiver_id: string; // AccountId
+  amount: string; // U128
+  token_id: string; // AccountId
+  label: string;
+  is_cancellable: boolean;
+}
+
+interface MultisigMember {
+  AccessKey: {
+    public_key: PublicKey;
+  };
+  Account: {
+    account_id: string; // AccountId
+  };
+}
+
+type PublicKey = string; // In near-api-js, PublicKey is usually represented as a string.
+
+interface FunctionCallPermission {
+  allowance: string | null; // U128
+  receiver_id: string; // AccountId
   method_names: string[];
 }
 
-export interface MultiSigRequest {
-  receiver_id: AccountId;
-  actions: MultiSigRequestAction[];
+interface FunctionCallAction {
+  type: MultiSigRequestActionType.FunctionCall; // Add FunctionCall to MultiSigRequestActionType enum
+  method_name: string;
+  args: string; // Base64VecU8
+  deposit: string; // U128
+  gas: string; // U64
 }
 
-export interface MultiSigRequestWithSigner {
-  request: MultiSigRequest;
-  member: MultisigMember;
-  added_timestamp: number;
-}
+type MultiSigAction =
+  | CreateAccountAction
+  | DeployContractAction
+  | AddMemberAction
+  | DeleteMemberAction
+  | AddKeyAction
+  | SetNumConfirmationsAction
+  | SetActiveRequestsLimitAction
+  | TransferAction
+  | NearEscrowTransferAction
+  | FTEscrowTransferAction
+  | FunctionCallAction;
 
-export enum MultisigMember {
-  AccessKey = "AccessKey",
-  Account = "Account",
+export interface MultisigRequest {
+  request_id: number;
+  receiver_id: string;
+  actions: MultiSigAction[];
 }
 
 export interface MultiSigContract extends nearAPI.Contract {
-  add_request(params: { request: MultiSigRequest }): Promise<RequestId>;
+  add_request(params: { request: MultisigRequest }): Promise<RequestId>;
   add_request_and_confirm(params: {
-    request: MultiSigRequest;
+    request: MultisigRequest;
   }): Promise<RequestId>;
   delete_request(params: { request_id: RequestId }): Promise<void>;
   confirm(params: { request_id: RequestId }): Promise<boolean>;
 
   // View methods
-  get_request(params: { request_id: RequestId }): Promise<MultiSigRequest>;
+  get_request(params: { request_id: RequestId }): Promise<MultisigRequest>;
   get_num_requests_per_member(params: {
     member: MultisigMember;
   }): Promise<number>;

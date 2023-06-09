@@ -7,12 +7,13 @@ import { useEffect, useState } from "react";
 import { CancelLockupDialog } from "~/components/CancelLockupDialog";
 import { getSidebarLayout } from "~/components/Layout";
 import { useNearContext } from "~/context/near";
+import { useWalletSelector } from "~/context/wallet";
 import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
   type AccountLockup,
   type FromStateVestingInformation,
 } from "~/lib/lockup/types";
-import usePersistingStore, { type IStore } from "~/store/useStore";
+import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
@@ -20,11 +21,13 @@ const ManageLockup: NextPageWithLayout = () => {
 
   const [account, setAccount] = useState("");
   const [accountError, setAccountError] = useState("");
+  const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
+
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
   const provider = useNearContext().archival_provider;
-  const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const store = usePersistingStore();
+  const walletSelector = useWalletSelector();
 
   useEffect(() => {
     const getKeys = async () => {
@@ -42,7 +45,8 @@ const ManageLockup: NextPageWithLayout = () => {
 
       // ks.map((k) => {
       //   console.log(k.public_key);
-      // });
+      // });w
+      const w = await walletSelector.selector.wallet();
     };
     void getKeys();
   }, []);
@@ -61,6 +65,38 @@ const ManageLockup: NextPageWithLayout = () => {
         setAccountError("Account not found");
       }
     }
+  };
+
+  const cancelLockupFn = async () => {
+    const w = await walletSelector.selector.wallet();
+    const res = await w.signAndSendTransaction({
+      receiverId: "foundation.near",
+      actions: [
+        {
+          type: "FunctionCall",
+          params: {
+            gas: "300000000000000",
+            deposit: "0",
+            methodName: "add_request",
+            args: {
+              request: {
+                receiver_id: lockupInformation?.lockupAccountId,
+                actions: [
+                  {
+                    type: "FunctionCall",
+                    method_name: "terminate_vesting",
+                    deposit: "0",
+                    gas: "200000000000000",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    console.log(res);
   };
 
   return (
@@ -99,12 +135,22 @@ const ManageLockup: NextPageWithLayout = () => {
         <>
           <div>{showLockupInfo(lockupInformation)}</div>
           <div>
-            {cancelLockup(
-              lockupInformation,
-              cancelLockupModalIsOpen,
-              cancelSetIsOpen,
-              store
-            )}
+            <div className="mt-4">
+              <button
+                className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
+                onClick={() => {
+                  cancelSetIsOpen(true);
+                }}
+              >
+                Cancel lockup
+                {cancelLockupModalIsOpen &&
+                  CancelLockupDialog(
+                    cancelLockupModalIsOpen,
+                    cancelSetIsOpen,
+                    cancelLockupFn
+                  )}
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -131,34 +177,6 @@ function prepareAccountId(data: string) {
   }
   return Buffer.from(publicKey).toString("hex");
 }
-
-const cancelLockup = (
-  lockup: AccountLockup,
-  modalIsOpen: boolean,
-  modalFn: (a: boolean) => void,
-  store: IStore
-) => {
-  return (
-    <div className="mt-4">
-      <button
-        className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
-        onClick={() => {
-          console.log("cancelLockup", lockup);
-          modalFn(true);
-        }}
-      >
-        Cancel lockup
-        {modalIsOpen &&
-          CancelLockupDialog(
-            modalIsOpen,
-            modalFn,
-            lockup.lockupAccountId,
-            store
-          )}
-      </button>
-    </div>
-  );
-};
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
   const getVestingDetails = (
