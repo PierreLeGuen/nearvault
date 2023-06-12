@@ -147,19 +147,21 @@ const ManageTeamPage: NextPageWithLayout = () => {
 
       <h2>Wallets</h2>
       <h3>List of wallets:</h3>
-      {wallets?.map((w) => (
-        <div key={w.id} className="inline-flex gap-3">
-          <div>{w.walletAddress}</div>
-          <button
-            onClick={() => {
-              void deleteWallet(w.id);
-            }}
-            className="rounded bg-red-200 px-3 py-1 hover:bg-red-300"
-          >
-            {loadingStates[w.id] ? "Deleting..." : "Delete"}
-          </button>
-        </div>
-      ))}
+      <div className="flex flex-col gap-3">
+        {wallets?.map((w) => (
+          <div key={w.id} className="inline-flex gap-3">
+            <div>{w.walletAddress}</div>
+            <button
+              onClick={() => {
+                void deleteWallet(w.id);
+              }}
+              className="rounded bg-red-200 px-3 py-1 hover:bg-red-300"
+            >
+              {loadingStates[w.id] ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
