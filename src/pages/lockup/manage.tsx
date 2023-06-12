@@ -59,7 +59,7 @@ const ManageLockup: NextPageWithLayout = () => {
     } catch (e) {
       if (e) {
         setAccountError(
-          `Error while retrieving account, err: ${JSON.stringify(e)}`
+          `Error while retrieving account, error: ${JSON.stringify(e)}`
         );
       } else {
         setAccountError("Account not found");

@@ -305,7 +305,9 @@ const Transfers: NextPageWithLayout = () => {
         </div>
 
         <div>
-          <div>Balances of {fromWallet?.prettyName}</div>
+          {fromWallet && fromWallet.prettyName != "" && (
+            <div>Balances of {fromWallet.prettyName}</div>
+          )}
           <div>
             {tokens.map((t) => (
               <div key={t.symbol}>

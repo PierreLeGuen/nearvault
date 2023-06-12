@@ -27,13 +27,8 @@ const Unstake: NextPageWithLayout = () => {
         if (!data || data.length == 0 || data[0] === undefined) {
           return;
         }
-        setAllWallets([]);
 
-        for (const wallet of data) {
-          setAllWallets((prev) => [
-            ...prev,
-            { prettyName: wallet.walletAddress, walletDetails: wallet },
-          ]);
+        const walletPromises = data.map(async (wallet) => {
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
@@ -41,8 +36,9 @@ const Unstake: NextPageWithLayout = () => {
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
-            setAllWallets((prev) => [
-              ...prev,
+
+            return [
+              { prettyName: wallet.walletAddress, walletDetails: wallet },
               {
                 prettyName: "Lockup of " + wallet.walletAddress,
                 walletDetails: {
@@ -51,9 +47,16 @@ const Unstake: NextPageWithLayout = () => {
                   teamId: "na",
                 },
               },
-            ]);
-          } catch (_) {}
-        }
+            ];
+          } catch (_) {
+            return [
+              { prettyName: wallet.walletAddress, walletDetails: wallet },
+            ];
+          }
+        });
+
+        const walletPairs = await Promise.all(walletPromises);
+        setAllWallets(walletPairs.flat());
       },
     }
   );

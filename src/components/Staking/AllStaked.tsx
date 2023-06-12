@@ -43,6 +43,10 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
               account_id: wallet.walletDetails.walletAddress,
             });
 
+            if (total_balance === "0") {
+              continue;
+            }
+
             stakedPools.push({
               deposit: total_balance,
               validator_id: pool.validator_id,
@@ -107,6 +111,10 @@ const StakedPoolComponent = ({ pool }: { pool: StakedPool }) => {
 
   const buttonClasses =
     "px-4 py-2 text-white " + (isAmountTooHigh ? "bg-red-500" : "bg-blue-500");
+
+  if (pool.deposit === "0") {
+    return null;
+  }
 
   return (
     <div key={pool.validator_id}>
