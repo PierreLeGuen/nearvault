@@ -150,8 +150,9 @@ export const teamsRouter = createTRPCRouter({
           });
 
           newWallets.push(newWallet);
-        } catch (error) {
+        } catch (error: any) {
           errors.push(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
             `Error processing wallet ${walletAddress}: ${error.message}`
           );
         }

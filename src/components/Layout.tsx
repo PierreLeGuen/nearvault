@@ -19,7 +19,7 @@ const Layout: React.FC<{
       <div className="flex flex-1 flex-col">
         <div className="flex flex-row px-8 py-2 shadow-md">
           <div className="flex flex-1"></div>
-          {store.accountId && (
+          {store.publicKey && (
             // TODO: switch account, disconnect, ...
             <button
               className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -27,10 +27,10 @@ const Layout: React.FC<{
                 handleSignIn();
               }}
             >
-              Ⓝ {store.accountId}
+              Ⓝ {store.publicKey.toString()}
             </button>
           )}
-          {!store.accountId && (
+          {!store && (
             <button
               className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               onClick={() => {
