@@ -93,15 +93,19 @@ export const teamsRouter = createTRPCRouter({
     }),
 
   // WALLET ROUTES
-  addWalletForTeam: protectedProcedure
-    .input(z.object({ walletAddress: z.string(), teamId: z.string() }))
+  addWalletsForTeam: protectedProcedure
+    .input(
+      z.object({ walletAddresses: z.array(z.string()), teamId: z.string() })
+    )
     .mutation(async ({ input, ctx }) => {
-      // Check if the user is part of the team they are trying to add a wallet to
+      const { walletAddresses, teamId } = input;
+
+      // Check if the user is part of the team they are trying to add wallets to
       const userTeam = await ctx.prisma.userTeam.findUnique({
         where: {
           userId_teamId: {
             userId: ctx.session.user.id,
-            teamId: input.teamId,
+            teamId,
           },
         },
       });
@@ -109,38 +113,51 @@ export const teamsRouter = createTRPCRouter({
       if (!userTeam) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "You are not authorized to add a wallet to this team.",
+          message: "You are not authorized to add wallets to this team.",
         });
       }
 
-      // Check if the wallet already exists for the team
-      const existingWallet = await ctx.prisma.wallet.findFirst({
-        where: {
-          walletAddress: input.walletAddress,
-          teamId: input.teamId,
-        },
-      });
+      const newWallets = [];
+      const errors = [];
 
-      if (existingWallet) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The wallet already exists for this team.",
-        });
-      }
-
-      // Create the new wallet
-      const newWallet = await ctx.prisma.wallet.create({
-        data: {
-          walletAddress: input.walletAddress,
-          team: {
-            connect: {
-              id: input.teamId,
+      for (const walletAddress of walletAddresses) {
+        try {
+          // Check if the wallet already exists for the team
+          const existingWallet = await ctx.prisma.wallet.findFirst({
+            where: {
+              walletAddress,
+              teamId,
             },
-          },
-        },
-      });
+          });
 
-      return newWallet;
+          if (existingWallet) {
+            errors.push(
+              `The wallet ${walletAddress} already exists for this team.`
+            );
+            continue;
+          }
+
+          // Create the new wallet
+          const newWallet = await ctx.prisma.wallet.create({
+            data: {
+              walletAddress,
+              team: {
+                connect: {
+                  id: teamId,
+                },
+              },
+            },
+          });
+
+          newWallets.push(newWallet);
+        } catch (error) {
+          errors.push(
+            `Error processing wallet ${walletAddress}: ${error.message}`
+          );
+        }
+      }
+
+      return { newWallets, errors };
     }),
   getWalletsForTeam: protectedProcedure
     .input(z.object({ teamId: z.string() }))

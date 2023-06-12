@@ -11,10 +11,10 @@ import { type NextPageWithLayout } from "../_app";
 const AddWallet: NextPageWithLayout = () => {
   useSession({ required: true });
   const { currentTeam, newNearConnection } = usePersistingStore();
-  const mutation = api.teams.addWalletForTeam.useMutation({});
+  const mutation = api.teams.addWalletsForTeam.useMutation({});
 
-  const [walletId, setWalletId] = useState<string>("");
-  const [walletError, setWalletError] = useState<string>("");
+  const [walletIds, setWalletIds] = useState<string>("");
+  const [walletErrors, setWalletsError] = useState<string[]>([]);
   const [walletSucess, setWalletSucess] = useState<string>("");
 
   if (!currentTeam) {
@@ -46,26 +46,45 @@ const AddWallet: NextPageWithLayout = () => {
     return true;
   };
 
-  const addMultisigWallet = async (walletId: string) => {
-    setWalletError("");
+  const addMultisigWallets = async () => {
+    setWalletsError([]);
     setWalletSucess("");
+    const wallets = walletIds.split(/[\n,]+/).map((id) => id.trim());
+    const validWallets = [];
 
-    const ok = await assertValidMultisigAccount(walletId);
-    if (!ok) {
-      setWalletError("Not a valid multisig account");
+    for (const walletId of wallets) {
+      const ok = await assertValidMultisigAccount(walletId);
+      if (!ok) {
+        setWalletsError((errors) => [
+          ...errors,
+          `Wallet ID ${walletId} is not a valid multisig account`,
+        ]);
+        continue;
+      }
+      validWallets.push(walletId);
     }
 
     mutation.mutate(
       {
-        walletAddress: walletId,
+        walletAddresses: validWallets,
         teamId: currentTeam.id,
       },
       {
         onSuccess: (data) => {
-          setWalletSucess(`Created wallet: ${JSON.stringify(data)}`);
+          if (data.newWallets.length > 0) {
+            setWalletSucess(
+              `Created wallets: ${JSON.stringify(data.newWallets)}`
+            );
+          }
+          if (data.errors.length > 0) {
+            setWalletsError((errors) => [...errors, ...data.errors]);
+          }
         },
         onError: (error) => {
-          setWalletError(`Error creating wallet: ${error.message}`);
+          setWalletsError((errors) => [
+            ...errors,
+            `Error creating wallets: ${error.message}`,
+          ]);
         },
       }
     );
@@ -78,24 +97,30 @@ const AddWallet: NextPageWithLayout = () => {
         If a lockup is attached to this wallet it will be automatically
         discovered.
       </p>
-      <p>The wallet needs to be a multisig wallet</p>
-      <input
-        type="text"
-        placeholder="Wallet ID"
-        value={walletId}
-        onChange={(e) => setWalletId(e.target.value)}
+      <p>Wallets needs to be multisig wallets</p>
+      <textarea
+        placeholder="Wallet IDs, separated by commas or new lines"
+        value={walletIds}
+        onChange={(e) => setWalletIds(e.target.value)}
         className="focus:shadow-outline mt-2 w-full px-3 py-2 leading-tight text-gray-700 focus:outline-none"
+        rows={4}
       />
       <button
         className="mt-4 inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
         onClick={() => {
-          console.log(`Creating wallet: ${walletId}`);
-          void addMultisigWallet(walletId);
+          console.log(`Creating wallets: ${walletIds}`);
+          void addMultisigWallets();
         }}
       >
         Add
       </button>
-      {walletError && <p className="text-red-500">{walletError}</p>}
+      {walletErrors.length > 0 && (
+        <div className="mt-4 text-red-500">
+          {walletErrors.map((error, index) => (
+            <p key={index}>{error}</p>
+          ))}
+        </div>
+      )}
       {walletSucess && <p className="text-green-500">{walletSucess}</p>}
     </div>
   );
