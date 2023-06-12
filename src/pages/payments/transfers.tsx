@@ -1,4 +1,4 @@
-import { type Beneficiary, type Wallet } from "@prisma/client";
+import { type Beneficiary } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
@@ -16,11 +16,7 @@ import { calculateLockup } from "~/lib/lockup/lockup";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-
-export interface WalletPretty {
-  prettyName: string;
-  walletDetails: Wallet;
-}
+import { type WalletPretty } from "../staking/stake";
 
 interface LikelyTokens {
   version: string;
@@ -41,6 +37,8 @@ const Transfers: NextPageWithLayout = () => {
   const [fromWallet, setFromWallet] = useState<WalletPretty>({
     prettyName: "",
     walletDetails: { walletAddress: "", id: "", teamId: "" },
+    isLockup: false,
+    ownerAccountId: undefined,
   });
   const [toBenef, setToBenef] = useState<Beneficiary>();
 
@@ -64,7 +62,12 @@ const Transfers: NextPageWithLayout = () => {
         }
         const w: WalletPretty[] = [];
         for (const wallet of data) {
-          w.push({ walletDetails: wallet, prettyName: wallet.walletAddress });
+          w.push({
+            walletDetails: wallet,
+            prettyName: wallet.walletAddress,
+            isLockup: false,
+            ownerAccountId: undefined,
+          });
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
@@ -80,6 +83,8 @@ const Transfers: NextPageWithLayout = () => {
                 id: lockupValue,
                 teamId: "na",
               },
+              isLockup: true,
+              ownerAccountId: wallet.walletAddress,
             });
           } catch (_) {}
         }

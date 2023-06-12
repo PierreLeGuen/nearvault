@@ -120,11 +120,18 @@ const PendingRequests: NextPageWithLayout = () => {
                 request_id,
                 actions: request.actions.map((action) => {
                   if (action.type === MultiSigRequestActionType.FunctionCall) {
+                    let a = action.args;
+                    try {
+                      const b = JSON.parse(
+                        Buffer.from(action.args, "base64").toString("utf8")
+                      ) as string;
+                      a = b;
+                    } catch (e) {
+                      console.log(e);
+                    }
                     return {
                       ...action,
-                      args: JSON.parse(
-                        Buffer.from(action.args, "base64").toString("utf8")
-                      ) as string,
+                      args: a,
                     };
                   }
                   return action;

@@ -8,7 +8,7 @@ import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "./CreateTeamDialog";
 import LetterProfilePicture from "./LetterProfilePicture"; // Import the LetterProfilePicture component
 
-function classNames(...classes: string[]) {
+export function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 

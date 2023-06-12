@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { initStakingContract } from "~/lib/staking/contract";
 import usePersistingStore from "~/store/useStore";
+import { classNames } from "../Sidebar/TeamsMenu";
 
 type PoolId = string;
 type Percentage = number;
@@ -14,8 +15,10 @@ type Pool = {
 
 const AllAvailablePools = ({
   onStakeClick,
+  stakingInProgress,
 }: {
   onStakeClick: (poolId: string) => Promise<void>;
+  stakingInProgress: { [poolId: string]: boolean };
 }) => {
   const { newNearConnection } = usePersistingStore();
 
@@ -133,12 +136,18 @@ const AllAvailablePools = ({
             </div>
             {pool.status === "active" && (
               <button
-                className="rounded-md bg-blue-600 px-4 py-2 text-white"
+                className={classNames(
+                  "rounded-md bg-blue-600 px-4 py-2 text-white",
+                  stakingInProgress[pool.id]
+                    ? "cursor-not-allowed opacity-50"
+                    : ""
+                )}
+                disabled={stakingInProgress[pool.id]}
                 onClick={() => {
                   void onStakeClick(pool.id);
                 }}
               >
-                Stake
+                {stakingInProgress[pool.id] ? "Staking..." : "Stake"}
               </button>
             )}
           </div>
