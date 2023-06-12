@@ -23,6 +23,7 @@ const PendingRequests: NextPageWithLayout = () => {
   const [pendingRequests, setPendingRequests] = useState<
     Map<Wallet, Array<MultisigRequest>>
   >(new Map());
+  const [loading, setLoading] = useState(false);
 
   if (!currentTeam) {
     throw new Error("No current team");
@@ -96,7 +97,7 @@ const PendingRequests: NextPageWithLayout = () => {
     };
 
     const fetchPendingRequests = async () => {
-      console.log("Fetching pending requests");
+      setLoading(true);
 
       if (!wallets) {
         return;
@@ -137,6 +138,7 @@ const PendingRequests: NextPageWithLayout = () => {
         }
       }
       setPendingRequests(tempPendingRequests);
+      setLoading(false);
     };
 
     if (wallets) {
@@ -147,6 +149,8 @@ const PendingRequests: NextPageWithLayout = () => {
   return (
     <div className="prose p-4">
       <h1>Pending requests</h1>
+      {loading && <p>Loading...</p>}
+      {!loading && pendingRequests.size === 0 && <p>No pending requests.</p>}
       {Array.from(pendingRequests).map(([wallet, requests]) =>
         requests.length > 0 ? (
           <div key={wallet.id} className="mb-2 border-gray-200 p-2">
