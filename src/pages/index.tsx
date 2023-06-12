@@ -1,56 +1,55 @@
-import { signIn, signOut, useSession } from "next-auth/react";
-
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
-import React from "react";
-import OffchainProfile from "~/components/Sidebar/OffchainProfile";
 import getWelcomeLayout from "~/components/WelcomeLayout";
-import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "./_app";
 
 const Home: NextPageWithLayout = () => {
-  const { data: sessionData } = useSession();
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
+  const { data: sessionData, status } = useSession();
 
-  if (sessionData) {
-    return (
-      <Link href={"/lockup/manage"}>
-        Hi {sessionData?.user.name || ""}, click here to access the app
-      </Link>
+  // Determine user's name or a default greeting
+  const userName = sessionData?.user?.name ? sessionData.user.name : "there";
+
+  // Determine the main content based on session status
+  let mainContent;
+  if (status === "loading") {
+    mainContent = <p>Loading...</p>;
+  } else if (sessionData) {
+    mainContent = (
+      <>
+        <h2>Welcome back, {userName}!</h2>
+        <p>Ready to continue?</p>
+        <Link
+          href={"/lockup/manage"}
+          className="rounded-md bg-blue-300 px-4 py-2 hover:bg-blue-100"
+        >
+          Continue
+        </Link>
+      </>
+    );
+  } else {
+    mainContent = (
+      <>
+        <p>
+          You need to be signed in to access this app. Please sign in to
+          continue.
+        </p>
+        <button
+          onClick={() => void signIn()}
+          className="rounded-md bg-blue-300 px-4 py-2 hover:bg-blue-100"
+        >
+          Sign in
+        </button>
+      </>
     );
   }
 
   return (
-    <>
-      <div>You need to be signed in to access this app</div>
-      <OffchainProfile />
-    </>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3">
+      {mainContent}
+    </div>
   );
 };
 
 Home.getLayout = getWelcomeLayout;
 
 export default Home;
-
-const AuthShowcase: React.FC = () => {
-  const { data: sessionData } = useSession();
-
-  const { data: secretMessage } = api.example.getSecretMessage.useQuery(
-    undefined, // no input
-    { enabled: sessionData?.user !== undefined }
-  );
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <p className="text-center text-2xl text-white">
-        {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
-        {secretMessage && <span> - {secretMessage}</span>}
-      </p>
-      <button
-        className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-        onClick={sessionData ? () => void signOut() : () => void signIn()}
-      >
-        {sessionData ? "Sign out" : "Sign in"}
-      </button>
-    </div>
-  );
-};
