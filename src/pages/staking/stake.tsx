@@ -14,6 +14,8 @@ import { type NextPageWithLayout } from "../_app";
 export interface WalletPretty {
   prettyName: string;
   walletDetails: Wallet;
+  isLockup: boolean;
+  ownerAccountId: string | undefined;
 }
 
 const Stake: NextPageWithLayout = () => {
@@ -23,51 +25,93 @@ const Stake: NextPageWithLayout = () => {
   const [selectedWallet, setSelectedWallet] = useState<WalletPretty>();
   const [allWallets, setAllWallets] = useState<WalletPretty[]>([]);
   const [amount, setAmount] = useState<string>("");
+  const [stakingInProgress, setStakingInProgress] = useState<{
+    [poolId: string]: boolean;
+  }>({});
 
   const addRequestStakeToPool = async (poolId: string) => {
     if (!selectedWallet) {
       throw new Error("No wallet selected");
     }
+    setStakingInProgress((prev) => ({ ...prev, [poolId]: true }));
 
     await assertCorrectMultisigWallet(
       walletSelector,
       selectedWallet.walletDetails.walletAddress
     );
-    // deposit_and_stake
     const w = await walletSelector.selector.wallet();
 
     const ftArgs = {
       amount: parseNearAmount(amount),
     };
 
-    const res = await w.signAndSendTransaction({
-      receiverId: selectedWallet.walletDetails.walletAddress,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: "add_request",
-            args: {
-              request: {
-                receiver_id: poolId,
-                actions: [
-                  {
-                    type: "FunctionCall",
-                    method_name: "deposit_and_stake",
-                    args: btoa(JSON.stringify(ftArgs)),
-                    deposit: "0",
-                    gas: "200000000000000",
+    try {
+      if (selectedWallet.isLockup) {
+        if (!selectedWallet.ownerAccountId) {
+          throw new Error("No owner account id");
+        }
+
+        await w.signAndSendTransaction({
+          receiverId: selectedWallet.ownerAccountId,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: "add_request",
+                args: {
+                  request: {
+                    receiver_id: selectedWallet.walletDetails.walletAddress,
+                    actions: [
+                      {
+                        type: "FunctionCall",
+                        method_name: "deposit_and_stake",
+                        args: btoa(JSON.stringify(ftArgs)),
+                        deposit: "0",
+                        gas: "200000000000000",
+                      },
+                    ],
                   },
-                ],
+                },
               },
             },
-          },
-        },
-      ],
-    });
-    console.log(res);
+          ],
+        });
+      } else {
+        await w.signAndSendTransaction({
+          receiverId: selectedWallet.walletDetails.walletAddress,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: "add_request",
+                args: {
+                  request: {
+                    receiver_id: poolId,
+                    actions: [
+                      {
+                        type: "FunctionCall",
+                        method_name: "deposit_and_stake",
+                        args: btoa(""),
+                        deposit: parseNearAmount(amount),
+                        gas: "200000000000000",
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setStakingInProgress((prev) => ({ ...prev, [poolId]: false }));
+    }
   };
 
   const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
@@ -83,14 +127,19 @@ const Stake: NextPageWithLayout = () => {
         setSelectedWallet({
           prettyName: data[0].walletAddress,
           walletDetails: data[0],
+
+          isLockup: false,
+          ownerAccountId: data[0].walletAddress,
         });
         setAllWallets([]);
-
+        const allWallets: WalletPretty[] = [];
         for (const wallet of data) {
-          // setAllWallets((prev) => [
-          //   ...prev,
-          //   { prettyName: wallet.walletAddress, walletDetails: wallet },
-          // ]);
+          allWallets.push({
+            prettyName: wallet.walletAddress,
+            walletDetails: wallet,
+            isLockup: false,
+            ownerAccountId: undefined,
+          });
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
@@ -98,19 +147,19 @@ const Stake: NextPageWithLayout = () => {
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
-            setAllWallets((prev) => [
-              ...prev,
-              {
-                prettyName: "Lockup of " + wallet.walletAddress,
-                walletDetails: {
-                  walletAddress: lockupValue,
-                  id: lockupValue,
-                  teamId: "na",
-                },
+            allWallets.push({
+              prettyName: `${wallet.walletAddress} (lockup)`,
+              walletDetails: {
+                walletAddress: lockupValue,
+                teamId: wallet.teamId,
+                id: lockupValue,
               },
-            ]);
+              isLockup: true,
+              ownerAccountId: wallet.walletAddress,
+            });
           } catch (_) {}
         }
+        setAllWallets(allWallets);
       },
     }
   );
@@ -141,7 +190,10 @@ const Stake: NextPageWithLayout = () => {
           />
         </div>
         <div>
-          <AllAvailablePools onStakeClick={addRequestStakeToPool} />
+          <AllAvailablePools
+            onStakeClick={addRequestStakeToPool}
+            stakingInProgress={stakingInProgress}
+          />
         </div>
       </div>
     </div>

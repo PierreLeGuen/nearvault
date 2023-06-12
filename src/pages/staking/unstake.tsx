@@ -10,6 +10,8 @@ import { type NextPageWithLayout } from "../_app";
 export interface WalletPretty {
   prettyName: string;
   walletDetails: Wallet;
+  isLockup: boolean;
+  ownerAccountId: string | undefined;
 }
 
 const Unstake: NextPageWithLayout = () => {
@@ -38,7 +40,12 @@ const Unstake: NextPageWithLayout = () => {
             await (await nearConn.account(lockupValue)).state();
 
             return [
-              { prettyName: wallet.walletAddress, walletDetails: wallet },
+              {
+                prettyName: wallet.walletAddress,
+                walletDetails: wallet,
+                isLockup: false,
+                ownerAccountId: undefined,
+              },
               {
                 prettyName: "Lockup of " + wallet.walletAddress,
                 walletDetails: {
@@ -46,11 +53,18 @@ const Unstake: NextPageWithLayout = () => {
                   id: lockupValue,
                   teamId: "na",
                 },
+                isLockup: true,
+                ownerAccountId: wallet.walletAddress,
               },
             ];
           } catch (_) {
             return [
-              { prettyName: wallet.walletAddress, walletDetails: wallet },
+              {
+                prettyName: wallet.walletAddress,
+                walletDetails: wallet,
+                isLockup: false,
+                ownerAccountId: undefined,
+              },
             ];
           }
         });
