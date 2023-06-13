@@ -48,28 +48,30 @@ model Session {
 }
 
 model User {
-    id                  String           @id @default(cuid())
+    id                  String            @id @default(cuid())
     name                String?
-    email               String?          @unique
+    email               String?           @unique
     emailVerified       DateTime?
     image               String?
     accounts            Account[]
     sessions            Session[]
     teams               UserTeam[]
-    sentInvitations     TeamInvitation[] @relation("InvitedByRelation")
-    receivedInvitations TeamInvitation[] @relation("InvitedUserRelation")
+    sentInvitations     TeamInvitation[]  @relation("InvitedByRelation")
+    receivedInvitations TeamInvitation[]  @relation("InvitedUserRelation")
     TeamInvitation      TeamInvitation[]
+    TransferHistory     TransferHistory[]
 
     @@index([email], name: "emailIndex")
 }
 
 model Team {
-    id          String           @id @default(cuid())
-    name        String
-    wallets     Wallet[]
-    users       UserTeam[]
-    Beneficiary Beneficiary[]
-    invitations TeamInvitation[]
+    id              String            @id @default(cuid())
+    name            String
+    wallets         Wallet[]
+    users           UserTeam[]
+    Beneficiary     Beneficiary[]
+    invitations     TeamInvitation[]
+    TransferHistory TransferHistory[]
 }
 
 model Wallet {
@@ -129,4 +131,26 @@ enum InvitationStatus {
     PENDING
     ACCEPTED
     REJECTED
+}
+
+model TransferHistory {
+    id                  String    @id @default(cuid())
+    token               String
+    amount              Decimal
+    creationDate        DateTime  @default(now())
+    approvedDate        DateTime? // Nullable, will be filled when the transfer is approved
+    rejectedDate        DateTime? // Nullable, will be filled when the transfer is rejected
+    memo                String?
+    createRequestTxnId  String
+    confirmExecuteTxnId String? // Nullable, will be filled when the transfer is confirmed and executed
+    creatorMail         String
+    createdAt           DateTime  @default(now())
+    updatedAt           DateTime  @updatedAt
+    teamId              String
+    team                Team      @relation(fields: [teamId], references: [id], onDelete: Cascade) // And this one too
+
+    // Relations
+    creator User @relation(fields: [creatorMail], references: [email])
+
+    @@index([token], name: "tokenIndex")
 }

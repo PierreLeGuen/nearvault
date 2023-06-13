@@ -576,4 +576,36 @@ export const teamsRouter = createTRPCRouter({
         },
       });
     }),
+
+  getTeamTransactionsHistory: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to get transactions for
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to view transactions of this team.",
+        });
+      }
+
+      // Fetch all transactions for the specified team
+      return ctx.prisma.transferHistory.findMany({
+        where: {
+          teamId: input.teamId,
+        },
+        include: {
+          team: true,
+          creator: true,
+        },
+      });
+    }),
 });
