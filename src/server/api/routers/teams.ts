@@ -608,4 +608,64 @@ export const teamsRouter = createTRPCRouter({
         },
       });
     }),
+
+  insertTransferHistory: protectedProcedure
+    .input(
+      z.object({
+        walletId: z.string(),
+        tokenAddress: z.string(),
+        amount: z.string(),
+        createRequestTxnId: z.string(),
+        memo: z.string().optional(),
+        teamId: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team they are trying to create a transaction for
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message:
+            "You are not authorized to create a transaction for this team.",
+        });
+      }
+
+      const creatorEmail = ctx.session.user.email as string;
+
+      // Insert new transaction
+      const newTransaction = await ctx.prisma.transferHistory.create({
+        data: {
+          token: input.tokenAddress,
+          amount: input.amount,
+          createRequestTxnId: input.createRequestTxnId,
+          memo: input.memo,
+          team: {
+            connect: {
+              id: input.teamId,
+            },
+          },
+          creator: {
+            connect: {
+              email: creatorEmail,
+            },
+          },
+          wallet: {
+            connect: {
+              id: input.walletId,
+            },
+          },
+        },
+      });
+
+      return newTransaction;
+    }),
 });

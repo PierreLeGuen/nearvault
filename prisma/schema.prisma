@@ -75,10 +75,11 @@ model Team {
 }
 
 model Wallet {
-    id            String @id @default(cuid())
-    walletAddress String
-    teamId        String
-    team          Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    id              String            @id @default(cuid())
+    walletAddress   String
+    teamId          String
+    team            Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    TransferHistory TransferHistory[]
 }
 
 model Beneficiary {
@@ -147,7 +148,9 @@ model TransferHistory {
     createdAt           DateTime  @default(now())
     updatedAt           DateTime  @updatedAt
     teamId              String
-    team                Team      @relation(fields: [teamId], references: [id], onDelete: Cascade) // And this one too
+    team                Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    walletId            String
+    wallet              Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
     // Relations
     creator User @relation(fields: [creatorMail], references: [email])

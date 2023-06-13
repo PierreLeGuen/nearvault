@@ -43,7 +43,10 @@ const CurrenciesDropDown = ({
                       active ? "bg-gray-100 text-gray-900" : "text-gray-700",
                       "flex w-full items-center justify-center px-4 py-2 text-sm"
                     )}
-                    onClick={() => setCurrentToken(token)}
+                    onClick={() => {
+                      console.log(token);
+                      setCurrentToken(token);
+                    }}
                   >
                     {token.symbol}
                   </button>

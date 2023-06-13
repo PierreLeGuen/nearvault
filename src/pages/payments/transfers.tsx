@@ -33,7 +33,6 @@ const Transfers: NextPageWithLayout = () => {
   const walletSelector = useWalletSelector();
 
   const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
-
   const [fromWallet, setFromWallet] = useState<WalletPretty>({
     prettyName: "",
     walletDetails: { walletAddress: "", id: "", teamId: "" },
@@ -41,14 +40,13 @@ const Transfers: NextPageWithLayout = () => {
     ownerAccountId: undefined,
   });
   const [toBenef, setToBenef] = useState<Beneficiary>();
-
   const [tokens, setTokens] = useState<Token[]>([]);
   const [currentToken, setCurrentToken] = useState<Token>();
-
   const [amount, setAmount] = useState<string>("");
   const [memo, setMemo] = useState<string>("");
 
   const { currentTeam, newNearConnection } = usePersistingStore();
+  const mutate = api.teams.insertTransferHistory.useMutation();
 
   const { isLoading } = api.teams.getWalletsForTeam.useQuery(
     {
@@ -136,7 +134,7 @@ const Transfers: NextPageWithLayout = () => {
             const t: Token = {
               ...ft_metadata,
               balance: ft_balance,
-              account_id: fromWallet.walletDetails.walletAddress,
+              account_id: token,
             };
 
             return t;
@@ -165,6 +163,21 @@ const Transfers: NextPageWithLayout = () => {
     }
   );
 
+  const insertTransactionInHistory = async (createRequestTxnId: string) => {
+    if (!currentTeam) {
+      throw new Error("No current team");
+    }
+
+    await mutate.mutateAsync({
+      amount: amount,
+      teamId: currentTeam.id,
+      tokenAddress: currentToken?.account_id || "NEAR",
+      createRequestTxnId: createRequestTxnId,
+      memo: memo,
+      walletId: fromWallet.walletDetails.id,
+    });
+  };
+
   const createTransferRequest = async () => {
     if (!fromWallet || !toBenef || !currentToken || !amount) {
       console.log("Missing data: ", fromWallet, toBenef, currentToken, amount);
@@ -177,6 +190,7 @@ const Transfers: NextPageWithLayout = () => {
     );
     const w = await walletSelector.selector.wallet();
 
+    let txnId: string | undefined = undefined;
     if (currentToken.symbol === "NEAR") {
       const nAmount = parseNearAmount(amount);
       const res = await w.signAndSendTransaction({
@@ -203,7 +217,7 @@ const Transfers: NextPageWithLayout = () => {
           },
         ],
       });
-      console.log(res);
+      txnId = res?.transaction_outcome.id;
     } else {
       const a = amount + "0".repeat(currentToken.decimals);
       const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
@@ -235,8 +249,16 @@ const Transfers: NextPageWithLayout = () => {
           },
         ],
       });
-      console.log(res);
+      txnId = res?.transaction_outcome.id;
     }
+
+    if (!txnId) {
+      throw new Error("No txnId");
+    }
+
+    console.log(currentToken);
+
+    await insertTransactionInHistory(txnId);
   };
 
   if (
@@ -251,75 +273,79 @@ const Transfers: NextPageWithLayout = () => {
 
   return (
     <>
-      <div className="inline-flex gap-3">
-        <div>
-          <div>From Wallet:</div>
-          <WalletsDropDown
-            wallets={teamsWallet}
-            selectedWallet={fromWallet}
-            setSelectedWallet={setFromWallet}
-          />
-          <div>To Wallet: Beneficiaries</div>
-          <BeneficiariesDropDown
-            beneficiaries={beneficiaries}
-            selectedBeneficiary={toBenef}
-            setSelectedBeneficiary={setToBenef}
-          />
-          <div>Select token</div>
-          <div>
-            <CurrenciesDropDown
-              tokens={tokens}
-              currentToken={currentToken}
-              setCurrentToken={setCurrentToken}
+      <div className="prose flex flex-col pl-3 pt-3">
+        <h1>Create transfer request</h1>
+        <div className="inline-flex gap-3">
+          <div className="flex flex-col gap-1">
+            <div>From Wallet:</div>
+            <WalletsDropDown
+              wallets={teamsWallet}
+              selectedWallet={fromWallet}
+              setSelectedWallet={setFromWallet}
             />
-          </div>
-          <div>
-            Available balance:{" "}
-            {currentToken
-              ? (
-                  Number(currentToken.balance) /
-                  Math.pow(10, currentToken.decimals)
-                ).toFixed(2)
-              : "0"}
-          </div>
-          <div>Enter amount</div>
-          <div>
-            <input
-              type="text"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+            <div>To Wallet: Beneficiaries</div>
+            <BeneficiariesDropDown
+              beneficiaries={beneficiaries}
+              selectedBeneficiary={toBenef}
+              setSelectedBeneficiary={setToBenef}
             />
+            <div>Select token</div>
+            <div>
+              <CurrenciesDropDown
+                tokens={tokens}
+                currentToken={currentToken}
+                setCurrentToken={setCurrentToken}
+              />
+            </div>
+            <div>
+              Available balance:{" "}
+              {currentToken
+                ? (
+                    Number(currentToken.balance) /
+                    Math.pow(10, currentToken.decimals)
+                  ).toFixed(2)
+                : "0"}
+            </div>
+            <div>Enter amount</div>
+            <div>
+              <input
+                type="text"
+                placeholder="Enter amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div>Transfer reason</div>
+            <div>
+              <input
+                type="text"
+                placeholder="Enter memo"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => {
+                createTransferRequest().catch((e) => console.error(e));
+              }}
+              className="rounded bg-blue-200 px-2 py-1 hover:bg-blue-300"
+            >
+              Create treansfer request
+            </button>
           </div>
-          <div>Transfer reason</div>
-          <div>
-            <input
-              type="text"
-              placeholder="Enter memo"
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-            />
-          </div>
-          <button
-            onClick={() => {
-              createTransferRequest().catch((e) => console.error(e));
-            }}
-          >
-            Create treansfer request
-          </button>
-        </div>
 
-        <div>
-          {fromWallet && fromWallet.prettyName != "" && (
-            <div>Balances of {fromWallet.prettyName}</div>
-          )}
           <div>
-            {tokens.map((t) => (
-              <div key={t.symbol}>
-                {t.symbol}:{" "}
-                {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
-              </div>
-            ))}
+            {fromWallet && fromWallet.prettyName != "" && (
+              <div>Balances of {fromWallet.prettyName}</div>
+            )}
+            <div>
+              {tokens.map((t) => (
+                <div key={t.symbol}>
+                  {t.symbol}:{" "}
+                  {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
