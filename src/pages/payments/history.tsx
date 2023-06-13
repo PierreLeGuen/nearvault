@@ -15,29 +15,50 @@ const History: NextPageWithLayout = () => {
     });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="prose p-3">
-      <h1>Transfer history</h1>
+    <div className="p-3">
+      <h1 className="mb-4 text-2xl font-semibold">Transfer history</h1>
       {transactions && transactions.length > 0 ? (
-        <ul>
-          {transactions.map((transaction) => (
-            <li key={transaction.id}>
-              <p>Token: {transaction.token}</p>
-              <p>Amount: {transaction.amount.toString()}</p>
-              <p>Date: {new Date(transaction.creationDate).toLocaleString()}</p>
-              <p>
-                Approved Date:{" "}
-                {transaction.approvedDate &&
-                  new Date(transaction.approvedDate).toLocaleString()}
-              </p>
-              <p>Memo: {transaction.memo || "N/A"}</p>
-              <p>Creator: {transaction.creatorMail}</p>
-            </li>
-          ))}
-        </ul>
+        <table className="w-full table-auto">
+          <thead>
+            <tr>
+              <th className="px-4 py-2">Token</th>
+              <th className="px-4 py-2">Amount</th>
+              <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Approved Date</th>
+              <th className="px-4 py-2">Memo</th>
+              <th className="px-4 py-2">Creator</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((transaction) => (
+              <tr key={transaction.id}>
+                <td className="border px-4 py-2">{transaction.token}</td>
+                <td className="border px-4 py-2">
+                  {transaction.amount.toString()}
+                </td>
+                <td className="border px-4 py-2">
+                  {new Date(transaction.creationDate).toLocaleString()}
+                </td>
+                <td className="border px-4 py-2">
+                  {transaction.approvedDate &&
+                    new Date(transaction.approvedDate).toLocaleString()}
+                </td>
+                <td className="border px-4 py-2">
+                  {transaction.memo || "N/A"}
+                </td>
+                <td className="border px-4 py-2">{transaction.creatorMail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       ) : (
         <p>No transaction history.</p>
       )}
