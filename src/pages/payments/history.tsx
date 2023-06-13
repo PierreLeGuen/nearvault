@@ -29,6 +29,7 @@ const History: NextPageWithLayout = () => {
         <table className="w-full table-auto">
           <thead>
             <tr>
+              <th className="px-4 py-2">Wallet</th>
               <th className="px-4 py-2">Token</th>
               <th className="px-4 py-2">Amount</th>
               <th className="px-4 py-2">Date</th>
@@ -40,6 +41,9 @@ const History: NextPageWithLayout = () => {
           <tbody>
             {transactions.map((transaction) => (
               <tr key={transaction.id}>
+                <td className="border px-4 py-2">
+                  {transaction.wallet.walletAddress}
+                </td>
                 <td className="border px-4 py-2">{transaction.token}</td>
                 <td className="border px-4 py-2">
                   {transaction.amount.toString()}

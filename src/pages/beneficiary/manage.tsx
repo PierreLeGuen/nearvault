@@ -42,7 +42,7 @@ const Add: NextPageWithLayout = () => {
   }
 
   return (
-    <div>
+    <div className="prose p-3">
       <h1>Manage Beneficiaries</h1>
       <div className="flex flex-col gap-2">
         {benefs?.map((b) => (

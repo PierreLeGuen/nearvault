@@ -98,7 +98,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="prose ml-2">
+    <div className="prose p-3">
       <h1>Manage Team</h1>
       <h2>Members</h2>
       <h3>Invite user to team</h3>

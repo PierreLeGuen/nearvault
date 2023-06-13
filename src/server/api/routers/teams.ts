@@ -605,6 +605,7 @@ export const teamsRouter = createTRPCRouter({
         include: {
           team: true,
           creator: true,
+          wallet: true,
         },
       });
     }),
