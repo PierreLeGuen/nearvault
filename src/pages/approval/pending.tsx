@@ -24,6 +24,7 @@ const PendingRequests: NextPageWithLayout = () => {
     Map<Wallet, Array<MultisigRequest>>
   >(new Map());
   const [loading, setLoading] = useState(false);
+  const [loadingState, setLoadingState] = useState(new Map());
 
   if (!currentTeam) {
     throw new Error("No current team");
@@ -38,51 +39,55 @@ const PendingRequests: NextPageWithLayout = () => {
     request: MultisigRequest,
     kind: ApproveOrReject
   ) => {
-    console.log(request);
-
     if (!request.request_id) {
       throw new Error("No request id");
     }
 
-    wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
-    const w = await wallet.selector.wallet();
+    try {
+      setLoadingState((prev) => new Map(prev.set(request.request_id, kind)));
 
-    await w.signAndSendTransaction({
-      receiverId: multisig_wallet.walletAddress,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: kind === "approve" ? "confirm" : "delete_request",
-            args: {
-              request_id: request.request_id,
+      wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
+      const w = await wallet.selector.wallet();
+
+      await w.signAndSendTransaction({
+        receiverId: multisig_wallet.walletAddress,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: kind === "approve" ? "confirm" : "delete_request",
+              args: {
+                request_id: request.request_id,
+              },
             },
           },
-        },
-      ],
-    });
+        ],
+      });
 
-    console.log("deleting request");
+      if (kind === "reject") {
+        // Make a copy of the Map
+        const updatedRequests = new Map(pendingRequests);
 
-    if (kind === "reject") {
-      // Make a copy of the Map
-      const updatedRequests = new Map(pendingRequests);
+        // Get the current wallet's requests
+        const walletRequests = updatedRequests.get(multisig_wallet);
 
-      // Get the current wallet's requests
-      const walletRequests = updatedRequests.get(multisig_wallet);
+        // Filter out the rejected request
+        const remainingRequests = walletRequests!.filter(
+          (r) => r.request_id !== request.request_id
+        );
 
-      // Filter out the rejected request
-      const remainingRequests = walletRequests!.filter(
-        (r) => r.request_id !== request.request_id
-      );
+        // Update the Map
+        updatedRequests.set(multisig_wallet, remainingRequests);
 
-      // Update the Map
-      updatedRequests.set(multisig_wallet, remainingRequests);
-
-      // Update the state
-      setPendingRequests(updatedRequests);
+        // Update the state
+        setPendingRequests(updatedRequests);
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingState((prev) => new Map(prev.set(request.request_id, "idle")));
     }
   };
 
@@ -188,31 +193,53 @@ const PendingRequests: NextPageWithLayout = () => {
                 <div className="my-2 flex justify-end space-x-4">
                   <button
                     type="button"
+                    disabled={
+                      loadingState.get(request.request_id) !== undefined &&
+                      loadingState.get(request.request_id) !== "idle"
+                    }
                     onClick={() => {
-                      console.log(
-                        `Approving request ${JSON.stringify(request)}`
-                      );
                       approveOrRejectRequest(wallet, request, "approve").catch(
                         console.error
                       );
                     }}
                     className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
                   >
-                    <CheckIcon className="mr-2 h-4 w-4" />
-                    <span>Approve</span>
+                    {loadingState.get(request.request_id) === "approve" ? (
+                      <>
+                        <CheckIcon className="mr-2 h-4 w-4" />
+                        <span>Approving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon className="mr-2 h-4 w-4" />
+                        <span>Approve</span>
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
+                    disabled={
+                      loadingState.get(request.request_id) !== undefined &&
+                      loadingState.get(request.request_id) !== "idle"
+                    }
                     onClick={() => {
-                      console.log(`Rejecting request ${index + 1}`);
                       approveOrRejectRequest(wallet, request, "reject").catch(
                         console.error
                       );
                     }}
                     className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                   >
-                    <XMarkIcon className="mr-2 h-4 w-4" />
-                    <span>Reject</span>
+                    {loadingState.get(request.request_id) === "reject" ? (
+                      <>
+                        <XMarkIcon className="mr-2 h-4 w-4" />
+                        <span>Rejecting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <XMarkIcon className="mr-2 h-4 w-4" />
+                        <span>Reject</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
