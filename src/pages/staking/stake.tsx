@@ -95,7 +95,7 @@ const Stake: NextPageWithLayout = () => {
                       {
                         type: "FunctionCall",
                         method_name: "deposit_and_stake",
-                        args: btoa(""),
+                        args: btoa(JSON.stringify({})),
                         deposit: parseNearAmount(amount),
                         gas: "200000000000000",
                       },

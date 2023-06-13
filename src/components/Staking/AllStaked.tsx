@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useWalletSelector } from "~/context/wallet";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { initStakingContract } from "~/lib/staking/contract";
@@ -38,10 +39,9 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
               await n.account(""),
               pool.validator_id
             );
-            const total_balance = await c.get_account_total_balance({
+            const total_balance = await c.get_account_staked_balance({
               account_id: wallet.walletDetails.walletAddress,
             });
-
             if (total_balance === "0") {
               continue;
             }
@@ -103,8 +103,11 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
                 receiver_id: requestReceiver,
                 actions: [
                   {
-                    type: "unstake",
-                    amount: amount,
+                    type: "FunctionCall",
+                    method_name: "unstake",
+                    args: btoa(JSON.stringify({ amount: amount })),
+                    deposit: parseNearAmount("0"),
+                    gas: "200000000000000",
                   },
                 ],
               },
@@ -137,6 +140,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
               <StakedPoolComponent
                 key={pool.validator_id}
                 pool={pool}
+                wallet={walletData}
                 unstakeFn={sendUnstakeTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
                   "lockup.near"

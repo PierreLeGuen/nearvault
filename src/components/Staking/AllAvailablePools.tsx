@@ -147,7 +147,7 @@ const AllAvailablePools = ({
                   void onStakeClick(pool.id);
                 }}
               >
-                {stakingInProgress[pool.id] ? "Staking..." : "Stake"}
+                {stakingInProgress[pool.id] ? "Creating request..." : "Stake"}
               </button>
             )}
           </div>

@@ -3,14 +3,16 @@ import {
   parseNearAmount,
 } from "near-api-js/lib/utils/format";
 import { useState } from "react";
-import { type StakedPool } from "./AllStaked";
+import { WalletData, type StakedPool } from "./AllStaked";
 
 const StakedPoolComponent = ({
   pool,
+  wallet,
   unstakeFn,
   isLockup,
 }: {
   pool: StakedPool;
+  wallet: WalletData;
   unstakeFn: (
     multisigAcc: string,
     isLockup: boolean,
@@ -68,7 +70,9 @@ const StakedPoolComponent = ({
             disabled={isAmountTooHigh}
             onClick={() => {
               void unstakeFn(
-                pool.validator_id,
+                wallet.wallet.isLockup
+                  ? wallet.wallet.ownerAccountId!
+                  : wallet.wallet.walletDetails.walletAddress,
                 isLockup,
                 pool.validator_id,
                 amountToUnstake
