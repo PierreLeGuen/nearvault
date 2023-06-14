@@ -5,7 +5,6 @@ import type {
 import { setupWalletSelector } from "@near-finance-near-wallet-selector/core";
 import type { WalletSelectorModal } from "@near-finance-near-wallet-selector/modal-ui";
 import { setupModal } from "@near-finance-near-wallet-selector/modal-ui";
-import { setupNearWallet } from "@near-finance-near-wallet-selector/near-wallet";
 // import { setupWalletConnect } from "@near-finance-near-wallet-selector/wallet-connect";
 import type { ReactNode } from "react";
 import React, {
@@ -18,7 +17,6 @@ import React, {
 import { distinctUntilChanged, map } from "rxjs";
 
 import { setupLedger } from "@near-finance-near-wallet-selector/ledger";
-import { setupMyNearWallet } from "@near-finance-near-wallet-selector/my-near-wallet";
 import { PublicKey } from "near-api-js/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { useNearContext } from "./near";
@@ -56,7 +54,7 @@ export const WalletSelectorContextProvider: React.FC<{
     const _selector = await setupWalletSelector({
       network: network,
       debug: true,
-      modules: [setupMyNearWallet(), setupLedger(), setupNearWallet()],
+      modules: [setupLedger()],
     });
 
     const _modal = setupModal(_selector, {
