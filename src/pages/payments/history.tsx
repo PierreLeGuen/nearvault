@@ -16,8 +16,9 @@ const History: NextPageWithLayout = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
+      <div className="p-3">
+        <h1 className="mb-4 text-2xl font-semibold">Transfer history</h1>
+        <div>Loading...</div>
       </div>
     );
   }
