@@ -19,13 +19,12 @@ const PendingRequests: NextPageWithLayout = () => {
   useSession({ required: true });
   const wallet = useWalletSelector();
 
-  const { currentTeam } = usePersistingStore();
+  const { currentTeam, publicKey } = usePersistingStore();
   const [pendingRequests, setPendingRequests] = useState<
     Map<Wallet, Array<MultisigRequest>>
   >(new Map());
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState(new Map());
-
   if (!currentTeam) {
     throw new Error("No current team");
   }
@@ -118,32 +117,36 @@ const PendingRequests: NextPageWithLayout = () => {
           );
           const request_ids = await c.list_request_ids();
           request_ids.sort((a, b) => Number(b) - Number(a));
-          const requestPromises = request_ids.map((request_id) =>
-            c.get_request({ request_id: request_id }).then((request) => {
-              return {
-                ...request,
-                request_id,
-                actions: request.actions.map((action) => {
-                  if (action.type === MultiSigRequestActionType.FunctionCall) {
-                    let a = action.args;
-                    try {
-                      const b = JSON.parse(
-                        Buffer.from(action.args, "base64").toString("utf8")
-                      ) as string;
-                      a = b;
-                    } catch (e) {
-                      console.log(e);
-                    }
-                    return {
-                      ...action,
-                      args: a,
-                    };
+          const requestPromises = request_ids.map(async (request_id) => {
+            const request = await c.get_request({ request_id: request_id });
+            const confirmations = await c.get_confirmations({
+              request_id: request_id,
+            });
+
+            return {
+              ...request,
+              request_id,
+              confirmations: confirmations,
+              actions: request.actions.map((action) => {
+                if (action.type === MultiSigRequestActionType.FunctionCall) {
+                  let a = action.args;
+                  try {
+                    const b = JSON.parse(
+                      Buffer.from(action.args, "base64").toString("utf8")
+                    ) as string;
+                    a = b;
+                  } catch (e) {
+                    console.log(e);
                   }
-                  return action;
-                }),
-              };
-            })
-          );
+                  return {
+                    ...action,
+                    args: a,
+                  };
+                }
+                return action;
+              }),
+            };
+          });
           tempPendingRequests.set(wallet, await Promise.all(requestPromises));
         } catch (e) {
           console.log(e);
@@ -157,6 +160,10 @@ const PendingRequests: NextPageWithLayout = () => {
       fetchPendingRequests().catch(console.error);
     }
   }, [wallets]);
+
+  const alreadyApproved = (confirmations: string[], publicKey: string) => {
+    return confirmations.some((c) => c === publicKey);
+  };
 
   return (
     <div className="prose p-4">
@@ -178,7 +185,21 @@ const PendingRequests: NextPageWithLayout = () => {
                 <h4 className="mb-1 text-xs font-bold">
                   Request {request.request_id}:
                 </h4>
-                <p className="">Receiver ID: {request.receiver_id}</p>
+                <div className="">Receiver ID: {request.receiver_id}</div>
+                {request.confirmations.length > 0 && (
+                  <div>
+                    <div>
+                      Approved by: {request.confirmations.length} voter(s)
+                    </div>
+                    <div>
+                      {request.confirmations.map((confirmation, index) => (
+                        <div key={index}>
+                          {index + 1}. {confirmation}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <p className="mb-1 text-xs">Actions:</p>
                 <ul className="text-xs">
                   {request.actions.map((action, index) => (
@@ -194,8 +215,12 @@ const PendingRequests: NextPageWithLayout = () => {
                   <button
                     type="button"
                     disabled={
-                      loadingState.get(request.request_id) !== undefined &&
-                      loadingState.get(request.request_id) !== "idle"
+                      (loadingState.get(request.request_id) !== undefined &&
+                        loadingState.get(request.request_id) !== "idle") ||
+                      alreadyApproved(
+                        request.confirmations,
+                        publicKey?.toString() || ""
+                      )
                     }
                     onClick={() => {
                       approveOrRejectRequest(wallet, request, "approve").catch(

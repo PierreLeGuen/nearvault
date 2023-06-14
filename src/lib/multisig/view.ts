@@ -112,11 +112,17 @@ export interface MultisigRequest {
   request_id: number;
   receiver_id: string;
   actions: MultiSigAction[];
+  confirmations: PublicKey[];
 }
 
 interface MultisigViewFunction extends naj.Contract {
   list_request_ids(): Promise<string[]>;
   get_request({ request_id }: { request_id: string }): Promise<MultisigRequest>;
+  get_confirmations({
+    request_id,
+  }: {
+    request_id: string;
+  }): Promise<PublicKey[]>;
 }
 
 const MultisigViewContract = (
@@ -124,7 +130,7 @@ const MultisigViewContract = (
   wallet: string
 ): MultisigViewFunction => {
   return new naj.Contract(account, wallet, {
-    viewMethods: ["list_request_ids", "get_request"],
+    viewMethods: ["list_request_ids", "get_request", "get_confirmations"],
     changeMethods: [],
   }) as MultisigViewFunction;
 };
