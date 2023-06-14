@@ -22,12 +22,12 @@ const WithdrawPoolComponent = ({
   ) => Promise<void>;
   isLockup: boolean;
 }) => {
-  const [amountToWithdraw, setAmountToUnstake] = useState("");
+  const [amountToWithdraw, setAmountToWithdraw] = useState("");
   const maxAmount = pool.withdraw_available;
 
   // check if input amount is greater than the maximum amount
   const isAmountTooHigh =
-    amountToWithdraw !== "" && amountToWithdraw > maxAmount;
+    amountToWithdraw !== "" && Number(amountToWithdraw) > Number(maxAmount);
 
   const inputDivClasses =
     "flex flex-row items-stretch overflow-hidden rounded-md shadow " +
@@ -38,7 +38,7 @@ const WithdrawPoolComponent = ({
 
   let formattedAmount = formatNearAmount(pool.withdraw_available, 2);
   if (formattedAmount === "0") {
-    formattedAmount = "<1";
+    formattedAmount = "< 1";
   }
   return (
     <div key={pool.validator_id}>
@@ -51,7 +51,7 @@ const WithdrawPoolComponent = ({
         </a>
         <div className="flex flex-row justify-between">
           <div>{formattedAmount + " Ⓝ"}</div>
-          <button onClick={() => setAmountToUnstake(pool.withdraw_available)}>
+          <button onClick={() => setAmountToWithdraw(pool.withdraw_available)}>
             Use max
           </button>
         </div>
@@ -63,9 +63,9 @@ const WithdrawPoolComponent = ({
             value={
               amountToWithdraw !== "" ? formatNearAmount(amountToWithdraw) : ""
             }
-            onChange={(e) =>
-              setAmountToUnstake(parseNearAmount(e.target.value) || "")
-            }
+            onChange={(e) => {
+              setAmountToWithdraw(parseNearAmount(e.target.value) || "");
+            }}
           />
           <button
             className={buttonClasses}

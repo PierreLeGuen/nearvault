@@ -28,7 +28,8 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
   }
 
   return (
-    <div>
+    <div className="p-3">
+      <h1 className="mb-3 text-2xl font-bold">Withdraw from staking pool</h1>
       <AllWithdrawAvailable wallets={allWallets} />
     </div>
   );

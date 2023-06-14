@@ -40,6 +40,14 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
               continue;
             }
 
+            const canWithdraw = await c.is_account_unstaked_balance_available({
+              account_id: wallet.walletDetails.walletAddress,
+            });
+
+            if (!canWithdraw) {
+              continue;
+            }
+
             stakedPools.push({
               deposit: "",
               withdraw_available: unstaked_balance,
