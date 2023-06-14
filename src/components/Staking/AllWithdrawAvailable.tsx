@@ -101,7 +101,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
           method_name: "unselect_staking_pool",
           args: btoa(JSON.stringify({})),
           deposit: parseNearAmount("0"),
-          gas: "200000000000000",
+          gas: "150000000000000",
         };
       }
     }
@@ -124,7 +124,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
                     method_name: methodName,
                     args: btoa(JSON.stringify({ amount: amount })),
                     deposit: parseNearAmount("0"),
-                    gas: "200000000000000",
+                    gas: "150000000000000",
                   },
                   deselectAction,
                 ],

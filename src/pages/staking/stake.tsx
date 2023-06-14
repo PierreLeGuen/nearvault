@@ -71,10 +71,19 @@ const Stake: NextPageWithLayout = () => {
                     actions: [
                       {
                         type: "FunctionCall",
+                        method_name: "select_staking_pool",
+                        args: btoa(
+                          JSON.stringify({ staking_pool_account_id: poolId })
+                        ),
+                        deposit: "0",
+                        gas: "150000000000000",
+                      },
+                      {
+                        type: "FunctionCall",
                         method_name: "deposit_and_stake",
                         args: btoa(JSON.stringify(ftArgs)),
                         deposit: "0",
-                        gas: "200000000000000",
+                        gas: "150000000000000",
                       },
                     ],
                   },
