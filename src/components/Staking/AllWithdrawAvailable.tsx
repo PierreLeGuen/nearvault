@@ -6,20 +6,10 @@ import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
-import StakedPoolComponent from "./StakedPoolComponent";
+import { StakedPool, WalletData } from "./AllStaked";
+import WithdrawPoolComponent from "./WithdrawComponent";
 
-export interface StakedPool {
-  deposit: string;
-  withdraw_available: string;
-  validator_id: string;
-}
-
-export interface WalletData {
-  wallet: WalletPretty;
-  stakedPools: StakedPool[];
-}
-
-const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
+const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
   const { currentTeam, newNearConnection } = usePersistingStore();
   const walletSelector = useWalletSelector();
 
@@ -33,22 +23,26 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
           );
           const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
-          const stakedPools = [];
+          const stakedPools: StakedPool[] = [];
 
           for (const pool of data) {
             const c = initStakingContract(
               await n.account(""),
               pool.validator_id
             );
-            const total_balance = await c.get_account_staked_balance({
+
+            const unstaked_balance = await c.get_account_unstaked_balance({
               account_id: wallet.walletDetails.walletAddress,
             });
-            if (total_balance === "0") {
+            console.log("unstaked_balance", unstaked_balance);
+
+            if (unstaked_balance === "0" || unstaked_balance.length < 6) {
               continue;
             }
 
             stakedPools.push({
-              deposit: total_balance,
+              deposit: "",
+              withdraw_available: unstaked_balance,
               validator_id: pool.validator_id,
             });
           }
@@ -70,11 +64,12 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
     }
   );
 
-  const sendUnstakeTransaction = async (
+  const sendWithdrawTransaction = async (
     multisigAcc: string,
     isLockup: boolean,
     poolId: string,
-    amount: string
+    amount: string,
+    maxAmount: string
   ) => {
     await assertCorrectMultisigWallet(walletSelector, multisigAcc);
 
@@ -84,13 +79,26 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
     }
 
     let requestReceiver = poolId;
+    let methodName = "withdraw";
+    let deselectAction = undefined;
     // If the staking was done through the lockup contract, then the request
     // should be sent to the lockup contract
     if (isLockup) {
       requestReceiver = calculateLockup(multisigAcc, "lockup.near");
+      methodName = "withdraw_from_staking_pool";
+
+      if (amount === maxAmount) {
+        deselectAction = {
+          type: "FunctionCall",
+          method_name: "unselect_staking_pool",
+          args: btoa(JSON.stringify({})),
+          deposit: parseNearAmount("0"),
+          gas: "200000000000000",
+        };
+      }
     }
 
-    const res = await w.signAndSendTransaction({
+    await w.signAndSendTransaction({
       receiverId: multisigAcc,
       actions: [
         {
@@ -105,11 +113,12 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
                 actions: [
                   {
                     type: "FunctionCall",
-                    method_name: "unstake",
+                    method_name: methodName,
                     args: btoa(JSON.stringify({ amount: amount })),
                     deposit: parseNearAmount("0"),
                     gas: "200000000000000",
                   },
+                  deselectAction,
                 ],
               },
             },
@@ -118,7 +127,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
       ],
     });
 
-    console.log(res);
+    alert("Succesfully added transaction to multisig.");
   };
 
   if (isLoading || !data) {
@@ -138,11 +147,11 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
           <h2>{walletData.wallet.prettyName}</h2>
           <div className="flex flex-col rounded-md border bg-white p-4 shadow">
             {walletData.stakedPools.map((pool) => (
-              <StakedPoolComponent
+              <WithdrawPoolComponent
                 key={pool.validator_id}
                 pool={pool}
                 wallet={walletData}
-                unstakeFn={sendUnstakeTransaction}
+                withdrawFn={sendWithdrawTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
                   "lockup.near"
                 )}
@@ -155,4 +164,4 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
   );
 };
 
-export default AllStaked;
+export default AllWithdrawAvailable;

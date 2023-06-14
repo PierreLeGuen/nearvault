@@ -56,6 +56,14 @@ const TreasurySection = () => {
               Unstake
             </Link>
           </div>
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
+              href="/staking/withdraw"
+            >
+              Withdraw
+            </Link>
+          </div>
         </div>
       )}
     </div>

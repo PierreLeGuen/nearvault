@@ -1,4 +1,5 @@
 import { type Wallet } from "@prisma/client";
+import { type Near } from "near-api-js";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import AllStaked from "~/components/Staking/AllStaked";
@@ -14,6 +15,54 @@ export interface WalletPretty {
   ownerAccountId: string | undefined;
 }
 
+export const onSuccessGetWallets = async (
+  data: Wallet[],
+  near: Promise<Near>,
+  setWalletsFn: (wallets: WalletPretty[]) => void
+) => {
+  if (!data || data.length == 0 || data[0] === undefined) {
+    return;
+  }
+
+  const walletPromises = data.map(async (wallet) => {
+    try {
+      const lockupValue = calculateLockup(wallet.walletAddress, "lockup.near");
+      await (await (await near).account(lockupValue)).state();
+
+      return [
+        {
+          prettyName: wallet.walletAddress,
+          walletDetails: wallet,
+          isLockup: false,
+          ownerAccountId: undefined,
+        },
+        {
+          prettyName: "Lockup of " + wallet.walletAddress,
+          walletDetails: {
+            walletAddress: lockupValue,
+            id: lockupValue,
+            teamId: "na",
+          },
+          isLockup: true,
+          ownerAccountId: wallet.walletAddress,
+        },
+      ];
+    } catch (_) {
+      return [
+        {
+          prettyName: wallet.walletAddress,
+          walletDetails: wallet,
+          isLockup: false,
+          ownerAccountId: undefined,
+        },
+      ];
+    }
+  });
+
+  const walletPairs = await Promise.all(walletPromises);
+  setWalletsFn(walletPairs.flat());
+};
+
 const Unstake: NextPageWithLayout = () => {
   const { newNearConnection } = usePersistingStore();
   const { currentTeam } = usePersistingStore();
@@ -26,51 +75,7 @@ const Unstake: NextPageWithLayout = () => {
     {
       enabled: true,
       async onSuccess(data) {
-        if (!data || data.length == 0 || data[0] === undefined) {
-          return;
-        }
-
-        const walletPromises = data.map(async (wallet) => {
-          try {
-            const lockupValue = calculateLockup(
-              wallet.walletAddress,
-              "lockup.near"
-            );
-            const nearConn = await newNearConnection();
-            await (await nearConn.account(lockupValue)).state();
-
-            return [
-              {
-                prettyName: wallet.walletAddress,
-                walletDetails: wallet,
-                isLockup: false,
-                ownerAccountId: undefined,
-              },
-              {
-                prettyName: "Lockup of " + wallet.walletAddress,
-                walletDetails: {
-                  walletAddress: lockupValue,
-                  id: lockupValue,
-                  teamId: "na",
-                },
-                isLockup: true,
-                ownerAccountId: wallet.walletAddress,
-              },
-            ];
-          } catch (_) {
-            return [
-              {
-                prettyName: wallet.walletAddress,
-                walletDetails: wallet,
-                isLockup: false,
-                ownerAccountId: undefined,
-              },
-            ];
-          }
-        });
-
-        const walletPairs = await Promise.all(walletPromises);
-        setAllWallets(walletPairs.flat());
+        await onSuccessGetWallets(data, newNearConnection(), setAllWallets);
       },
     }
   );

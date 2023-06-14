@@ -10,6 +10,7 @@ import AllAvailablePools from "~/components/Staking/AllAvailablePools";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
+import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
@@ -168,11 +169,31 @@ const Stake: NextPageWithLayout = () => {
     }
   );
 
+  const { data: selectedPool, isLoading: selectedPoolLoading } = useQuery(
+    ["isPoolSelected", selectedWallet],
+    async () => {
+      if (!selectedWallet || !selectedWallet.isLockup) {
+        return "";
+      }
+      const n = await newNearConnection();
+
+      const c = initLockupContract(
+        await n.account(""),
+        selectedWallet.walletDetails.walletAddress
+      );
+
+      const accId = await c.get_staking_pool_account_id();
+      console.log(accId);
+
+      return accId;
+    }
+  );
+
   const { data: currentBalance, isLoading: balanceLoading } = useQuery(
-    [selectedWallet],
+    ["currentBalance", selectedWallet],
     async () => {
       if (!selectedWallet) {
-        return;
+        return "";
       }
 
       const n = await newNearConnection();
@@ -203,22 +224,28 @@ const Stake: NextPageWithLayout = () => {
             {balanceLoading}
           </div>
         </div>
-        <div className="mb-3 w-full">
-          <label className="block text-gray-700">Amount</label>
-          <input
-            className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
-            type="text"
-            placeholder="Enter amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-        <div>
-          <AllAvailablePools
-            onStakeClick={addRequestStakeToPool}
-            stakingInProgress={stakingInProgress}
-          />
-        </div>
+        {selectedPool === "" ? (
+          <>
+            <div className="mb-3 w-full">
+              <label className="block text-gray-700">Amount</label>
+              <input
+                className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
+                type="text"
+                placeholder="Enter amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <AllAvailablePools
+                onStakeClick={addRequestStakeToPool}
+                stakingInProgress={stakingInProgress}
+              />
+            </div>
+          </>
+        ) : (
+          "This lockup already staked to a pool"
+        )}
       </div>
     </div>
   );
