@@ -1,5 +1,9 @@
 import { type Wallet } from "@prisma/client";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { useQuery } from "@tanstack/react-query";
+import {
+  formatNearAmount,
+  parseNearAmount,
+} from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import AllAvailablePools from "~/components/Staking/AllAvailablePools";
@@ -164,6 +168,19 @@ const Stake: NextPageWithLayout = () => {
     }
   );
 
+  const { data: currentBalance, isLoading: balanceLoading } = useQuery(
+    [selectedWallet],
+    async () => {
+      if (!selectedWallet) {
+        return;
+      }
+
+      const n = await newNearConnection();
+      const acc = await n.account(selectedWallet.walletDetails.walletAddress);
+      return (await acc.state()).amount;
+    }
+  );
+
   if (isLoading || !selectedWallet || !data || allWallets.length == 0) {
     return <div>Loading...</div>;
   }
@@ -179,7 +196,14 @@ const Stake: NextPageWithLayout = () => {
             setSelectedWallet={setSelectedWallet}
           />
         </div>
-        <div className="mt-4 w-full">
+        <div className="my-3">
+          <div>NEAR Balance</div>
+          <div>
+            {`${formatNearAmount(currentBalance || "0", 5)} Ⓝ`}
+            {balanceLoading}
+          </div>
+        </div>
+        <div className="mb-3 w-full">
           <label className="block text-gray-700">Amount</label>
           <input
             className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
