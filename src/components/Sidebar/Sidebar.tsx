@@ -6,7 +6,7 @@ import TreasurySection from "./TreasurySection";
 
 const Sidebar = () => {
   return (
-    <div className="sticky top-0 flex h-screen w-64 flex-col">
+    <div className="sticky top-0 flex h-screen w-64 min-w-fit flex-col">
       <TeamsMenu />
       <div className="flex h-screen flex-col px-3 pb-3">
         <TreasurySection />
