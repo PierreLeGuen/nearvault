@@ -32,6 +32,15 @@ const ManageTeamPage: NextPageWithLayout = () => {
       teamId: currentTeam?.id || "",
     });
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
   const getInvitationLink = (id: string) => {
     return window.location.origin + "/team/invitation?id=" + id;
   };
@@ -124,15 +133,23 @@ const ManageTeamPage: NextPageWithLayout = () => {
           <a href={invitationLink}>{invitationLink}</a>
         </div>
       )}
-      <h3>List of members:</h3>
+      <h3>List of members</h3>
       {members?.map((m) => (
         <div key={m.id}>{m.email}</div>
       ))}
-      <h3>List of pending invitations:</h3>
+      <h3>List of pending invitations</h3>
       <div className="flex flex-col gap-3">
         {invitations?.map((i) => (
           <div key={i.id} className="inline-flex items-center gap-3">
-            <span>{i.invitedEmail}</span>
+            <div className="flex flex-col">
+              <span>{i.invitedEmail}</span>
+              <div
+                onClick={() => void copyToClipboard(getInvitationLink(i.id))}
+                className="cursor-pointer text-xs underline"
+              >
+                {getInvitationLink(i.id)}
+              </div>
+            </div>
             <button
               onClick={() => {
                 void deleteInvitation(i.id);
@@ -146,7 +163,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
       </div>
 
       <h2>Wallets</h2>
-      <h3>List of wallets:</h3>
+      <h3>List of wallets</h3>
       <div className="flex flex-col gap-3">
         {wallets?.map((w) => (
           <div key={w.id} className="inline-flex gap-3">
