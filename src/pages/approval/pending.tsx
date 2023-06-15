@@ -59,40 +59,57 @@ const PendingRequests: NextPageWithLayout = () => {
 
       wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
       const w = await wallet.selector.wallet();
-
-      await w.signAndSendTransaction({
-        receiverId: multisig_wallet.walletAddress,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: kind === "approve" ? "confirm" : "delete_request",
-              args: {
-                request_id: request.request_id,
+      const res = await toast.promise(
+        w.signAndSendTransaction({
+          receiverId: multisig_wallet.walletAddress,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: kind === "approve" ? "confirm" : "delete_request",
+                args: {
+                  request_id: request.request_id,
+                },
               },
             },
-          },
-        ],
-      });
+          ],
+        }),
+        {
+          pending: "Check your wallet to approve the request",
+          success: "Successfully sent request to the multisig wallet",
+          error: "Error sending request to the multisig wallet",
+        }
+      );
 
       if (kind === "reject") {
-        // Make a copy of the Map
         const updatedRequests = new Map(pendingRequests);
-
-        // Get the current wallet's requests
         const walletRequests = updatedRequests.get(multisig_wallet);
-
-        // Filter out the rejected request
         const remainingRequests = walletRequests!.filter(
           (r) => r.request_id !== request.request_id
         );
-
-        // Update the Map
         updatedRequests.set(multisig_wallet, remainingRequests);
 
-        // Update the state
+        setPendingRequests(updatedRequests);
+      }
+      if (kind === "approve") {
+        const updatedRequests = new Map(pendingRequests);
+        const walletRequests = updatedRequests.get(multisig_wallet);
+        const remainingRequests = walletRequests!.filter((r) => {
+          if (r.request_id !== request.request_id) {
+            return true;
+          }
+          if (
+            request.confirmations.length + 1 >=
+            request.requiredConfirmations
+          ) {
+            return false;
+          }
+          return true;
+        });
+        updatedRequests.set(multisig_wallet, remainingRequests);
+
         setPendingRequests(updatedRequests);
       }
     } catch (e) {
