@@ -3,6 +3,7 @@ import { type Wallet } from "@prisma/client";
 import * as naj from "near-api-js";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
@@ -10,6 +11,7 @@ import MultisigViewContract, {
   MultiSigRequestActionType,
   type MultisigRequest,
 } from "~/lib/multisig/view";
+import { assertCorrectMultisigWallet as assertCanSignForMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -44,6 +46,16 @@ const PendingRequests: NextPageWithLayout = () => {
 
     try {
       setLoadingState((prev) => new Map(prev.set(request.request_id, kind)));
+
+      try {
+        await assertCanSignForMultisigWallet(
+          wallet,
+          multisig_wallet.walletAddress
+        );
+      } catch (e) {
+        toast.error((e as Error).message);
+        return;
+      }
 
       wallet.selector.setActiveAccount(multisig_wallet.walletAddress);
       const w = await wallet.selector.wallet();

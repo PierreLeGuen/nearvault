@@ -1,4 +1,3 @@
-import { toast } from "react-toastify";
 import { type WalletSelectorContextValue } from "~/context/wallet";
 
 export const assertCorrectMultisigWallet = async (

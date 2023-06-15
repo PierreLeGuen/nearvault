@@ -1,4 +1,5 @@
 import { type UserTeam, type Team } from "@prisma/client";
+import { toast } from "react-toastify";
 import { type StateCreator } from "zustand";
 
 export interface TeamsState {
@@ -11,6 +12,14 @@ export interface TeamsState {
 
 export const createTeamsSlice: StateCreator<TeamsState> = (set, get) => ({
   currentTeam: null,
-  setCurrentTeam: (currentTeam) => set({ currentTeam: currentTeam?.team }),
+  setCurrentTeam: (currentTeam) => {
+    if (!currentTeam) {
+      set({ currentTeam: null });
+      toast.warning("No team selected anymore");
+      return;
+    }
+    set({ currentTeam: currentTeam.team });
+    toast.success(`Team switched to: ${currentTeam.team.name}`);
+  },
   resetTeams: () => set({ currentTeam: null }),
 });
