@@ -116,6 +116,7 @@ const PendingRequests: NextPageWithLayout = () => {
             wallet.walletAddress
           );
           const request_ids = await c.list_request_ids();
+          const numConfirmations = await c.get_num_confirmations();
           request_ids.sort((a, b) => Number(b) - Number(a));
           const requestPromises = request_ids.map(async (request_id) => {
             const request = await c.get_request({ request_id: request_id });
@@ -127,6 +128,7 @@ const PendingRequests: NextPageWithLayout = () => {
               ...request,
               request_id,
               confirmations: confirmations,
+              requiredConfirmations: numConfirmations,
               actions: request.actions.map((action) => {
                 if (action.type === MultiSigRequestActionType.FunctionCall) {
                   let a = action.args;
@@ -186,20 +188,21 @@ const PendingRequests: NextPageWithLayout = () => {
                   Request {request.request_id}:
                 </h4>
                 <div className="">Receiver ID: {request.receiver_id}</div>
-                {request.confirmations.length > 0 && (
+                <div>
                   <div>
-                    <div>
-                      Approved by: {request.confirmations.length} voter(s)
-                    </div>
-                    <div>
-                      {request.confirmations.map((confirmation, index) => (
-                        <div key={index}>
-                          {index + 1}. {confirmation}
-                        </div>
-                      ))}
-                    </div>
+                    Approvals: {request.confirmations.length} voter
+                    {request.confirmations.length > 1 ? "s" : ""} approved.{" "}
+                    {request.requiredConfirmations} vote
+                    {request.requiredConfirmations > 1 ? "s" : ""} needed.
                   </div>
-                )}
+                  <div>
+                    {request.confirmations.map((confirmation, index) => (
+                      <div key={index}>
+                        {index + 1}. {confirmation}
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <p className="mb-1 text-xs">Actions:</p>
                 <ul className="text-xs">
                   {request.actions.map((action, index) => (
