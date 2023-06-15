@@ -18,25 +18,14 @@ export default function TeamsMenu() {
 
   const { data } = useSession({ required: true });
 
-  let { teams, currentTeam } = usePersistingStore();
-  const { setCurrentTeam } = usePersistingStore();
+  const { setCurrentTeam, currentTeam } = usePersistingStore();
 
-  const fetchTeams = () => {
-    const res = api.teams.getTeamsForUser
-      .useQuery()
-      .data?.map((team) => team.team);
-    return res ?? null;
-  };
+  const { data: teams } = api.teams.getTeamsForUser.useQuery();
 
-  if (!teams || teams.length === 0) {
-    teams = fetchTeams();
-  }
   if (!currentTeam) {
-    currentTeam = teams?.[0] ?? null;
+    setCurrentTeam(teams?.[0]);
   }
 
-  // const teams = fetchTeams();
-  // const currentTeam = teams?.[0];
   const mail = data?.user.email;
 
   return (
@@ -67,8 +56,8 @@ export default function TeamsMenu() {
                   {mail}
                 </div>
               )}
-              {teams?.map((team) => (
-                <Menu.Item key={team.id}>
+              {teams?.map((userTeamMap) => (
+                <Menu.Item key={userTeamMap.teamId}>
                   {({ active }) => (
                     <button
                       className={classNames(
@@ -76,13 +65,14 @@ export default function TeamsMenu() {
                         "flex w-full items-center gap-2 px-4 py-2 text-sm"
                       )}
                       onClick={() => {
-                        setCurrentTeam(team);
+                        setCurrentTeam(userTeamMap);
                       }}
                     >
-                      {/* Render the LetterProfilePicture component before each team name */}
-                      <LetterProfilePicture letter={team.name[0] || "a"} />
-                      {team.name}
-                      {currentTeam?.id === team.id && (
+                      <LetterProfilePicture
+                        letter={userTeamMap.team.name[0] || "a"}
+                      />
+                      {userTeamMap.team.name}
+                      {currentTeam?.id === userTeamMap.teamId && (
                         <>
                           <div className="flex flex-grow"></div>
                           <CheckIcon className="h-4 w-4 font-bold text-gray-900" />

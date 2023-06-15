@@ -1,7 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
 import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
 
 export const CreateTeamDialog = ({
   isOpen,
@@ -11,15 +10,10 @@ export const CreateTeamDialog = ({
   setIsOpen: (isOpen: boolean) => void;
 }) => {
   const [teamName, setTeamName] = useState<string>("");
-  const setTeams = usePersistingStore().setTeams;
 
   const mutation = api.teams.createTeam.useMutation();
   const teamsQuery = api.teams.getTeamsForUser.useQuery();
 
-  const fetchTeams = () => {
-    const res = teamsQuery.data?.map((team) => team.team);
-    return res ?? null;
-  };
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -81,11 +75,7 @@ export const CreateTeamDialog = ({
                           {
                             onSuccess: (data) => {
                               console.log(`Created team: ${data.name}`);
-
-                              const f = fetchTeams();
-                              if (f) {
-                                void setTeams(f);
-                              }
+                              void teamsQuery.refetch();
                             },
                             onError: (error) => {
                               console.error(
