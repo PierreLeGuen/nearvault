@@ -88,9 +88,6 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     }
 
     const w = await walletSelector.selector.wallet();
-    if (!w) {
-      throw new Error("No wallet selected");
-    }
 
     let requestReceiver = poolId;
     let methodName = "withdraw";

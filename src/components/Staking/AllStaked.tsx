@@ -84,9 +84,6 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
       return;
     }
     const w = await walletSelector.selector.wallet();
-    if (!w) {
-      throw new Error("No wallet selected");
-    }
 
     let requestReceiver = poolId;
     // If the staking was done through the lockup contract, then the request
