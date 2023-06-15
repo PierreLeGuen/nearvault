@@ -29,6 +29,8 @@ const TeamInvitationPage: NextPageWithLayout = () => {
         invitationId: id,
         status: accept ? "ACCEPTED" : "REJECTED",
       });
+      api.teams.getTeamsForUser.useQuery();
+
       setSuccess("Invitation accepted");
     } catch (error: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
@@ -37,13 +39,15 @@ const TeamInvitationPage: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="prose">
+    <div className="prose p-3">
       <h1>Team Invitation</h1>
+      {success && <p>{success}</p>}
       {error && <p>{error}</p>}
       <button
         onClick={() => {
           void acceptOrRejectInvitation(true);
         }}
+        className="mr-3 rounded bg-green-500 px-3 py-1 text-white hover:bg-green-600"
       >
         Join
       </button>
@@ -51,6 +55,7 @@ const TeamInvitationPage: NextPageWithLayout = () => {
         onClick={() => {
           void acceptOrRejectInvitation(false);
         }}
+        className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
       >
         Reject
       </button>
