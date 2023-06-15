@@ -3,6 +3,7 @@ import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { Fragment, useState } from "react";
+import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "./CreateTeamDialog";
@@ -18,16 +19,24 @@ export default function TeamsMenu() {
 
   const { data } = useSession({ required: true });
 
-  const { setCurrentTeam, currentTeam } = usePersistingStore();
+  const { setCurrentTeam, currentTeam, resetTeams, resetWallet } =
+    usePersistingStore();
 
   const { data: teams } = api.teams.getTeamsForUser.useQuery();
-
+  const walletSelector = useWalletSelector();
   if (!currentTeam) {
     setCurrentTeam(teams?.[0]);
   }
 
   const mail = data?.user.email;
 
+  const handleSignOut = async () => {
+    void signOut();
+    resetTeams();
+    resetWallet();
+    const w = await walletSelector.selector.wallet();
+    await w.signOut();
+  };
   return (
     <>
       <Menu as="div" className="relative inline-block text-left">
@@ -120,7 +129,7 @@ export default function TeamsMenu() {
                         active ? "bg-gray-100 text-gray-900" : "text-gray-700",
                         "flex w-full items-center px-4 py-2 text-left text-sm"
                       )}
-                      onClick={() => void signOut()}
+                      onClick={() => void handleSignOut()}
                     >
                       Sign out
                     </button>

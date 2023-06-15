@@ -6,9 +6,11 @@ export interface TeamsState {
   setCurrentTeam: (
     team: (UserTeam & { team: Team }) | null | undefined
   ) => void;
+  resetTeams: () => void;
 }
 
 export const createTeamsSlice: StateCreator<TeamsState> = (set, get) => ({
   currentTeam: null,
   setCurrentTeam: (currentTeam) => set({ currentTeam: currentTeam?.team }),
+  resetTeams: () => set({ currentTeam: null }),
 });
