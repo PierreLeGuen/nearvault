@@ -80,7 +80,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
     try {
       await assertCorrectMultisigWallet(walletSelector, multisigAcc);
     } catch (e) {
-      toast.error(e.message);
+      toast.error((e as Error).message);
       return;
     }
     const w = await walletSelector.selector.wallet();

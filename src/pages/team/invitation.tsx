@@ -39,7 +39,7 @@ const TeamInvitationPage: NextPageWithLayout = () => {
     } catch (error: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       setError(error.message);
-      toast.error(error.message);
+      toast.error((error as Error).message);
     }
   };
 

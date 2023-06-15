@@ -100,7 +100,9 @@ const ManageTeamPage: NextPageWithLayout = () => {
       });
       toast.success("Wallet deleted");
     } catch (error) {
-      toast.error("Failed to delete wallet, error: " + error.message);
+      toast.error(
+        "Failed to delete wallet, error: " + (error as Error).message
+      );
       console.error(error);
     } finally {
       await refetchInvites();

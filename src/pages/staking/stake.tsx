@@ -123,7 +123,7 @@ const Stake: NextPageWithLayout = () => {
         });
       }
     } catch (e) {
-      toast.error(e.message);
+      toast.error((e as Error).message);
       console.error(e);
     } finally {
       setStakingInProgress((prev) => ({ ...prev, [poolId]: false }));

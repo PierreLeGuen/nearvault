@@ -83,7 +83,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     try {
       await assertCorrectMultisigWallet(walletSelector, multisigAcc);
     } catch (e) {
-      toast.error(e.message);
+      toast.error((e as Error).message);
       return;
     }
 

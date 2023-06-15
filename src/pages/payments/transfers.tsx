@@ -191,7 +191,7 @@ const Transfers: NextPageWithLayout = () => {
         fromWallet.walletDetails.walletAddress
       );
     } catch (e) {
-      toast.error(e.message);
+      toast.error((e as Error).message);
       return;
     }
 
