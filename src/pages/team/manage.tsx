@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
@@ -97,10 +98,12 @@ const ManageTeamPage: NextPageWithLayout = () => {
         walletId: id,
         teamId: currentTeam.id,
       });
-      await refetchInvites();
+      toast.success("Wallet deleted");
     } catch (error) {
+      toast.error("Failed to delete wallet, error: " + error.message);
       console.error(error);
     } finally {
+      await refetchInvites();
       void refetchWallets();
       setLoadingStates((prev) => ({ ...prev, [id]: false }));
     }

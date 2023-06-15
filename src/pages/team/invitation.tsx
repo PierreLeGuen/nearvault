@@ -1,6 +1,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "../_app";
@@ -31,10 +32,14 @@ const TeamInvitationPage: NextPageWithLayout = () => {
       });
       api.teams.getTeamsForUser.useQuery();
 
-      setSuccess("Invitation accepted");
+      setSuccess("Invitation accepted, you can see your teams in the sidebar");
+      toast.success(
+        "Invitation accepted, you can see your teams in the sidebar"
+      );
     } catch (error: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       setError(error.message);
+      toast.error(error.message);
     }
   };
 

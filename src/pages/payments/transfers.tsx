@@ -2,6 +2,7 @@ import { type Beneficiary } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
 import CurrenciesDropDown from "~/components/Payments/CurrenciesDropDown";
@@ -184,10 +185,16 @@ const Transfers: NextPageWithLayout = () => {
       return;
     }
 
-    await assertCorrectMultisigWallet(
-      walletSelector,
-      fromWallet.walletDetails.walletAddress
-    );
+    try {
+      await assertCorrectMultisigWallet(
+        walletSelector,
+        fromWallet.walletDetails.walletAddress
+      );
+    } catch (e) {
+      toast.error(e.message);
+      return;
+    }
+
     const w = await walletSelector.selector.wallet();
 
     let txnId: string | undefined = undefined;

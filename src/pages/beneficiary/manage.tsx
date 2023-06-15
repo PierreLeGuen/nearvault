@@ -1,5 +1,6 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
 import { type Beneficiary } from "@prisma/client";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
@@ -33,6 +34,7 @@ const Add: NextPageWithLayout = () => {
       {
         onSettled: () => {
           void refetch();
+          toast.success("Beneficiary removed");
         },
       }
     );

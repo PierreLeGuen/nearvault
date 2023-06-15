@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { type WalletSelectorContextValue } from "~/context/wallet";
 
 export const assertCorrectMultisigWallet = async (
@@ -9,9 +10,10 @@ export const assertCorrectMultisigWallet = async (
   if (
     availableSigners.find((a) => a.accountId === walletAddress) === undefined
   ) {
-    console.log("Not found!");
-    console.log(JSON.stringify(await w.getAccounts()));
-    throw new Error("Wallet is not a signer of the multisig wallet");
+    const e =
+      "Currently imported wallet can't sign transaction to this multisig wallet";
+    // toast.error(e);
+    throw new Error(e);
   }
 
   walletSelector.selector.setActiveAccount(walletAddress);

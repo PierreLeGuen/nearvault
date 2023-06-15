@@ -5,6 +5,7 @@ import {
   parseNearAmount,
 } from "near-api-js/lib/utils/format";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import AllAvailablePools from "~/components/Staking/AllAvailablePools";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
@@ -35,22 +36,22 @@ const Stake: NextPageWithLayout = () => {
   }>({});
 
   const addRequestStakeToPool = async (poolId: string) => {
-    if (!selectedWallet) {
-      throw new Error("No wallet selected");
-    }
-    setStakingInProgress((prev) => ({ ...prev, [poolId]: true }));
-
-    await assertCorrectMultisigWallet(
-      walletSelector,
-      selectedWallet.walletDetails.walletAddress
-    );
-    const w = await walletSelector.selector.wallet();
-
-    const ftArgs = {
-      amount: parseNearAmount(amount),
-    };
-
     try {
+      if (!selectedWallet) {
+        throw new Error("No wallet selected");
+      }
+      setStakingInProgress((prev) => ({ ...prev, [poolId]: true }));
+
+      await assertCorrectMultisigWallet(
+        walletSelector,
+        selectedWallet.walletDetails.walletAddress
+      );
+      const w = await walletSelector.selector.wallet();
+
+      const ftArgs = {
+        amount: parseNearAmount(amount),
+      };
+
       if (selectedWallet.isLockup) {
         if (!selectedWallet.ownerAccountId) {
           throw new Error("No owner account id");
@@ -122,6 +123,7 @@ const Stake: NextPageWithLayout = () => {
         });
       }
     } catch (e) {
+      toast.error(e.message);
       console.error(e);
     } finally {
       setStakingInProgress((prev) => ({ ...prev, [poolId]: false }));

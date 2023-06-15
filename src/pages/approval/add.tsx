@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { useSession } from "next-auth/react";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
 import { initMultiSigContract } from "~/lib/multisig/contract";
@@ -59,6 +60,7 @@ const AddWallet: NextPageWithLayout = () => {
           ...errors,
           `Wallet ID ${walletId} is not a valid multisig account`,
         ]);
+        toast.error(`Wallet ID ${walletId} is not a valid multisig account`);
         continue;
       }
       validWallets.push(walletId);
@@ -75,9 +77,11 @@ const AddWallet: NextPageWithLayout = () => {
             setWalletSucess(
               `Created wallets: ${JSON.stringify(data.newWallets)}`
             );
+            toast.success(`Imported ${data.newWallets.length} wallets.`);
           }
           if (data.errors.length > 0) {
             setWalletsError((errors) => [...errors, ...data.errors]);
+            toast.error(`Failed to import ${data.errors.length} wallets.`);
           }
         },
         onError: (error) => {
@@ -85,6 +89,7 @@ const AddWallet: NextPageWithLayout = () => {
             ...errors,
             `Error creating wallets: ${error.message}`,
           ]);
+          toast.error(`Error creating wallets: ${error.message}`);
         },
       }
     );

@@ -9,9 +9,11 @@ import { type NextPage } from "next";
 import { type Session } from "next-auth";
 import { type AppProps } from "next/app";
 import { type ReactElement, type ReactNode } from "react";
+import { ToastContainer } from "react-toastify";
 
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import "@near-wallet-selector/modal-ui/styles.css";
+import "react-toastify/dist/ReactToastify.css";
 import "~/styles/globals.css";
 
 config.autoAddCss = false;
@@ -40,6 +42,7 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
         <NearContextProvider>
           <WalletSelectorContextProvider>
             {layout}
+            <ToastContainer />
           </WalletSelectorContextProvider>
         </NearContextProvider>
       </QueryClientProvider>

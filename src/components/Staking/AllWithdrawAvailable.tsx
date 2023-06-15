@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { toast } from "react-toastify";
 import { useWalletSelector } from "~/context/wallet";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { initStakingContract } from "~/lib/staking/contract";
@@ -79,7 +80,12 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     amount: string,
     maxAmount: string
   ) => {
-    await assertCorrectMultisigWallet(walletSelector, multisigAcc);
+    try {
+      await assertCorrectMultisigWallet(walletSelector, multisigAcc);
+    } catch (e) {
+      toast.error(e.message);
+      return;
+    }
 
     const w = await walletSelector.selector.wallet();
     if (!w) {

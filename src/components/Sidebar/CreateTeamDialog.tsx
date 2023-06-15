@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
+import { toast } from "react-toastify";
 import { api } from "~/lib/api";
 
 export const CreateTeamDialog = ({
@@ -75,10 +76,14 @@ export const CreateTeamDialog = ({
                           {
                             onSuccess: (data) => {
                               console.log(`Created team: ${data.name}`);
+                              toast.success(`Created team: ${data.name}`);
                               void teamsQuery.refetch();
                             },
                             onError: (error) => {
                               console.error(
+                                `Error creating team: ${error.message}`
+                              );
+                              toast.error(
                                 `Error creating team: ${error.message}`
                               );
                             },
