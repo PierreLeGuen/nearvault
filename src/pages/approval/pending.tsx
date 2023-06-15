@@ -78,8 +78,34 @@ const PendingRequests: NextPageWithLayout = () => {
         }),
         {
           pending: "Check your wallet to approve the request",
-          success: "Successfully sent request to the multisig wallet",
-          error: "Error sending request to the multisig wallet",
+          success: {
+            render: (data) => {
+              if (!data.data) {
+                return `Successfully sent request to the multisig wallet`;
+              }
+              return (
+                <span>
+                  Successfully sent request to the multisig wallet, transaction
+                  id:{" "}
+                  <a
+                    href={`https://nearblocks.io/txns/${data.data.transaction_outcome.id}`}
+                    target="_blank"
+                    className="font-bold underline"
+                  >
+                    {data.data.transaction_outcome.id}
+                  </a>
+                  `
+                </span>
+              );
+            },
+          },
+          error: {
+            render: (err) => {
+              return `Failed to send transaction: ${
+                (err.data as Error).message
+              }`;
+            },
+          },
         }
       );
 
