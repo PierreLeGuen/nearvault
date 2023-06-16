@@ -16,9 +16,11 @@ type Pool = {
 const AllAvailablePools = ({
   onStakeClick,
   stakingInProgress,
+  poolsAllowList,
 }: {
   onStakeClick: (poolId: string) => Promise<void>;
   stakingInProgress: { [poolId: string]: boolean };
+  poolsAllowList: string[];
 }) => {
   const { newNearConnection } = usePersistingStore();
 
@@ -84,11 +86,11 @@ const AllAvailablePools = ({
     }
   );
 
-  const filteredPools = [...pools.values()].filter(
-    (
-      pool // added filtering based on input
-    ) => pool.id.toLowerCase().includes(searchInput.toLowerCase())
-  );
+  const filteredPools = [...pools.values()]
+    .filter((pool) => pool.id.toLowerCase().includes(searchInput.toLowerCase()))
+    .filter((pool) =>
+      poolsAllowList.length > 0 ? poolsAllowList.includes(pool.id) : true
+    );
 
   if (isLoading || pools.size === 0) return <div>Loading...</div>;
   if (isError) return <div>Error occurred while fetching pools</div>;

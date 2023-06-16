@@ -16,6 +16,7 @@ import { calculateLockup } from "~/lib/lockup/lockup";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
+import { handleWalletRequestWithToast } from "../payments/transfers";
 
 export interface WalletPretty {
   prettyName: string;
@@ -57,70 +58,83 @@ const Stake: NextPageWithLayout = () => {
           throw new Error("No owner account id");
         }
 
-        await w.signAndSendTransaction({
-          receiverId: selectedWallet.ownerAccountId,
-          actions: [
-            {
-              type: "FunctionCall",
-              params: {
-                gas: "300000000000000",
-                deposit: "0",
-                methodName: "add_request",
-                args: {
-                  request: {
-                    receiver_id: selectedWallet.walletDetails.walletAddress,
-                    actions: [
-                      {
-                        type: "FunctionCall",
-                        method_name: "select_staking_pool",
-                        args: btoa(
-                          JSON.stringify({ staking_pool_account_id: poolId })
-                        ),
-                        deposit: "0",
-                        gas: "150000000000000",
-                      },
-                      {
-                        type: "FunctionCall",
-                        method_name: "deposit_and_stake",
-                        args: btoa(JSON.stringify(ftArgs)),
-                        deposit: "0",
-                        gas: "150000000000000",
-                      },
-                    ],
+        // selectStakingPoolAction will be empty if the user already has a staking pool selected
+        const selectStakingPoolAction =
+          selectedPool === ""
+            ? [
+                {
+                  type: "FunctionCall",
+                  method_name: "select_staking_pool",
+                  args: btoa(
+                    JSON.stringify({ staking_pool_account_id: poolId })
+                  ),
+                  deposit: "0",
+                  gas: "150000000000000",
+                },
+              ]
+            : [];
+
+        await handleWalletRequestWithToast(
+          w.signAndSendTransaction({
+            receiverId: selectedWallet.ownerAccountId,
+            actions: [
+              {
+                type: "FunctionCall",
+                params: {
+                  gas: "300000000000000",
+                  deposit: "0",
+                  methodName: "add_request",
+                  args: {
+                    request: {
+                      receiver_id: selectedWallet.walletDetails.walletAddress,
+                      actions: selectStakingPoolAction.concat([
+                        {
+                          type: "FunctionCall",
+                          method_name: "deposit_and_stake",
+                          args: btoa(JSON.stringify(ftArgs)),
+                          deposit: "0",
+                          gas: "150000000000000",
+                        },
+                      ]),
+                    },
                   },
                 },
               },
-            },
-          ],
-        });
+            ],
+          })
+        );
+
+        await refetchSelectedPool();
       } else {
-        await w.signAndSendTransaction({
-          receiverId: selectedWallet.walletDetails.walletAddress,
-          actions: [
-            {
-              type: "FunctionCall",
-              params: {
-                gas: "300000000000000",
-                deposit: "0",
-                methodName: "add_request",
-                args: {
-                  request: {
-                    receiver_id: poolId,
-                    actions: [
-                      {
-                        type: "FunctionCall",
-                        method_name: "deposit_and_stake",
-                        args: btoa(JSON.stringify({})),
-                        deposit: parseNearAmount(amount),
-                        gas: "200000000000000",
-                      },
-                    ],
+        await handleWalletRequestWithToast(
+          w.signAndSendTransaction({
+            receiverId: selectedWallet.walletDetails.walletAddress,
+            actions: [
+              {
+                type: "FunctionCall",
+                params: {
+                  gas: "300000000000000",
+                  deposit: "0",
+                  methodName: "add_request",
+                  args: {
+                    request: {
+                      receiver_id: poolId,
+                      actions: [
+                        {
+                          type: "FunctionCall",
+                          method_name: "deposit_and_stake",
+                          args: btoa(JSON.stringify({})),
+                          deposit: parseNearAmount(amount),
+                          gas: "200000000000000",
+                        },
+                      ],
+                    },
                   },
                 },
               },
-            },
-          ],
-        });
+            ],
+          })
+        );
       }
     } catch (e) {
       toast.error((e as Error).message);
@@ -180,25 +194,26 @@ const Stake: NextPageWithLayout = () => {
     }
   );
 
-  const { data: selectedPool, isLoading: selectedPoolLoading } = useQuery(
-    ["isPoolSelected", selectedWallet],
-    async () => {
-      if (!selectedWallet || !selectedWallet.isLockup) {
-        return "";
-      }
-      const n = await newNearConnection();
-
-      const c = initLockupContract(
-        await n.account(""),
-        selectedWallet.walletDetails.walletAddress
-      );
-
-      const accId = await c.get_staking_pool_account_id();
-      console.log(accId);
-
-      return accId;
+  const {
+    data: selectedPool,
+    isLoading: selectedPoolLoading,
+    refetch: refetchSelectedPool,
+  } = useQuery(["isPoolSelected", selectedWallet], async () => {
+    if (!selectedWallet || !selectedWallet.isLockup) {
+      return "";
     }
-  );
+    const n = await newNearConnection();
+
+    const c = initLockupContract(
+      await n.account(""),
+      selectedWallet.walletDetails.walletAddress
+    );
+
+    const accId = await c.get_staking_pool_account_id();
+    console.log(accId);
+
+    return accId;
+  });
 
   const { data: currentBalance, isLoading: balanceLoading } = useQuery(
     ["currentBalance", selectedWallet],
@@ -235,28 +250,25 @@ const Stake: NextPageWithLayout = () => {
             {balanceLoading}
           </div>
         </div>
-        {selectedPool === "" ? (
-          <>
-            <div className="mb-3 w-full">
-              <label className="block text-gray-700">Amount</label>
-              <input
-                className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
-                type="text"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-            <div>
-              <AllAvailablePools
-                onStakeClick={addRequestStakeToPool}
-                stakingInProgress={stakingInProgress}
-              />
-            </div>
-          </>
-        ) : (
-          "This lockup already staked to a pool"
-        )}
+        <>
+          <div className="mb-3 w-full">
+            <label className="block text-gray-700">Amount</label>
+            <input
+              className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
+              type="text"
+              placeholder="Enter amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+          <div>
+            <AllAvailablePools
+              onStakeClick={addRequestStakeToPool}
+              stakingInProgress={stakingInProgress}
+              poolsAllowList={selectedPool ? [selectedPool] : []}
+            />
+          </div>
+        </>
       </div>
     </div>
   );

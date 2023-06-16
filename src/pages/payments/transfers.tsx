@@ -1,3 +1,4 @@
+import { FinalExecutionOutcome } from "@near-finance-near-wallet-selector/core";
 import { type Beneficiary } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
@@ -29,6 +30,41 @@ export interface Token extends FungibleTokenMetadata {
   balance: string;
   account_id: string;
 }
+
+export const handleWalletRequestWithToast = async (
+  p: Promise<FinalExecutionOutcome | void>
+) => {
+  const res = await toast.promise(p, {
+    pending: "Check your wallet to approve the request",
+    success: {
+      render: (data) => {
+        if (!data.data) {
+          return `Successfully sent request to the multisig wallet`;
+        }
+        return (
+          <span>
+            Successfully sent request to the multisig wallet, transaction id:{" "}
+            <a
+              href={`https://nearblocks.io/txns/${data.data.transaction_outcome.id}`}
+              target="_blank"
+              className="font-bold underline"
+            >
+              {data.data.transaction_outcome.id}
+            </a>
+            `
+          </span>
+        );
+      },
+    },
+    error: {
+      render: (err) => {
+        return `Failed to send transaction: ${(err.data as Error).message}`;
+      },
+    },
+  });
+
+  return res;
+};
 
 const Transfers: NextPageWithLayout = () => {
   const walletSelector = useWalletSelector();
@@ -200,70 +236,72 @@ const Transfers: NextPageWithLayout = () => {
     let txnId: string | undefined = undefined;
     if (currentToken.symbol === "NEAR") {
       const nAmount = parseNearAmount(amount);
-      const res = await w.signAndSendTransaction({
-        receiverId: fromWallet.walletDetails.walletAddress,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: "add_request",
-              args: {
-                request: {
-                  receiver_id: toBenef.walletAddress,
-                  actions: [
-                    {
-                      type: "Transfer",
-                      amount: nAmount,
-                    },
-                  ],
+      const res = await handleWalletRequestWithToast(
+        w.signAndSendTransaction({
+          receiverId: fromWallet.walletDetails.walletAddress,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: "add_request",
+                args: {
+                  request: {
+                    receiver_id: toBenef.walletAddress,
+                    actions: [
+                      {
+                        type: "Transfer",
+                        amount: nAmount,
+                      },
+                    ],
+                  },
                 },
               },
             },
-          },
-        ],
-      });
+          ],
+        })
+      );
       txnId = res?.transaction_outcome.id;
     } else {
       const a = amount + "0".repeat(currentToken.decimals);
       const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
 
-      const res = await w.signAndSendTransaction({
-        receiverId: fromWallet.walletDetails.walletAddress,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: "add_request",
-              args: {
-                request: {
-                  receiver_id: currentToken.account_id,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "ft_transfer",
-                      args: btoa(JSON.stringify(ftArgs)),
-                      deposit: "1",
-                      gas: "200000000000000",
-                    },
-                  ],
+      const res = await handleWalletRequestWithToast(
+        w.signAndSendTransaction({
+          receiverId: fromWallet.walletDetails.walletAddress,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: "add_request",
+                args: {
+                  request: {
+                    receiver_id: currentToken.account_id,
+                    actions: [
+                      {
+                        type: "FunctionCall",
+                        method_name: "ft_transfer",
+                        args: btoa(JSON.stringify(ftArgs)),
+                        deposit: "1",
+                        gas: "200000000000000",
+                      },
+                    ],
+                  },
                 },
               },
             },
-          },
-        ],
-      });
+          ],
+        })
+      );
       txnId = res?.transaction_outcome.id;
     }
 
     if (!txnId) {
       throw new Error("No txnId");
     }
-
-    console.log(currentToken);
 
     await insertTransactionInHistory(txnId);
   };
