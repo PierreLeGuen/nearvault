@@ -249,7 +249,7 @@ const Transfers: NextPageWithLayout = () => {
         action = {
           type: "FunctionCall",
           method_name: "transfer",
-          args: atob(
+          args: btoa(
             JSON.stringify({
               receiver_id: toBenef.walletAddress,
               amount: nAmount,
