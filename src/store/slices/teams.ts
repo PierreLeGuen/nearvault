@@ -14,9 +14,7 @@ export const createTeamsSlice: StateCreator<TeamsState> = (set, get) => ({
   currentTeam: null,
   setCurrentTeam: (currentTeam) => {
     if (!currentTeam) {
-      set({ currentTeam: null });
-      toast.warning("No team selected anymore");
-      return;
+      throw new Error("No team provided");
     }
     set({ currentTeam: currentTeam.team });
     toast.success(`Team switched to: ${currentTeam.team.name}`);

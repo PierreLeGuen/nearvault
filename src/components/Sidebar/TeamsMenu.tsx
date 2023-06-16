@@ -2,7 +2,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
@@ -24,9 +24,12 @@ export default function TeamsMenu() {
 
   const { data: teams } = api.teams.getTeamsForUser.useQuery();
   const walletSelector = useWalletSelector();
-  if (!currentTeam) {
-    setCurrentTeam(teams?.[0]);
-  }
+
+  useEffect(() => {
+    if (!currentTeam && teams) {
+      setCurrentTeam(teams[0]);
+    }
+  });
 
   const mail = data?.user.email;
 
