@@ -255,7 +255,7 @@ const Transfers: NextPageWithLayout = () => {
               amount: nAmount,
             })
           ),
-          gas: "300000000000000",
+          gas: "250000000000000",
           deposit: "0",
         };
       }
