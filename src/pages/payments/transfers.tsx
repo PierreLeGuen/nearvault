@@ -221,11 +221,16 @@ const Transfers: NextPageWithLayout = () => {
       return;
     }
 
+    let fromAddress = fromWallet.walletDetails.walletAddress;
+
+    if (fromWallet.isLockup) {
+      if (!fromWallet.ownerAccountId) {
+        throw new Error("No owner account id");
+      }
+      fromAddress = fromWallet.ownerAccountId;
+    }
     try {
-      await assertCorrectMultisigWallet(
-        walletSelector,
-        fromWallet.walletDetails.walletAddress
-      );
+      await assertCorrectMultisigWallet(walletSelector, fromAddress);
     } catch (e) {
       toast.error((e as Error).message);
       return;
@@ -236,9 +241,27 @@ const Transfers: NextPageWithLayout = () => {
     let txnId: string | undefined = undefined;
     if (currentToken.symbol === "NEAR") {
       const nAmount = parseNearAmount(amount);
+      let action: any = {
+        type: "Transfer",
+        amount: nAmount,
+      };
+      if (fromWallet.isLockup && fromWallet.ownerAccountId) {
+        action = {
+          type: "FunctionCall",
+          method_name: "transfer",
+          args: atob(
+            JSON.stringify({
+              receiver_id: toBenef.walletAddress,
+              amount: nAmount,
+            })
+          ),
+          gas: "300000000000000",
+          deposit: "0",
+        };
+      }
       const res = await handleWalletRequestWithToast(
         w.signAndSendTransaction({
-          receiverId: fromWallet.walletDetails.walletAddress,
+          receiverId: fromAddress,
           actions: [
             {
               type: "FunctionCall",
@@ -248,13 +271,10 @@ const Transfers: NextPageWithLayout = () => {
                 methodName: "add_request",
                 args: {
                   request: {
-                    receiver_id: toBenef.walletAddress,
-                    actions: [
-                      {
-                        type: "Transfer",
-                        amount: nAmount,
-                      },
-                    ],
+                    receiver_id: fromWallet.isLockup
+                      ? fromWallet.walletDetails.walletAddress
+                      : toBenef.walletAddress,
+                    actions: [action],
                   },
                 },
               },
@@ -269,7 +289,7 @@ const Transfers: NextPageWithLayout = () => {
 
       const res = await handleWalletRequestWithToast(
         w.signAndSendTransaction({
-          receiverId: fromWallet.walletDetails.walletAddress,
+          receiverId: fromAddress,
           actions: [
             {
               type: "FunctionCall",
