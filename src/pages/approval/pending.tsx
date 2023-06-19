@@ -126,6 +126,9 @@ const PendingRequests: NextPageWithLayout = () => {
           if (r.request_id !== request.request_id) {
             return true;
           }
+          if (publicKey) {
+            request.confirmations.push(publicKey.toString());
+          }
           if (
             request.confirmations.length + 1 >=
             request.requiredConfirmations
@@ -135,7 +138,6 @@ const PendingRequests: NextPageWithLayout = () => {
           return true;
         });
         updatedRequests.set(multisig_wallet, remainingRequests);
-
         setPendingRequests(updatedRequests);
       }
     } catch (e) {
