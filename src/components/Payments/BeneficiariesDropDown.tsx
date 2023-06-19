@@ -22,7 +22,7 @@ const BeneficiariesDropDown = ({
     query === ""
       ? beneficiaries
       : beneficiaries.filter((b) =>
-          (b.firstName + " " + b.lastName)
+          (b.firstName + " " + b.lastName + " " + b.walletAddress)
             .toLowerCase()
             .replace(/\s+/g, "")
             .includes(query.toLowerCase().replace(/\s+/g, ""))
@@ -70,14 +70,15 @@ const BeneficiariesDropDown = ({
                   value={b}
                 >
                   {({ selected, active }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
+                    <div>
+                      <div
+                        className={`flex flex-col truncate ${
                           selected ? "font-medium" : "font-normal"
                         }`}
                       >
-                        {`${b.firstName} ${b.lastName} (${b.walletAddress})`}
-                      </span>
+                        <span>{`${b.firstName} ${b.lastName}`}</span>
+                        <span className="text-xs">{b.walletAddress}</span>
+                      </div>
                       {selected ? (
                         <span
                           className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
@@ -87,7 +88,7 @@ const BeneficiariesDropDown = ({
                           <CheckIcon className="h-5 w-5" aria-hidden="true" />
                         </span>
                       ) : null}
-                    </>
+                    </div>
                   )}
                 </Combobox.Option>
               ))
