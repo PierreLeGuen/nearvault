@@ -14,6 +14,7 @@ import {
   initFungibleTokenContract,
   type FungibleTokenMetadata,
 } from "~/lib/ft/contract";
+import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
@@ -241,12 +242,32 @@ const Transfers: NextPageWithLayout = () => {
     let txnId: string | undefined = undefined;
     if (currentToken.symbol === "NEAR") {
       const nAmount = parseNearAmount(amount);
-      let action: any = {
+
+      let actions: any[] = [];
+      const action = {
         type: "Transfer",
         amount: nAmount,
       };
+      actions.push(action);
+
       if (fromWallet.isLockup && fromWallet.ownerAccountId) {
-        action = {
+        actions = [];
+        const n = await newNearConnection();
+        const lockup = initLockupContract(
+          await n.account(""),
+          fromWallet.walletDetails.walletAddress
+        );
+        const are_transfers_enabled = await lockup.are_transfers_enabled();
+        if (!are_transfers_enabled) {
+          actions.push({
+            type: "FunctionCall",
+            method_name: "check_transfers_vote",
+            args: btoa(JSON.stringify({})),
+            gas: "125000000000000",
+            deposit: "0",
+          });
+        }
+        actions.push({
           type: "FunctionCall",
           method_name: "transfer",
           args: btoa(
@@ -255,10 +276,11 @@ const Transfers: NextPageWithLayout = () => {
               amount: nAmount,
             })
           ),
-          gas: "250000000000000",
+          gas: "125000000000000",
           deposit: "0",
-        };
+        });
       }
+
       const res = await handleWalletRequestWithToast(
         w.signAndSendTransaction({
           receiverId: fromAddress,
@@ -274,7 +296,7 @@ const Transfers: NextPageWithLayout = () => {
                     receiver_id: fromWallet.isLockup
                       ? fromWallet.walletDetails.walletAddress
                       : toBenef.walletAddress,
-                    actions: [action],
+                    actions: actions,
                   },
                 },
               },
