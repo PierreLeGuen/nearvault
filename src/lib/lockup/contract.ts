@@ -1,4 +1,5 @@
 import * as nearAPI from "near-api-js";
+import { type Base58PublicKey } from "../multisig/contract";
 
 export type AccountId = string;
 export type WrappedBalance = string;
@@ -7,6 +8,7 @@ export type VestingInformation = string; // Define it more precisely if you know
 export type VestingSchedule = string; // Define it more precisely if you know the exact possible values
 
 export interface LockupContract extends nearAPI.Contract {
+  // View methods
   get_owner_account_id(): Promise<AccountId>;
   get_staking_pool_account_id(): Promise<AccountId | null>;
   get_known_deposited_balance(): Promise<WrappedBalance>;
@@ -25,7 +27,45 @@ export interface LockupContract extends nearAPI.Contract {
   get_balance(): Promise<WrappedBalance>;
   get_liquid_owners_balance(): Promise<WrappedBalance>;
   are_transfers_enabled(): Promise<boolean>;
+
+  // Change methods
+  add_full_access_key(params: {
+    new_public_key: Base58PublicKey;
+  }): Promise<void>;
+  transfer(params: {
+    amount: WrappedBalance;
+    receiver_id: AccountId;
+  }): Promise<void>;
+  check_transfers_vote(): Promise<void>;
+  unstake_all(): Promise<void>;
+  unstake(params: { amount: WrappedBalance }): Promise<void>;
+  withdraw_all_from_staking_pool(): Promise<void>;
+  withdraw_from_staking_pool(params: { amount: WrappedBalance }): Promise<void>;
+  refresh_staking_pool_balance(): Promise<void>;
+  deposit_and_stake(params: { amount: WrappedBalance }): Promise<void>;
+  deposit_to_staking_pool(params: { amount: WrappedBalance }): Promise<void>;
+  unselect_staking_pool(): Promise<void>;
+  select_staking_pool(params: {
+    staking_pool_account_id: AccountId;
+  }): Promise<void>;
 }
+
+export const changeMethods = [
+  "select_staking_pool",
+  "unselect_staking_pool",
+  "deposit_to_staking_pool",
+  "deposit_and_stake",
+  "refresh_staking_pool_balance",
+  "withdraw_from_staking_pool",
+  "withdraw_all_from_staking_pool",
+  "unstake",
+  "unstake_all",
+  "check_transfers_vote",
+  "transfer",
+  "add_full_access_key",
+];
+
+export const lockupChangeMethods = new Set(changeMethods);
 
 export function initLockupContract(
   account: nearAPI.Account,
@@ -48,6 +88,6 @@ export function initLockupContract(
       "get_liquid_owners_balance",
       "are_transfers_enabled",
     ],
-    changeMethods: [],
+    changeMethods: changeMethods,
   }) as LockupContract;
 }

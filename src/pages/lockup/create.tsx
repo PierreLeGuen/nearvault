@@ -50,9 +50,10 @@ const CreateLockup: NextPageWithLayout = () => {
 
     if (withCliff) {
       explenation += `It includes a cliff period of ${cliffDurationYears} year(s) and ${remainingCliffDaysAfterYears} day(s), ending on ${cliffDate.toLocaleDateString()}. `;
+      explenation += `The release will last for a total of ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s) (counting the cliff). `;
+    } else {
+      explenation += `The release will be linear over ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s). (Ending dates are excluded from the calculations). `;
     }
-
-    explenation += `The release will be linear over ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s). (Ending dates are excluded from the calculations). `;
 
     if (allowStaking) {
       explenation += `Staking is allowed during the lockup period.`;

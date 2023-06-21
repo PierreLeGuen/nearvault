@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
+import { FungibleTokenContract } from "~/lib/ft/contract";
 import { LockupContract } from "~/lib/lockup/contract";
 import {
   MultiSigRequestActionType,
@@ -352,6 +353,7 @@ const PendingRequests: NextPageWithLayout = () => {
 PendingRequests.getLayout = getSidebarLayout;
 export default PendingRequests;
 
+// Lockup Contract
 type TransferParams = Parameters<LockupContract["transfer"]>[0];
 type AddFullAccessKeyParams = Parameters<
   LockupContract["add_full_access_key"]
@@ -368,6 +370,12 @@ type SelectStakingPoolParams = Parameters<
   LockupContract["select_staking_pool"]
 >[0];
 
+// Fungible Token Contract
+type FtTransferParams = Parameters<FungibleTokenContract["ft_transfer"]>[0];
+type FtTransferCallParams = Parameters<
+  FungibleTokenContract["ft_transfer_call"]
+>[0];
+
 type MethodArgs =
   | TransferParams
   | AddFullAccessKeyParams
@@ -375,13 +383,16 @@ type MethodArgs =
   | WithdrawFromStakingPoolParams
   | DepositAndStakeParams
   | DepositToStakingPoolParams
-  | SelectStakingPoolParams;
+  | SelectStakingPoolParams
+  | FtTransferParams
+  | FtTransferCallParams;
 
 const methodDescriptions: {
   [methodName: string]: {
     getExplanation: (args: MethodArgs, executed_from: string) => string;
   };
 } = {
+  // Lockup Contract
   add_full_access_key: {
     getExplanation: (args: MethodArgs) => {
       const addFullAccessKeyParams = args as AddFullAccessKeyParams;
@@ -423,6 +434,45 @@ const methodDescriptions: {
     getExplanation: (args: MethodArgs) => {
       const selectStakingPoolParams = args as SelectStakingPoolParams;
       return `Selects staking pool with account ID: ${selectStakingPoolParams.staking_pool_account_id}.`;
+    },
+  },
+  unselect_staking_pool: {
+    getExplanation: () => `Unselects the currently selected staking pool.`,
+  },
+  refresh_staking_pool_balance: {
+    getExplanation: () => `Refreshes the balance of the selected staking pool.`,
+  },
+  withdraw_all_from_staking_pool: {
+    getExplanation: () => `Withdraws all funds from the selected staking pool.`,
+  },
+  unstake_all: {
+    getExplanation: () => `Unstakes all funds.`,
+  },
+  check_transfers_vote: {
+    getExplanation: () => `Checks the vote on transfers.`,
+  },
+
+  // Fungible Token Contract
+  ft_transfer: {
+    getExplanation: (args: MethodArgs, executed_from: string) => {
+      const ftTransferParams = args as FtTransferParams;
+      return `Transfers ${
+        ftTransferParams.amount
+      } tokens from ${executed_from} to ${
+        ftTransferParams.receiver_id
+      }. Memo: ${ftTransferParams.memo || "None"}.`;
+    },
+  },
+  ft_transfer_call: {
+    getExplanation: (args: MethodArgs, executed_from: string) => {
+      const ftTransferCallParams = args as FtTransferCallParams;
+      return `Transfers ${
+        ftTransferCallParams.amount
+      } tokens from ${executed_from} to ${
+        ftTransferCallParams.receiver_id
+      }, and makes a contract call. Memo: ${
+        ftTransferCallParams.memo || "None"
+      }, Message: ${ftTransferCallParams.msg}`;
     },
   },
 };

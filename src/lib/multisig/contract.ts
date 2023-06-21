@@ -19,6 +19,7 @@ export enum MultiSigRequestActionType {
   NearEscrowTransfer = "NearEscrowTransfer",
   FTEscrowTransfer = "FTEscrowTransfer",
   FunctionCall = "FunctionCall",
+  DeleteKey = "DeleteKey",
 }
 interface CreateAccountAction {
   type: MultiSigRequestActionType.CreateAccount;
@@ -102,12 +103,18 @@ interface FunctionCallAction {
   gas: string; // U64
 }
 
-type MultiSigAction =
+interface DeleteKeyAction {
+  type: MultiSigRequestActionType.DeleteKey;
+  public_key: Base58PublicKey;
+}
+
+export type MultiSigAction =
   | CreateAccountAction
   | DeployContractAction
   | AddMemberAction
   | DeleteMemberAction
   | AddKeyAction
+  | DeleteKeyAction
   | SetNumConfirmationsAction
   | SetActiveRequestsLimitAction
   | TransferAction
@@ -118,6 +125,8 @@ type MultiSigAction =
 export interface MultisigRequest {
   request_id: number;
   receiver_id: string;
+  confirmations: PublicKey[];
+  requiredConfirmations: number;
   actions: MultiSigAction[];
 }
 
