@@ -1,16 +1,20 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { type Wallet } from "@prisma/client";
 import * as naj from "near-api-js";
+import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
-import MultisigViewContract, {
+import { LockupContract } from "~/lib/lockup/contract";
+import {
   MultiSigRequestActionType,
+  initMultiSigContract,
+  type MultiSigAction,
   type MultisigRequest,
-} from "~/lib/multisig/view";
+} from "~/lib/multisig/contract";
 import { assertCorrectMultisigWallet as assertCanSignForMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
@@ -172,7 +176,7 @@ const PendingRequests: NextPageWithLayout = () => {
         try {
           const nearConnection = await naj.connect(connectionConfig);
           const walletConnection = new naj.WalletConnection(nearConnection, "");
-          const c = MultisigViewContract(
+          const c = initMultiSigContract(
             walletConnection.account(),
             wallet.walletAddress
           );
@@ -272,6 +276,11 @@ const PendingRequests: NextPageWithLayout = () => {
                       <pre className="text-xs">
                         {JSON.stringify(action, null, 2)}
                       </pre>
+                      {explainAction(
+                        action,
+                        request.receiver_id,
+                        wallet.walletAddress
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -342,3 +351,154 @@ const PendingRequests: NextPageWithLayout = () => {
 
 PendingRequests.getLayout = getSidebarLayout;
 export default PendingRequests;
+
+type TransferParams = Parameters<LockupContract["transfer"]>[0];
+type AddFullAccessKeyParams = Parameters<
+  LockupContract["add_full_access_key"]
+>[0];
+type UnstakeParams = Parameters<LockupContract["unstake"]>[0];
+type WithdrawFromStakingPoolParams = Parameters<
+  LockupContract["withdraw_from_staking_pool"]
+>[0];
+type DepositAndStakeParams = Parameters<LockupContract["deposit_and_stake"]>[0];
+type DepositToStakingPoolParams = Parameters<
+  LockupContract["deposit_to_staking_pool"]
+>[0];
+type SelectStakingPoolParams = Parameters<
+  LockupContract["select_staking_pool"]
+>[0];
+
+type MethodArgs =
+  | TransferParams
+  | AddFullAccessKeyParams
+  | UnstakeParams
+  | WithdrawFromStakingPoolParams
+  | DepositAndStakeParams
+  | DepositToStakingPoolParams
+  | SelectStakingPoolParams;
+
+const methodDescriptions: {
+  [methodName: string]: {
+    getExplanation: (args: MethodArgs, executed_from: string) => string;
+  };
+} = {
+  add_full_access_key: {
+    getExplanation: (args: MethodArgs) => {
+      const addFullAccessKeyParams = args as AddFullAccessKeyParams;
+      return `Adds a new full access key: ${addFullAccessKeyParams.new_public_key}.`;
+    },
+  },
+  transfer: {
+    getExplanation: (args: MethodArgs, executed_from: string) => {
+      const transferParams = args as TransferParams;
+      return `Transfers ${formatNearAmount(
+        transferParams.amount
+      )}Ⓝ from ${executed_from} to ${transferParams.receiver_id}.`;
+    },
+  },
+  unstake: {
+    getExplanation: (args: MethodArgs) => {
+      const unstakeParams = args as UnstakeParams;
+      return `Unstakes ${formatNearAmount(unstakeParams.amount)}Ⓝ.`;
+    },
+  },
+  withdraw_from_staking_pool: {
+    getExplanation: (args: MethodArgs) => {
+      const withdrawFromStakingPoolParams =
+        args as WithdrawFromStakingPoolParams;
+      return `Withdraws ${formatNearAmount(
+        withdrawFromStakingPoolParams.amount
+      )}Ⓝ from the staking pool.`;
+    },
+  },
+  deposit_and_stake: {
+    getExplanation: (args: MethodArgs) => {
+      const depositAndStakeParams = args as DepositAndStakeParams;
+      return `Deposits and stakes ${formatNearAmount(
+        depositAndStakeParams.amount
+      )}Ⓝ.`;
+    },
+  },
+  select_staking_pool: {
+    getExplanation: (args: MethodArgs) => {
+      const selectStakingPoolParams = args as SelectStakingPoolParams;
+      return `Selects staking pool with account ID: ${selectStakingPoolParams.staking_pool_account_id}.`;
+    },
+  },
+};
+
+// Action is the action request done from the multisig contract.
+// multisig_call_receiver is the receiver of the action.
+function explainAction(
+  action: MultiSigAction,
+  to: string,
+  from: string
+): string {
+  switch (action.type) {
+    case MultiSigRequestActionType.CreateAccount:
+      return `Creates a new account on behalf of the multisig contract.`;
+
+    case MultiSigRequestActionType.DeployContract:
+      return `Deploys a contract to ${from} with the provided code.`;
+
+    case MultiSigRequestActionType.AddMember:
+      return `Adds a new member with the public key: ${action.member.AccessKey.public_key} to ${from} multisig contract.`;
+
+    case MultiSigRequestActionType.DeleteMember:
+      return `Removes a member with the public key: ${action.member.AccessKey.public_key} from ${from}.`;
+
+    case MultiSigRequestActionType.AddKey:
+      return `Adds a new key with the public key: ${action.public_key} to ${from} multisig contract.`;
+
+    case MultiSigRequestActionType.SetNumConfirmations:
+      return `Sets the number of confirmations required for a multisig request to: ${action.num_confirmations}.`;
+
+    case MultiSigRequestActionType.SetActiveRequestsLimit:
+      return `Sets the limit for active (unconfirmed) requests to: ${action.active_requests_limit}.`;
+
+    case MultiSigRequestActionType.Transfer:
+      return `Transfers ${formatNearAmount(
+        action.amount
+      )}Ⓝ from ${from} to ${to}.`;
+
+    case MultiSigRequestActionType.NearEscrowTransfer:
+      return `Transfers ${formatNearAmount(
+        action.amount
+      )}Ⓝ from ${from} to the receiver: ${action.receiver_id} with the label: ${
+        action.label
+      }. Transaction is ${action.is_cancellable ? "" : "not "}cancellable.`;
+
+    case MultiSigRequestActionType.FTEscrowTransfer:
+      return `Transfers ${formatNearAmount(action.amount)}Ⓝ of the token: ${
+        action.token_id
+      } from ${from} to the receiver: ${action.receiver_id} with the label: ${
+        action.label
+      }. Transaction is ${action.is_cancellable ? "" : "not "}cancellable.`;
+
+    case MultiSigRequestActionType.FunctionCall:
+      let desc = `The deposit for this function call is: ${
+        action.deposit
+      } and the gas limit is: ${Number(action.gas) / 10 ** 12} TGas.`;
+
+      const methodDescription = methodDescriptions[action.method_name];
+      if (!methodDescription) {
+        return desc;
+      }
+      // If args are available and methodDescription has a processArgs function, use it
+      if (action.args && methodDescription.getExplanation) {
+        const parsedArgs = action.args as unknown as MethodArgs;
+        const argsDescription = methodDescription.getExplanation(
+          parsedArgs,
+          to
+        );
+        desc = `${argsDescription} ` + desc;
+      }
+
+      return desc;
+    case MultiSigRequestActionType.DeleteKey:
+      return `Deletes a key with the public key: ${action.public_key} from ${from} multisig contract.`;
+
+    default:
+      return "";
+  }
+}
