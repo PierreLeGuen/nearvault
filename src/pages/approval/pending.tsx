@@ -449,7 +449,8 @@ const methodDescriptions: {
     getExplanation: () => `Unstakes all funds.`,
   },
   check_transfers_vote: {
-    getExplanation: () => `Checks the vote on transfers.`,
+    getExplanation: () =>
+      `Checks the vote on transfers. If the voting contract returns "yes", transfers will be enabled. If the vote is "no", transfers will remain disabled.`,
   },
 
   // Fungible Token Contract
