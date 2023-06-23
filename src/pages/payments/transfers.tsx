@@ -1,8 +1,9 @@
-import { FinalExecutionOutcome } from "@near-finance-near-wallet-selector/core";
+import { Dialog, Transition } from "@headlessui/react";
+import { type FinalExecutionOutcome } from "@near-finance-near-wallet-selector/core";
 import { type Beneficiary } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
@@ -82,6 +83,10 @@ const Transfers: NextPageWithLayout = () => {
   const [currentToken, setCurrentToken] = useState<Token>();
   const [amount, setAmount] = useState<string>("");
   const [memo, setMemo] = useState<string>("");
+  const [showDialog, setShowDialog] = useState(false);
+  const openDialog = () => setShowDialog(true);
+  const closeDialog = () => setShowDialog(false);
+  const [checkLedger, setCheckLedger] = useState(false);
 
   const { currentTeam, newNearConnection } = usePersistingStore();
   const mutate = api.teams.insertTransferHistory.useMutation();
@@ -216,6 +221,45 @@ const Transfers: NextPageWithLayout = () => {
     });
   };
 
+  const enableTransfers = async () => {
+    if (!fromWallet.isLockup || !fromWallet.ownerAccountId) {
+      throw new Error("Not a lockup");
+    }
+    setCheckLedger(true);
+    const w = await walletSelector.selector.wallet();
+    const res = await handleWalletRequestWithToast(
+      w.signAndSendTransaction({
+        receiverId: fromWallet.ownerAccountId,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: fromWallet.walletDetails.walletAddress,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "check_transfers_vote",
+                      args: btoa(JSON.stringify({})),
+                      gas: "125000000000000",
+                      deposit: "0",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      })
+    );
+    setCheckLedger(false);
+    closeDialog();
+  };
+
   const createTransferRequest = async () => {
     if (!fromWallet || !toBenef || !currentToken || !amount) {
       console.log("Missing data: ", fromWallet, toBenef, currentToken, amount);
@@ -259,13 +303,8 @@ const Transfers: NextPageWithLayout = () => {
         );
         const are_transfers_enabled = await lockup.are_transfers_enabled();
         if (!are_transfers_enabled) {
-          actions.push({
-            type: "FunctionCall",
-            method_name: "check_transfers_vote",
-            args: btoa(JSON.stringify({})),
-            gas: "125000000000000",
-            deposit: "0",
-          });
+          openDialog();
+          return;
         }
         actions.push({
           type: "FunctionCall",
@@ -436,6 +475,68 @@ const Transfers: NextPageWithLayout = () => {
           </div>
         </div>
       </div>
+
+      <Transition appear show={showDialog} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-10 overflow-y-auto"
+          onClose={closeDialog}
+        >
+          <div className="min-h-screen px-4 text-center">
+            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+
+            <span
+              className="inline-block h-screen align-middle"
+              aria-hidden="true"
+            >
+              &#8203;
+            </span>
+
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title
+                  as="h3"
+                  className="text-lg font-medium leading-6 text-gray-900"
+                >
+                  Enable Transfers
+                </Dialog.Title>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Transfers are not yet enabled for this lockup account. Would
+                    you like to enable them?
+                  </p>
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    onClick={() => void enableTransfers()}
+                    disabled={checkLedger}
+                  >
+                    {checkLedger ? "Check Ledger..." : "Enable Transfers"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    onClick={closeDialog}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </>
   );
 };
