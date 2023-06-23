@@ -1,9 +1,38 @@
 import { Switch } from "@headlessui/react";
 import { differenceInDays, subDays } from "date-fns";
+import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
+import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import { useWalletSelector } from "~/context/wallet";
+import { api } from "~/lib/api";
+import { calculateLockup } from "~/lib/lockup/lockup";
+import { assertCorrectMultisigWallet, getNearTimestamp } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
+import { handleWalletRequestWithToast } from "../payments/transfers";
+import { type WalletPretty } from "../staking/stake";
+
+interface CreateLockupProps {
+  owner_account_id: string;
+  lockup_duration: number;
+  vesting_schedule:
+    | {
+        start_timestamp: number;
+        cliff_timestamp: number;
+        end_timestamp: number;
+      }
+    | undefined;
+  lockup_timestamp: number;
+  release_duration: number;
+  whitelist_account_id: string | undefined;
+}
+
+interface VestingSchedule {
+  start_timestamp: number;
+  cliff_timestamp: number;
+  end_timestamp: number;
+}
 
 const CreateLockup: NextPageWithLayout = () => {
   const [amount, setAmount] = useState(0);
@@ -22,15 +51,148 @@ const CreateLockup: NextPageWithLayout = () => {
 
   const [explenation, setExplenation] = useState("");
 
+  const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
+  const [fromWallet, setFromWallet] = useState<WalletPretty>({
+    prettyName: "",
+    walletDetails: { walletAddress: "", id: "", teamId: "" },
+    isLockup: false,
+    ownerAccountId: undefined,
+  });
+
   const { newNearConnection } = usePersistingStore();
+  const { currentTeam } = usePersistingStore.getState();
+
+  const walletSector = useWalletSelector();
+  api.teams.getWalletsForTeam.useQuery(
+    {
+      teamId: currentTeam?.id || "",
+    },
+    {
+      enabled: true,
+      async onSuccess(data) {
+        if (!data || data.length == 0 || data[0] === undefined) {
+          throw new Error("No wallets found");
+        }
+        const w: WalletPretty[] = [];
+        for (const wallet of data) {
+          w.push({
+            walletDetails: wallet,
+            prettyName: wallet.walletAddress,
+            isLockup: false,
+            ownerAccountId: undefined,
+          });
+          try {
+            const lockupValue = calculateLockup(
+              wallet.walletAddress,
+              "lockup.near"
+            );
+            const nearConn = await newNearConnection();
+            await (await nearConn.account(lockupValue)).state();
+
+            w.push({
+              prettyName: "Lockup of " + wallet.walletAddress,
+              walletDetails: {
+                walletAddress: lockupValue,
+                id: lockupValue,
+                teamId: "na",
+              },
+              isLockup: true,
+              ownerAccountId: wallet.walletAddress,
+            });
+          } catch (_) {}
+        }
+        setTeamsWallet(w);
+      },
+    }
+  );
 
   const createLockup = async () => {
     if (endDate < startDate) {
       setError("End date cannot be before start date");
       return;
     }
+    if (fromWallet.isLockup) {
+      setError("Cannot create a lockup from a lockup wallet");
+      return;
+    }
+    if (amount < 3.5) {
+      setError("Minimum amount is 3.5 NEAR");
+      return;
+    }
+
     setError("");
-    const n = await newNearConnection();
+    // const n = await newNearConnection();
+    await assertCorrectMultisigWallet(
+      walletSector,
+      fromWallet.walletDetails.walletAddress
+    );
+
+    const w = await walletSector.selector.wallet();
+    // Empty string means allow staking
+    let allowListAccount = "";
+    if (!allowStaking) {
+      allowListAccount = "system";
+    }
+
+    let createArgs: any = {};
+    if (withCliff) {
+      // lockup schedule
+      createArgs = {
+        vesting_schedule: {
+          VestingSchedule: {
+            start_timestamp: getNearTimestamp(startDate).toString(),
+            cliff_timestamp: getNearTimestamp(cliffDate).toString(),
+            end_timestamp: getNearTimestamp(endDate).toString(),
+          },
+        },
+      };
+    } else {
+      // linear release
+      createArgs = {
+        lockup_timestamp: getNearTimestamp(startDate).toString(),
+        release_duration: (
+          getNearTimestamp(endDate) - getNearTimestamp(startDate)
+        ).toString(),
+      };
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const fnCallArgs: CreateLockupProps = {
+      owner_account_id: account,
+      lockup_duration: "0",
+      ...createArgs,
+    };
+    if (!allowStaking) {
+      fnCallArgs["whitelist_account_id"] = "system";
+    }
+    await handleWalletRequestWithToast(
+      w.signAndSendTransaction({
+        receiverId: fromWallet.walletDetails.walletAddress,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: "lockup.near",
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "create",
+                      args: btoa(JSON.stringify(fnCallArgs)),
+                      deposit: parseNearAmount(amount.toString()),
+                      gas: "150000000000000",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      })
+    );
   };
 
   useEffect(() => {
@@ -67,8 +229,17 @@ const CreateLockup: NextPageWithLayout = () => {
   return (
     <div className="prose flex flex-col gap-2">
       <h1>Create Lockup</h1>
+      <div className="flex flex-row items-center gap-3">
+        Funding account:
+        <WalletsDropDown
+          wallets={teamsWallet}
+          selectedWallet={fromWallet}
+          setSelectedWallet={setFromWallet}
+        />
+      </div>
+
       <div>
-        Account:{" "}
+        Lockup for account:{" "}
         <input
           type="text"
           value={account}
@@ -158,7 +329,7 @@ const CreateLockup: NextPageWithLayout = () => {
 
       <button
         className="rounded bg-blue-200 px-3 py-1 hover:bg-blue-300"
-        onClick={void createLockup}
+        onClick={() => void createLockup()}
       >
         Create
       </button>

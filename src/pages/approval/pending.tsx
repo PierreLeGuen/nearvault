@@ -527,9 +527,9 @@ function explainAction(
       }. Transaction is ${action.is_cancellable ? "" : "not "}cancellable.`;
 
     case MultiSigRequestActionType.FunctionCall:
-      let desc = `The deposit for this function call is: ${
+      let desc = `The deposit for this function call is: ${formatNearAmount(
         action.deposit
-      } and the gas limit is: ${Number(action.gas) / 10 ** 12} TGas.`;
+      )}Ⓝ and the gas limit is: ${Number(action.gas) / 10 ** 12} TGas.`;
 
       const methodDescription = methodDescriptions[action.method_name];
       if (!methodDescription) {

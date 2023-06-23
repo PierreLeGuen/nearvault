@@ -27,3 +27,7 @@ export const assertCorrectMultisigWallet = async (
 
   walletSelector.selector.setActiveAccount(walletAddress);
 };
+
+export const getNearTimestamp = (date: Date) => {
+  return date.getTime() * 1_000_000;
+};
