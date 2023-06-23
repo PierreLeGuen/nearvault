@@ -311,7 +311,14 @@ const PendingRequests: NextPageWithLayout = () => {
                     ) : (
                       <>
                         <CheckIcon className="mr-2 h-4 w-4" />
-                        <span>Approve</span>
+                        <span>
+                          {alreadyApproved(
+                            request.confirmations,
+                            publicKey?.toString() || ""
+                          )
+                            ? "Already approved"
+                            : "Approve"}
+                        </span>
                       </>
                     )}
                   </button>
