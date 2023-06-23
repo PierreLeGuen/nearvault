@@ -226,38 +226,41 @@ const Transfers: NextPageWithLayout = () => {
       throw new Error("Not a lockup");
     }
     setCheckLedger(true);
-    const w = await walletSelector.selector.wallet();
-    const res = await handleWalletRequestWithToast(
-      w.signAndSendTransaction({
-        receiverId: fromWallet.ownerAccountId,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: "add_request",
-              args: {
-                request: {
-                  receiver_id: fromWallet.walletDetails.walletAddress,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "check_transfers_vote",
-                      args: btoa(JSON.stringify({})),
-                      gas: "125000000000000",
-                      deposit: "0",
-                    },
-                  ],
+    try {
+      const w = await walletSelector.selector.wallet();
+      const res = await handleWalletRequestWithToast(
+        w.signAndSendTransaction({
+          receiverId: fromWallet.ownerAccountId,
+          actions: [
+            {
+              type: "FunctionCall",
+              params: {
+                gas: "300000000000000",
+                deposit: "0",
+                methodName: "add_request",
+                args: {
+                  request: {
+                    receiver_id: fromWallet.walletDetails.walletAddress,
+                    actions: [
+                      {
+                        type: "FunctionCall",
+                        method_name: "check_transfers_vote",
+                        args: btoa(JSON.stringify({})),
+                        gas: "125000000000000",
+                        deposit: "0",
+                      },
+                    ],
+                  },
                 },
               },
             },
-          },
-        ],
-      })
-    );
-    setCheckLedger(false);
-    closeDialog();
+          ],
+        })
+      );
+    } finally {
+      setCheckLedger(false);
+      closeDialog();
+    }
   };
 
   const createTransferRequest = async () => {
@@ -281,110 +284,116 @@ const Transfers: NextPageWithLayout = () => {
       return;
     }
 
-    const w = await walletSelector.selector.wallet();
+    setCheckLedger(true);
 
-    let txnId: string | undefined = undefined;
-    if (currentToken.symbol === "NEAR") {
-      const nAmount = parseNearAmount(amount);
+    try {
+      const w = await walletSelector.selector.wallet();
 
-      let actions: any[] = [];
-      const action = {
-        type: "Transfer",
-        amount: nAmount,
-      };
-      actions.push(action);
+      let txnId: string | undefined = undefined;
+      if (currentToken.symbol === "NEAR") {
+        const nAmount = parseNearAmount(amount);
 
-      if (fromWallet.isLockup && fromWallet.ownerAccountId) {
-        actions = [];
-        const n = await newNearConnection();
-        const lockup = initLockupContract(
-          await n.account(""),
-          fromWallet.walletDetails.walletAddress
-        );
-        const are_transfers_enabled = await lockup.are_transfers_enabled();
-        if (!are_transfers_enabled) {
-          openDialog();
-          return;
+        let actions: any[] = [];
+        const action = {
+          type: "Transfer",
+          amount: nAmount,
+        };
+        actions.push(action);
+
+        if (fromWallet.isLockup && fromWallet.ownerAccountId) {
+          actions = [];
+          const n = await newNearConnection();
+          const lockup = initLockupContract(
+            await n.account(""),
+            fromWallet.walletDetails.walletAddress
+          );
+          const are_transfers_enabled = await lockup.are_transfers_enabled();
+          if (!are_transfers_enabled) {
+            openDialog();
+            return;
+          }
+          actions.push({
+            type: "FunctionCall",
+            method_name: "transfer",
+            args: btoa(
+              JSON.stringify({
+                receiver_id: toBenef.walletAddress,
+                amount: nAmount,
+              })
+            ),
+            gas: "125000000000000",
+            deposit: "0",
+          });
         }
-        actions.push({
-          type: "FunctionCall",
-          method_name: "transfer",
-          args: btoa(
-            JSON.stringify({
-              receiver_id: toBenef.walletAddress,
-              amount: nAmount,
-            })
-          ),
-          gas: "125000000000000",
-          deposit: "0",
-        });
+
+        const res = await handleWalletRequestWithToast(
+          w.signAndSendTransaction({
+            receiverId: fromAddress,
+            actions: [
+              {
+                type: "FunctionCall",
+                params: {
+                  gas: "300000000000000",
+                  deposit: "0",
+                  methodName: "add_request",
+                  args: {
+                    request: {
+                      receiver_id: fromWallet.isLockup
+                        ? fromWallet.walletDetails.walletAddress
+                        : toBenef.walletAddress,
+                      actions: actions,
+                    },
+                  },
+                },
+              },
+            ],
+          })
+        );
+        txnId = res?.transaction_outcome.id;
+      } else {
+        const a = amount + "0".repeat(currentToken.decimals);
+        const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
+
+        const res = await handleWalletRequestWithToast(
+          w.signAndSendTransaction({
+            receiverId: fromAddress,
+            actions: [
+              {
+                type: "FunctionCall",
+                params: {
+                  gas: "300000000000000",
+                  deposit: "0",
+                  methodName: "add_request",
+                  args: {
+                    request: {
+                      receiver_id: currentToken.account_id,
+                      actions: [
+                        {
+                          type: "FunctionCall",
+                          method_name: "ft_transfer",
+                          args: btoa(JSON.stringify(ftArgs)),
+                          deposit: "1",
+                          gas: "200000000000000",
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          })
+        );
+        txnId = res?.transaction_outcome.id;
       }
 
-      const res = await handleWalletRequestWithToast(
-        w.signAndSendTransaction({
-          receiverId: fromAddress,
-          actions: [
-            {
-              type: "FunctionCall",
-              params: {
-                gas: "300000000000000",
-                deposit: "0",
-                methodName: "add_request",
-                args: {
-                  request: {
-                    receiver_id: fromWallet.isLockup
-                      ? fromWallet.walletDetails.walletAddress
-                      : toBenef.walletAddress,
-                    actions: actions,
-                  },
-                },
-              },
-            },
-          ],
-        })
-      );
-      txnId = res?.transaction_outcome.id;
-    } else {
-      const a = amount + "0".repeat(currentToken.decimals);
-      const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
+      if (!txnId) {
+        throw new Error("No txnId");
+      }
 
-      const res = await handleWalletRequestWithToast(
-        w.signAndSendTransaction({
-          receiverId: fromAddress,
-          actions: [
-            {
-              type: "FunctionCall",
-              params: {
-                gas: "300000000000000",
-                deposit: "0",
-                methodName: "add_request",
-                args: {
-                  request: {
-                    receiver_id: currentToken.account_id,
-                    actions: [
-                      {
-                        type: "FunctionCall",
-                        method_name: "ft_transfer",
-                        args: btoa(JSON.stringify(ftArgs)),
-                        deposit: "1",
-                        gas: "200000000000000",
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        })
-      );
-      txnId = res?.transaction_outcome.id;
+      await insertTransactionInHistory(txnId);
+    } finally {
+      setCheckLedger(false);
     }
-
-    if (!txnId) {
-      throw new Error("No txnId");
-    }
-
-    await insertTransactionInHistory(txnId);
   };
 
   if (
@@ -456,7 +465,7 @@ const Transfers: NextPageWithLayout = () => {
               }}
               className="rounded bg-blue-200 px-2 py-1 hover:bg-blue-300"
             >
-              Create treansfer request
+              {checkLedger ? "Check Ledger..." : "Create transfer request"}
             </button>
           </div>
 
