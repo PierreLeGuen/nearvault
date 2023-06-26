@@ -79,12 +79,8 @@ interface FTEscrowTransferAction {
 }
 
 interface MultisigMember {
-  AccessKey: {
-    public_key: PublicKey;
-  };
-  Account: {
-    account_id: string; // AccountId
-  };
+  public_key: PublicKey;
+  account_id: string; // AccountId
 }
 
 type PublicKey = string; // In near-api-js, PublicKey is usually represented as a string.

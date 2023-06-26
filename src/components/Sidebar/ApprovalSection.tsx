@@ -40,6 +40,14 @@ const ApprovalSection = () => {
               Add wallet
             </Link>
           </div>
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
+              href="/approval/manage"
+            >
+              Manage wallets
+            </Link>
+          </div>
         </div>
       )}
     </div>

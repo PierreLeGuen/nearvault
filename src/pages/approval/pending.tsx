@@ -493,10 +493,10 @@ function explainAction(
       return `Deploys a contract to ${from} with the provided code.`;
 
     case MultiSigRequestActionType.AddMember:
-      return `Adds a new member with the public key: ${action.member.AccessKey.public_key} to ${from} multisig contract.`;
+      return `Adds a new member with the public key: ${action.member.public_key} to ${from} multisig contract.`;
 
     case MultiSigRequestActionType.DeleteMember:
-      return `Removes a member with the public key: ${action.member.AccessKey.public_key} from ${from}.`;
+      return `Removes a member with the public key: ${action.member.public_key} from ${from}.`;
 
     case MultiSigRequestActionType.AddKey:
       return `Adds a new key with the public key: ${action.public_key} to ${from} multisig contract.`;
