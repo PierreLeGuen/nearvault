@@ -73,6 +73,8 @@ export const getVestingInformation = (
   reader: BinaryReader
 ): FromStateVestingInformation | undefined => {
   const vestingType = reader.readU8();
+  console.log("vestingType", vestingType);
+
   switch (vestingType) {
     case 1:
       return {
@@ -124,13 +126,12 @@ export const getStakingInformation = (
 ): StakingInformation | undefined => {
   const tiType = reader.readU8();
   console.log("tiType", tiType);
-
   if (tiType === 0) {
     return undefined;
   } else {
     return {
-      staking_pool_account_id: reader.readU128(),
-      status: reader.readString(),
+      staking_pool_account_id: reader.readString(),
+      status: reader.readU8(),
       deposit_amount: reader.readU128(),
     };
   }

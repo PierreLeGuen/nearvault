@@ -39,8 +39,8 @@ export type TransferInformation = {
 };
 
 export type StakingInformation = {
-  readonly staking_pool_account_id?: BN;
-  readonly status?: string;
+  readonly staking_pool_account_id?: string;
+  readonly status?: number;
   readonly deposit_amount?: BN;
 };
 
