@@ -113,11 +113,14 @@ const ManageLockup: NextPageWithLayout = () => {
             <div className="mt-4">
               <button
                 className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
+                disabled={!lockupInformation.lockupState.vestingInformation}
                 onClick={() => {
                   cancelSetIsOpen(true);
                 }}
               >
-                Cancel lockup
+                {!lockupInformation.lockupState.vestingInformation
+                  ? "Can't cancel lockup without a vesting schedule or terminated"
+                  : "Cancel lockup"}
                 {cancelLockupModalIsOpen &&
                   CancelLockupDialog(
                     cancelLockupModalIsOpen,
