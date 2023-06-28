@@ -1,9 +1,8 @@
 import type BN from "bn.js";
 import bs58 from "bs58";
-import { connect } from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CancelLockupDialog } from "~/components/CancelLockupDialog";
 import { getSidebarLayout } from "~/components/Layout";
 import { useNearContext } from "~/context/near";
@@ -13,7 +12,6 @@ import {
   type AccountLockup,
   type FromStateVestingInformation,
 } from "~/lib/lockup/types";
-import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageLockup: NextPageWithLayout = () => {
@@ -26,30 +24,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
   const provider = useNearContext().archival_provider;
-  const store = usePersistingStore();
   const walletSelector = useWalletSelector();
-
-  useEffect(() => {
-    const getKeys = async () => {
-      const c = await connect({
-        networkId: "mainnet",
-        nodeUrl: "https://rpc.mainnet.near.org",
-      });
-      // const m = new multisig.AccountMultisig(
-      //   c.connection,
-      //   "foundation.near",
-      //   {}
-      // );
-      // const ks = await m.getAccessKeys();
-      // console.log(ks);
-
-      // ks.map((k) => {
-      //   console.log(k.public_key);
-      // });w
-      const w = await walletSelector.selector.wallet();
-    };
-    void getKeys();
-  }, []);
 
   const getLockupInformation = async (account: string) => {
     try {

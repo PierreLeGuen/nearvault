@@ -227,7 +227,7 @@ const CreateLockup: NextPageWithLayout = () => {
   }, [amount, account, startDate, endDate, withCliff, cliffDate, allowStaking]);
 
   return (
-    <div className="prose flex flex-col gap-2">
+    <div className="prose flex flex-col gap-2 p-3">
       <h1>Create Lockup</h1>
       <div className="flex flex-row items-center gap-3">
         Funding account:

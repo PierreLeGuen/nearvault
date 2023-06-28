@@ -75,7 +75,6 @@ export const viewLockupState = async (
     "3kVY9qcVRoW3B5498SMX6R3rtSLiCdmBzKs7zcnzDJ7Q",
     "DiC9bKCqUHqoYqUXovAnqugiuntHWnM3cAc7KrgaHTu",
   ].includes(lockupAccountCodeHash);
-
   const transferInformation = getTransferInformation(reader);
   const vestingInformation = getVestingInformation(reader);
   const stakingPoolWhitelistAccountId = reader.readString();
