@@ -165,7 +165,7 @@ const ManageApprovalWallets: NextPageWithLayout = () => {
   );
 };
 
-const addRequestToMultisigWallet = async (
+export const addRequestToMultisigWallet = async (
   w: Wallet,
   multisigWallet: string,
   receiverWallet: string,
