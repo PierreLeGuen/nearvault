@@ -13,6 +13,7 @@ import {
   type AccountLockup,
   type FromStateVestingInformation,
 } from "~/lib/lockup/types";
+import { findProperVestingSchedule } from "~/lib/lockup/utils";
 import { type NextPageWithLayout } from "../_app";
 import { addRequestToMultisigWallet } from "../approval/manage";
 
@@ -40,6 +41,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
+
   const provider = useNearContext().archival_provider;
   const walletSelector = useWalletSelector();
 
@@ -54,7 +56,12 @@ const ManageLockup: NextPageWithLayout = () => {
     formState: { errors },
   } = useForm<IFormInput>();
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
-    console.log(data);
+    void cancelLockupFn(
+      data.authToken,
+      data.startDate,
+      data.cliffDate,
+      data.endDate
+    );
   };
 
   const startDate = useWatch({
@@ -71,11 +78,6 @@ const ManageLockup: NextPageWithLayout = () => {
     control,
     name: "endDate",
   });
-
-  // const [startDate, setStartDate] = useState();
-  // const [endDate, setEndDate] = useState();
-  // const [clifftDate, setCliffDate] = useState();
-
   useEffect(() => {
     if (startDate && cliffDate && endDate) {
       // Start Date vs Cliff Date validation
@@ -87,9 +89,7 @@ const ManageLockup: NextPageWithLayout = () => {
       } else {
         clearErrors("cliffDate");
       }
-      console.log("cliffDate", cliffDate);
-      console.log("endDate", endDate);
-      console.log("cliffDate >= endDate", cliffDate >= endDate);
+
       // Cliff Date vs End Date validation
       if (new Date(cliffDate).getTime() >= new Date(endDate).getTime()) {
         setError("endDate", {
@@ -118,7 +118,12 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   };
 
-  const cancelLockupFn = async () => {
+  const cancelLockupFn = async (
+    authToken: string,
+    start: Date,
+    cliff: Date,
+    end: Date
+  ) => {
     const w = await walletSelector.selector.wallet();
     // No vesting hash -> not private schedule
     if (!lockupInformation?.lockupState.vestingInformation?.vestingHash) {
@@ -158,16 +163,18 @@ const ManageLockup: NextPageWithLayout = () => {
             type: "FunctionCall",
             method_name: "terminate_vesting",
             args: btoa(
-              JSON.stringify({
-                vesting_schedule_with_salt: {
-                  salt: "random_string",
-                  vesting_schedule: {
-                    start_timestamp: "0",
-                    cliff_timestamp: "0",
-                    end_timestamp: "0",
-                  },
-                },
-              })
+              JSON.stringify(
+                findProperVestingSchedule(
+                  lockupInformation.lockupState.owner,
+                  authToken,
+                  new Date(start),
+                  new Date(cliff),
+                  new Date(end),
+                  Buffer.from(
+                    lockupInformation.lockupState.vestingInformation.vestingHash
+                  ).toString("base64")
+                )
+              )
             ),
             deposit: "0",
             gas: "200000000000000",
@@ -282,10 +289,10 @@ const ManageLockup: NextPageWithLayout = () => {
                         cliff and end date that were used when creating the
                         lockup
                       </p>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col gap-3">
                         <div className="flex flex-row items-center gap-3">
                           <label className="flex flex-col">
-                            Start{" "}
+                            Start date
                             <input
                               type="date"
                               {...register("startDate")}
@@ -293,7 +300,7 @@ const ManageLockup: NextPageWithLayout = () => {
                             />
                           </label>
                           <label className="flex flex-col">
-                            Cliff{" "}
+                            Cliff date
                             <input
                               type="date"
                               {...register("cliffDate")}
@@ -301,7 +308,7 @@ const ManageLockup: NextPageWithLayout = () => {
                             />{" "}
                           </label>
                           <label className="flex flex-col">
-                            End{" "}
+                            End date
                             <input
                               type="date"
                               {...register("endDate")}
@@ -346,7 +353,7 @@ const ManageLockup: NextPageWithLayout = () => {
                   <div className="mt-4">
                     <input
                       type="submit"
-                      value="Continue"
+                      value="Create termination request"
                       className="inline-flex cursor-pointer justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                     />
                     <button
@@ -422,6 +429,10 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
           <div className="grid grid-cols-3">
             <div className="col-span-1">Vesting Schedule</div>
             <div className="text-red-500">Private vesting</div>
+          </div>
+          <div className="grid grid-cols-3">
+            <div className="col-span-1">Vesting Hash</div>
+            <div>{Buffer.from(vesting.vestingHash).toString("base64")}</div>
           </div>
         </>
       );

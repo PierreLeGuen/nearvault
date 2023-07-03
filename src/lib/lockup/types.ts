@@ -45,7 +45,7 @@ export type StakingInformation = {
 };
 
 export type FromStateVestingInformation = {
-  readonly vestingHash?: readonly unknown[];
+  readonly vestingHash?: Uint8Array;
   readonly start?: BN;
   readonly cliff?: BN;
   readonly end?: BN;

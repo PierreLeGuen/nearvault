@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import BN from "bn.js";
-import { type BinaryReader } from "near-api-js/lib/utils/serialize";
+import {
+  serialize,
+  type BinaryReader,
+  Schema,
+} from "near-api-js/lib/utils/serialize";
 import { sha256 } from "js-sha256";
 import * as nearAPI from "near-api-js";
 
@@ -10,6 +14,7 @@ import {
   type TransferInformation,
   type FromStateVestingInformation,
 } from "./types";
+import { U64 } from "../multisig/contract";
 
 export const saturatingSub = (a: BN, b: BN) => {
   const res = a.sub(b);
@@ -78,6 +83,8 @@ export const getVestingInformation = (
   switch (vestingType) {
     case 1:
       return {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         vestingHash: reader.readArray(() => reader.readU8()),
       };
     case 2:
@@ -125,7 +132,6 @@ export const getStakingInformation = (
   reader: BinaryReader
 ): StakingInformation | undefined => {
   const tiType = reader.readU8();
-  console.log("tiType", tiType);
   if (tiType === 0) {
     return undefined;
   } else {
@@ -137,15 +143,30 @@ export const getStakingInformation = (
   }
 };
 
-function dateToNs(date: Date): number {
-  // Implement this function to convert Date to Nanoseconds.
-  return date.getTime() * 1e6; // just a placeholder.
+function dateToNs(date: Date): U64 {
+  return (new Date(date).getTime() * 1000000).toString();
 }
 
-interface VestingSchedule {
-  start_timestamp: number;
-  cliff_timestamp: number;
-  end_timestamp: number;
+export class VestingSchedule {
+  start_timestamp: U64;
+  cliff_timestamp: U64;
+  end_timestamp: U64;
+
+  constructor(start: U64, cliff: U64, end: U64) {
+    this.start_timestamp = start;
+    this.cliff_timestamp = cliff;
+    this.end_timestamp = end;
+  }
+}
+
+export class VestingScheduleWithSalt {
+  vesting_schedule: VestingSchedule;
+  salt: Uint8Array;
+
+  constructor(schedule: VestingSchedule, salt: Uint8Array) {
+    this.vesting_schedule = schedule;
+    this.salt = salt;
+  }
 }
 
 interface ComputeVestingScheduleResult {
@@ -173,10 +194,19 @@ function computeVestingSchedule(
   );
 
   const writer = new nearAPI.utils.serialize.BinaryWriter();
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore:next-line
   writer.writeU64(vestingSchedule.start_timestamp);
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore:next-line
   writer.writeU64(vestingSchedule.cliff_timestamp);
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore:next-line
   writer.writeU64(vestingSchedule.end_timestamp);
   writer.writeU32(salt.length);
+
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore:next-line
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -188,6 +218,8 @@ function computeVestingSchedule(
     "hex"
   ).toString("base64");
 
+  hashVestingSchedule({ salt: salt, vesting_schedule: vestingSchedule });
+
   return {
     vestingSchedule,
     salt,
@@ -195,7 +227,7 @@ function computeVestingSchedule(
   };
 }
 
-function findProperVestingSchedule(
+export function findProperVestingSchedule(
   lockupOwnerAccountId: string,
   authToken: string,
   start: Date,
@@ -224,10 +256,6 @@ function findProperVestingSchedule(
     ++lockupOwnerInputId
   ) {
     const lockupOwnerInput = lockupOwnerInputs[lockupOwnerInputId] || "";
-    const salt = Buffer.from(
-      sha256(Buffer.from(authToken + lockupOwnerInput)),
-      "hex"
-    ).toString("base64");
 
     for (let timezone = -12; timezone <= 12; timezone += 1) {
       const lockupVestingStartDateCopy = new Date(start);
@@ -243,7 +271,10 @@ function findProperVestingSchedule(
         lockupVestingEndDateCopy,
         lockupVestingCliffDateCopy
       );
+      console.log("vestingHash and hashValue", vestingHash, hashValue);
       if (hashValue === vestingHash) {
+        console.log("FOUND");
+
         return {
           vesting_schedule_with_salt: {
             vesting_schedule: vestingSchedule,
@@ -253,4 +284,57 @@ function findProperVestingSchedule(
       }
     }
   }
+
+  throw new Error(
+    `Unable to find proper vesting schedule for ${lockupOwnerAccountId}`
+  );
+}
+
+export const VestingScheduleSchema: Schema = new Map([
+  [
+    VestingSchedule,
+    {
+      kind: "struct",
+      fields: [
+        ["start_timestamp", "string"],
+        ["cliff_timestamp", "string"],
+        ["end_timestamp", "string"],
+      ],
+    },
+  ],
+]);
+
+export const VestingScheduleWithSaltSchema: Schema = new Map([
+  [
+    VestingScheduleWithSalt,
+    {
+      kind: "struct",
+      fields: [
+        ["vesting_schedule", VestingSchedule],
+        ["salt", [32]], // This represents a byte array of length 32
+      ],
+    },
+  ],
+  ...Array.from(VestingScheduleSchema),
+  // ... add schemas for other structures
+]);
+
+function hashVestingSchedule(vestingScheduleWithSalt: VestingScheduleWithSalt) {
+  vestingScheduleWithSalt = new VestingScheduleWithSalt(
+    new VestingSchedule(
+      vestingScheduleWithSalt.vesting_schedule.start_timestamp,
+      vestingScheduleWithSalt.vesting_schedule.cliff_timestamp,
+      vestingScheduleWithSalt.vesting_schedule.end_timestamp
+    ),
+    vestingScheduleWithSalt.salt
+  );
+  const data = serialize(
+    VestingScheduleWithSaltSchema,
+    vestingScheduleWithSalt
+  );
+
+  const res = sha256.array(data); // Directly feed the Uint8Array to js-sha256
+  const base64Hash = Buffer.from(res).toString("base64");
+  console.log("hashVestingSchedule", base64Hash);
+  return base64Hash;
 }
