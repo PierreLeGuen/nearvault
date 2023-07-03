@@ -14,6 +14,7 @@ import {
   type FromStateVestingInformation,
 } from "~/lib/lockup/types";
 import { findProperVestingSchedule } from "~/lib/lockup/utils";
+import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { type NextPageWithLayout } from "../_app";
 import { addRequestToMultisigWallet } from "../approval/manage";
 
@@ -125,38 +126,32 @@ const ManageLockup: NextPageWithLayout = () => {
     end: Date
   ) => {
     const w = await walletSelector.selector.wallet();
+    const multisigWalletId = "foundation.near";
+    await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
+
     // No vesting hash -> not private schedule
     if (!lockupInformation?.lockupState.vestingInformation?.vestingHash) {
-      const res = await w.signAndSendTransaction({
-        receiverId: "foundation.near",
-        actions: [
+      if (!lockupInformation) {
+        throw new Error("Lockup information not found");
+      }
+      await addRequestToMultisigWallet(
+        w,
+        multisigWalletId,
+        lockupInformation?.lockupAccountId,
+        [
           {
             type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: "add_request",
-              args: {
-                request: {
-                  receiver_id: lockupInformation?.lockupAccountId,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "terminate_vesting",
-                      deposit: "0",
-                      gas: "200000000000000",
-                    },
-                  ],
-                },
-              },
-            },
+            method_name: "terminate_vesting",
+            args: btoa(JSON.stringify({})),
+            deposit: "0",
+            gas: "200000000000000",
           },
-        ],
-      });
+        ]
+      );
     } else {
       await addRequestToMultisigWallet(
         w,
-        "foundation.near",
+        multisigWalletId,
         lockupInformation?.lockupAccountId,
         [
           {
