@@ -303,14 +303,16 @@ const ManageLockup: NextPageWithLayout = () => {
                     ? "Can't cancel lockup without a vesting schedule or terminated"
                     : "Cancel lockup"}
                 </button>
-                <button
-                  className="rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
-                  onClick={() => {
-                    void tryWithdrawFn();
-                  }}
-                >
-                  Try withdraw
-                </button>
+                {terminationStatus && terminationStatus !== "" && (
+                  <button
+                    className="rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
+                    onClick={() => {
+                      void tryWithdrawFn();
+                    }}
+                  >
+                    Try withdraw
+                  </button>
+                )}
               </div>
             </div>
           </>
