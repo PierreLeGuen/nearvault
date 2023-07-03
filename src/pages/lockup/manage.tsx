@@ -1,4 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react";
+import { useQuery } from "@tanstack/react-query";
 import type BN from "bn.js";
 import bs58 from "bs58";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
@@ -8,6 +9,7 @@ import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { getSidebarLayout } from "~/components/Layout";
 import { useNearContext } from "~/context/near";
 import { useWalletSelector } from "~/context/wallet";
+import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
   type AccountLockup,
@@ -15,6 +17,7 @@ import {
 } from "~/lib/lockup/types";
 import { findProperVestingSchedule } from "~/lib/lockup/utils";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { addRequestToMultisigWallet } from "../approval/manage";
 
@@ -38,6 +41,7 @@ const ManageLockup: NextPageWithLayout = () => {
   useSession({ required: true });
 
   const [account, setAccount] = useState("");
+  const [lockupAccountId, setLockupAccountId] = useState("");
   const [accountError, setAccountError] = useState("");
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const [lockupInformation, setLockupInformation] =
@@ -45,6 +49,8 @@ const ManageLockup: NextPageWithLayout = () => {
 
   const provider = useNearContext().archival_provider;
   const walletSelector = useWalletSelector();
+  const { newNearConnection } = usePersistingStore();
+  const multisigWalletId = "foundation.near";
 
   // Lockup termination
 
@@ -79,6 +85,7 @@ const ManageLockup: NextPageWithLayout = () => {
     control,
     name: "endDate",
   });
+
   useEffect(() => {
     if (startDate && cliffDate && endDate) {
       // Start Date vs Cliff Date validation
@@ -103,6 +110,16 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   }, [startDate, cliffDate, endDate, setError, clearErrors]);
 
+  useEffect(() => {
+    if (account.length > 0) {
+      console.log(account);
+
+      setLockupAccountId(
+        calculateLockup(prepareAccountId(account), "lockup.near")
+      );
+    }
+  }, [account]);
+
   const getLockupInformation = async (account: string) => {
     try {
       const l = calculateLockup(prepareAccountId(account), "lockup.near");
@@ -119,6 +136,61 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   };
 
+  const { data: terminationStatus } = useQuery(
+    ["lockup", account],
+    async () => {
+      const n = await newNearConnection();
+      const l = initLockupContract(await n.account(account), lockupAccountId);
+      const terminationStatus = await l.get_termination_status();
+
+      return terminationStatus;
+    }
+  );
+
+  const tryWithdrawFn = async () => {
+    const w = await walletSelector.selector.wallet();
+    await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
+
+    if (
+      terminationStatus === "VestingTerminatedWithDeficit" ||
+      terminationStatus === "EverythingUnstaked"
+    ) {
+      await addRequestToMultisigWallet(w, multisigWalletId, lockupAccountId, [
+        {
+          type: "FunctionCall",
+          method_name: "termination_prepare_to_withdraw",
+          args: btoa(JSON.stringify({})),
+          deposit: "0",
+          gas: "200000000000000",
+        },
+      ]);
+
+      if (terminationStatus === "VestingTerminatedWithDeficit") {
+        alert(
+          `Account ${lockupAccountId} will the tokens unstaked after confirmation (get back to "Try Withdraw" in 2 days after the confirmation)`
+        );
+      } else {
+        alert(
+          `Account ${lockupAccountId} will get the tokens withdrawn from the staking pool after confirmation (get back to "Try Withdraw" immediately after the confirmation to withdraw the funds back to foundation)`
+        );
+      }
+    } else {
+      await addRequestToMultisigWallet(w, multisigWalletId, lockupAccountId, [
+        {
+          type: "FunctionCall",
+          method_name: "termination_withdraw",
+          args: btoa(JSON.stringify({ receiver_id: multisigWalletId })),
+          deposit: "0",
+          gas: "200000000000000",
+        },
+      ]);
+
+      alert(
+        `Account ${lockupAccountId} will get the tokens withdrawn to foundation and the termination will be completed after confirmation!`
+      );
+    }
+  };
+
   const cancelLockupFn = async (
     authToken: string,
     start: Date,
@@ -126,7 +198,6 @@ const ManageLockup: NextPageWithLayout = () => {
     end: Date
   ) => {
     const w = await walletSelector.selector.wallet();
-    const multisigWalletId = "foundation.near";
     await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
 
     // No vesting hash -> not private schedule
@@ -177,6 +248,10 @@ const ManageLockup: NextPageWithLayout = () => {
         ]
       );
     }
+
+    await tryWithdrawFn();
+
+    cancelSetIsOpen(false);
   };
 
   return (
@@ -216,7 +291,7 @@ const ManageLockup: NextPageWithLayout = () => {
           <>
             <div>{showLockupInfo(lockupInformation)}</div>
             <div>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-row gap-3">
                 <button
                   className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
                   disabled={!lockupInformation.lockupState.vestingInformation}
@@ -228,11 +303,20 @@ const ManageLockup: NextPageWithLayout = () => {
                     ? "Can't cancel lockup without a vesting schedule or terminated"
                     : "Cancel lockup"}
                 </button>
+                <button
+                  className="rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
+                  onClick={() => {
+                    void tryWithdrawFn();
+                  }}
+                >
+                  Try withdraw
+                </button>
               </div>
             </div>
           </>
         )}
       </div>
+
       <Transition appear show={cancelLockupModalIsOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -383,13 +467,20 @@ function prepareAccountId(data: string) {
 
   if (data.startsWith("NEAR")) {
     publicKey = bs58.decode(data.slice(4)).slice(0, -4);
-  } else {
-    publicKey = bs58.decode(data.replace("ed25519:", ""));
   }
+
+  if (data.startsWith("ed25519:")) {
+    publicKey = bs58.decode(data.replace("ed25519:", ""));
+  } else {
+    return "";
+  }
+
   return Buffer.from(publicKey).toString("hex");
 }
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
+  console.log(lockupInfo);
+
   const getVestingDetails = (
     vesting: FromStateVestingInformation | undefined
   ) => {
