@@ -48,6 +48,14 @@ const ApprovalSection = () => {
               Manage wallets
             </Link>
           </div>
+          <div>
+            <Link
+              className="cursor-pointer hover:text-blue-500"
+              href="/approval/create"
+            >
+              Create wallet
+            </Link>
+          </div>
         </div>
       )}
     </div>
