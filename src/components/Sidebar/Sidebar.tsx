@@ -1,4 +1,5 @@
 import { useNearContext } from "~/context/near";
+import AccountingSection from "./AccountingSection";
 import ApprovalSection from "./ApprovalSection";
 import PaymentsSection from "./PaymentsSection";
 import TeamsMenu from "./TeamsMenu";
@@ -12,6 +13,7 @@ const Sidebar = () => {
         <TreasurySection />
         <PaymentsSection />
         <ApprovalSection />
+        <AccountingSection />
         <div className="flex-grow"></div>
         {/* <OffchainProfile /> */}
         <CurrentNetwork />
