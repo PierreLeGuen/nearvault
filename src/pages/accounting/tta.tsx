@@ -107,7 +107,7 @@ const Tta: NextPageWithLayout = () => {
         ></textarea>
         <button
           disabled={loading}
-          onClick={handleDownloadClick}
+          onClick={() => void handleDownloadClick()}
           className="w-1/2 rounded bg-blue-100 px-2 py-1 hover:bg-blue-300"
         >
           {loading
