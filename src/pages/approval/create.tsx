@@ -17,6 +17,7 @@ import { addRequestToMultisigWallet } from "./manage";
 interface IFormInput {
   newMultisigWalletId: string;
   fundingMultisigWalletId: string;
+  members: string;
 }
 
 const CreateMultisigWallet: NextPageWithLayout = () => {
@@ -120,12 +121,18 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     await addRequestToMultisigWallet(
       w,
       fromWalletId,
-      "multisig-factory.pierre-dev.near",
+      "multisig-factory-v0.near-finance.near",
       [
         {
           type: "FunctionCall",
           method_name: "create",
-          args: btoa(JSON.stringify({})),
+          args: btoa(
+            JSON.stringify({
+              name: data.newMultisigWalletId,
+              members: ["ed25519:8dpAgHR8zqcHqfX2abqq9F6JGEJFEFd42vHR6kDkpZ5D"], // TODO
+              num_confirmations: 1, // TODO
+            })
+          ),
           deposit: parseNearAmount("0"),
           gas: "150000000000000",
         },
@@ -141,7 +148,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     <div className="prose">
       <h1>Create multisig wallet</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
-        <label htmlFor="newMultisigWalletId">Multisig ID</label>
+        <label htmlFor="fundingMultisigWalletId">Funding multisig wallet</label>
         <WalletsDropDown
           wallets={teamsWallet || []}
           selectedWallet={fromWallet}
@@ -156,8 +163,8 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
         <input
           type="text"
           placeholder="mymultisig.near"
-          {...register("fundingMultisigWalletId", {
-            validate: (value) => value !== "bill",
+          {...register("newMultisigWalletId", {
+            validate: (value) => value !== "bill", // TODO: check wallet doesn't exist
           })}
         />
         {errors.newMultisigWalletId && (
@@ -167,12 +174,12 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
         <label>Members</label>
         <textarea
           placeholder={`example.near\ned25519:publickey`}
-          {...register("fundingMultisigWalletId", {
+          {...register("members", {
             validate: (value) => value !== "bill",
           })}
         />
-        {errors.fundingMultisigWalletId && (
-          <div className="text-red-500">Incorrect multisig wallet</div>
+        {errors.members && (
+          <div className="text-red-500">Incorrect members</div>
         )}
 
         <input type="submit" value="Create multisig wallet" />
