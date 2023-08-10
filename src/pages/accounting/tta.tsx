@@ -28,7 +28,7 @@ const Tta: NextPageWithLayout = () => {
     const end = new Date(endDate).toISOString();
 
     // Split the accountIds by newline character
-    const accountIdsArray = accountIds.split("\n");
+    const accountIdsArray = accountIds.replaceAll(" ", "").split("\n");
     const commaSeparatedAccountIds = accountIdsArray.join(",");
 
     const url =
