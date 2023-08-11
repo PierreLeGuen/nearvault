@@ -165,7 +165,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
           type="text"
           placeholder="mymultisig"
           {...register("newMultisigWalletId", {
-            validate: (value) => value !== "bill", // TODO: check wallet doesn't exist
+            validate: (value) => value !== "",
           })}
         />
         {errors.newMultisigWalletId && (
@@ -176,7 +176,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
         <textarea
           placeholder={`ed25519:publickey`}
           {...register("members", {
-            validate: (value) => value !== "bill",
+            validate: (value) => value !== "ed25519:",
           })}
         />
         {errors.members && (
