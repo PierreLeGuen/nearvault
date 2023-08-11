@@ -58,7 +58,7 @@ export const WalletSelectorContextProvider: React.FC<{
     });
 
     const _modal = setupModal(_selector, {
-      contractId: "lockup.near",
+      contractId: "multisignature.near",
     });
     const state = _selector.store.getState();
     setAccounts(state.accounts);
