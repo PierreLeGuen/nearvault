@@ -18,7 +18,10 @@ interface IFormInput {
   newMultisigWalletId: string;
   fundingMultisigWalletId: string;
   members: string;
+  numConfirmations: number;
 }
+
+const MULTISIG_FACTORY = "multisignature.near";
 
 const CreateMultisigWallet: NextPageWithLayout = () => {
   const {
@@ -117,27 +120,25 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
 
     const w = await walletSelector.selector.wallet();
 
-    // TODO: get the actual multisig factory address
-    await addRequestToMultisigWallet(
-      w,
-      fromWalletId,
-      "multisig-factory-v0.near-finance.near",
-      [
-        {
-          type: "FunctionCall",
-          method_name: "create",
-          args: btoa(
-            JSON.stringify({
-              name: data.newMultisigWalletId,
-              members: ["ed25519:8dpAgHR8zqcHqfX2abqq9F6JGEJFEFd42vHR6kDkpZ5D"], // TODO
-              num_confirmations: 1, // TODO
-            })
-          ),
-          deposit: parseNearAmount("0"),
-          gas: "150000000000000",
-        },
-      ]
-    );
+    await addRequestToMultisigWallet(w, fromWalletId, MULTISIG_FACTORY, [
+      {
+        type: "FunctionCall",
+        method_name: "create",
+        args: btoa(
+          JSON.stringify({
+            name: data.newMultisigWalletId,
+            members: data.members
+              .replaceAll(" ", "")
+              .split("\n")
+              .join(",")
+              .split(","),
+            num_confirmations: data.numConfirmations,
+          })
+        ),
+        deposit: parseNearAmount("0"),
+        gas: "150000000000000",
+      },
+    ]);
   };
 
   if (isLoading || walletsLoading) {
@@ -159,10 +160,10 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
           <div className="text-red-500">Incorrect multisig wallet</div>
         )}
 
-        <label>New multisig ID</label>
+        <label>New multisig name</label>
         <input
           type="text"
-          placeholder="mymultisig.near"
+          placeholder="mymultisig"
           {...register("newMultisigWalletId", {
             validate: (value) => value !== "bill", // TODO: check wallet doesn't exist
           })}
@@ -173,13 +174,25 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
 
         <label>Members</label>
         <textarea
-          placeholder={`example.near\ned25519:publickey`}
+          placeholder={`ed25519:publickey`}
           {...register("members", {
             validate: (value) => value !== "bill",
           })}
         />
         {errors.members && (
           <div className="text-red-500">Incorrect members</div>
+        )}
+
+        <label>Number of confirmations</label>
+        <input
+          type="number"
+          placeholder="2"
+          {...register("numConfirmations", {
+            validate: (value) => value > 0,
+          })}
+        />
+        {errors.numConfirmations && (
+          <div className="text-red-500">Incorrect number of confirmations</div>
         )}
 
         <input type="submit" value="Create multisig wallet" />

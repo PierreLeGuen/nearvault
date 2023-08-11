@@ -45,9 +45,9 @@ const PendingRequests: NextPageWithLayout = () => {
     request: MultisigRequest,
     kind: ApproveOrReject
   ) => {
-    if (!request.request_id) {
-      throw new Error("No request id");
-    }
+    // if (!request.request_id) {
+    //   throw new Error("No request id");
+    // }
 
     try {
       setLoadingState((prev) => new Map(prev.set(request.request_id, kind)));
