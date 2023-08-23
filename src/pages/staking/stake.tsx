@@ -43,10 +43,15 @@ const Stake: NextPageWithLayout = () => {
       }
       setStakingInProgress((prev) => ({ ...prev, [poolId]: true }));
 
-      await assertCorrectMultisigWallet(
-        walletSelector,
-        selectedWallet.walletDetails.walletAddress
-      );
+      let fromAddress = selectedWallet.walletDetails.walletAddress;
+
+      if (selectedWallet.isLockup) {
+        if (!selectedWallet.ownerAccountId) {
+          throw new Error("No owner account id");
+        }
+        fromAddress = selectedWallet.ownerAccountId;
+      }
+      await assertCorrectMultisigWallet(walletSelector, fromAddress);
       const w = await walletSelector.selector.wallet();
 
       const ftArgs = {
@@ -59,20 +64,31 @@ const Stake: NextPageWithLayout = () => {
         }
 
         // selectStakingPoolAction will be empty if the user already has a staking pool selected
-        const selectStakingPoolAction =
-          selectedPool === ""
-            ? [
-                {
-                  type: "FunctionCall",
-                  method_name: "select_staking_pool",
-                  args: btoa(
-                    JSON.stringify({ staking_pool_account_id: poolId })
-                  ),
-                  deposit: "0",
-                  gas: "150000000000000",
-                },
-              ]
-            : [];
+        let action = [];
+        if (selectedPool !== "") {
+          action = [
+            {
+              type: "FunctionCall",
+              method_name: "deposit_and_stake",
+              args: btoa(JSON.stringify(ftArgs)),
+              deposit: "0",
+              gas: "150000000000000",
+            },
+          ];
+        } else {
+          toast.info(
+            "You need to first select the staking pool with the following transaction then come back again here to deposit and stake."
+          );
+          action = [
+            {
+              type: "FunctionCall",
+              method_name: "select_staking_pool",
+              args: btoa(JSON.stringify({ staking_pool_account_id: poolId })),
+              deposit: "0",
+              gas: "150000000000000",
+            },
+          ];
+        }
 
         await handleWalletRequestWithToast(
           w.signAndSendTransaction({
@@ -87,15 +103,7 @@ const Stake: NextPageWithLayout = () => {
                   args: {
                     request: {
                       receiver_id: selectedWallet.walletDetails.walletAddress,
-                      actions: selectStakingPoolAction.concat([
-                        {
-                          type: "FunctionCall",
-                          method_name: "deposit_and_stake",
-                          args: btoa(JSON.stringify(ftArgs)),
-                          deposit: "0",
-                          gas: "150000000000000",
-                        },
-                      ]),
+                      actions: action,
                     },
                   },
                 },
