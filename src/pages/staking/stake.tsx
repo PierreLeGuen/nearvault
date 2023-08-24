@@ -65,7 +65,7 @@ const Stake: NextPageWithLayout = () => {
 
         // selectStakingPoolAction will be empty if the user already has a staking pool selected
         let action = [];
-        if (selectedPool !== "") {
+        if (currentlySelectedPool !== "") {
           action = [
             {
               type: "FunctionCall",
@@ -203,7 +203,7 @@ const Stake: NextPageWithLayout = () => {
   );
 
   const {
-    data: selectedPool,
+    data: currentlySelectedPool,
     isLoading: selectedPoolLoading,
     refetch: refetchSelectedPool,
   } = useQuery(["isPoolSelected", selectedWallet], async () => {
@@ -273,7 +273,14 @@ const Stake: NextPageWithLayout = () => {
             <AllAvailablePools
               onStakeClick={addRequestStakeToPool}
               stakingInProgress={stakingInProgress}
-              poolsAllowList={selectedPool ? [selectedPool] : []}
+              poolsAllowList={
+                currentlySelectedPool ? [currentlySelectedPool] : []
+              }
+              btnText={
+                selectedWallet.isLockup && currentlySelectedPool === null
+                  ? "Select Pool"
+                  : "Stake"
+              }
             />
           </div>
         </>

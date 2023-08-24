@@ -17,10 +17,12 @@ const AllAvailablePools = ({
   onStakeClick,
   stakingInProgress,
   poolsAllowList,
+  btnText,
 }: {
   onStakeClick: (poolId: string) => Promise<void>;
   stakingInProgress: { [poolId: string]: boolean };
   poolsAllowList: string[];
+  btnText: "Stake" | "Select Pool";
 }) => {
   const { newNearConnection } = usePersistingStore();
 
@@ -149,7 +151,7 @@ const AllAvailablePools = ({
                   void onStakeClick(pool.id);
                 }}
               >
-                {stakingInProgress[pool.id] ? "Creating request..." : "Stake"}
+                {stakingInProgress[pool.id] ? "Creating request..." : btnText}
               </button>
             )}
           </div>
