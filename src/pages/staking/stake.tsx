@@ -13,6 +13,7 @@ import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
+import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
@@ -25,6 +26,15 @@ export interface WalletPretty {
   ownerAccountId: string | undefined;
 }
 
+type PoolId = string;
+type Percentage = number;
+
+type Pool = {
+  id: PoolId;
+  status: "active" | "inactive";
+  fees: Percentage;
+};
+
 const Stake: NextPageWithLayout = () => {
   const { newNearConnection, currentTeam } = usePersistingStore();
   const walletSelector = useWalletSelector();
@@ -35,6 +45,7 @@ const Stake: NextPageWithLayout = () => {
   const [stakingInProgress, setStakingInProgress] = useState<{
     [poolId: string]: boolean;
   }>({});
+  const [pools, setPools] = useState<Map<PoolId, Pool>>(new Map());
 
   const addRequestStakeToPool = async (poolId: string) => {
     try {
@@ -236,6 +247,65 @@ const Stake: NextPageWithLayout = () => {
     }
   );
 
+  const { isLoading: poolsLoading, isError: poolsError } = useQuery(
+    ["allAvailablePools"],
+    async () => {
+      const res = await fetch("https://api.kitwallet.app/stakingPools");
+      const data = await (res.json() as Promise<PoolId[]>);
+      return data;
+    },
+    {
+      async onSuccess(poolsFromApi) {
+        const activePools: Map<PoolId, Pool> = new Map();
+        const inactivePools: Map<PoolId, Pool> = new Map();
+
+        const n = await newNearConnection();
+        const validatorsRes = await n.connection.provider.validators(null);
+
+        // Create a Set for constant time lookups
+        const validatorSet = new Set(
+          validatorsRes.current_validators.map(
+            (validator) => validator.account_id
+          )
+        );
+
+        // Parallelize calls to get_reward_fee_fraction
+        const poolPromises = poolsFromApi.map(async (pool) => {
+          const contract = initStakingContract(await n.account(""), pool);
+          const fees = await contract.get_reward_fee_fraction();
+
+          if (validatorSet.has(pool)) {
+            activePools.set(pool, {
+              id: pool,
+              status: "active",
+              fees: Number(
+                ((fees.numerator / fees.denominator) * 100).toFixed(2)
+              ),
+            });
+          } else {
+            inactivePools.set(pool, {
+              id: pool,
+              status: "inactive",
+              fees: Number(
+                ((fees.numerator / fees.denominator) * 100).toFixed(2)
+              ),
+            });
+          }
+        });
+
+        // Wait for all promises to resolve
+        await Promise.all(poolPromises);
+
+        const sortedPools: Map<PoolId, Pool> = new Map([
+          ...activePools,
+          ...inactivePools,
+        ]);
+
+        setPools(sortedPools);
+      },
+    }
+  );
+
   if (isLoading || !selectedWallet || !data || allWallets.length == 0) {
     return <div>Loading...</div>;
   }
@@ -281,6 +351,7 @@ const Stake: NextPageWithLayout = () => {
                   ? "Select Pool"
                   : "Stake"
               }
+              pools={pools}
             />
           </div>
         </>
