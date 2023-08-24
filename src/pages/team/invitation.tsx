@@ -16,6 +16,7 @@ const TeamInvitationPage: NextPageWithLayout = () => {
   const { id } = router.query;
   const mut = api.teams.acceptOrRejectInvitation.useMutation();
 
+  const { refetch } = api.teams.getTeamsForUser.useQuery();
   const acceptOrRejectInvitation = async (accept: boolean) => {
     setError("");
     setSuccess("");
@@ -30,7 +31,7 @@ const TeamInvitationPage: NextPageWithLayout = () => {
         invitationId: id,
         status: accept ? "ACCEPTED" : "REJECTED",
       });
-      api.teams.getTeamsForUser.useQuery();
+      await refetch();
 
       setSuccess("Invitation accepted, you can see your teams in the sidebar");
       toast.success(
