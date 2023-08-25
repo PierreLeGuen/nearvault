@@ -135,7 +135,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
             num_confirmations: data.numConfirmations,
           })
         ),
-        deposit: parseNearAmount("0"),
+        deposit: parseNearAmount("5"),
         gas: "150000000000000",
       },
     ]);
