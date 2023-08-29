@@ -20,6 +20,7 @@ const Tta: NextPageWithLayout = () => {
   const [startDate, setStartDate] = useState(startDateString);
   const [endDate, setEndDate] = useState(endDateString);
   const [accountIds, setAccountIds] = useState("");
+  const [includeBalances, setIncludeBalances] = useState(false);
 
   const handleDownloadClick = async () => {
     setLoading(true);
@@ -32,13 +33,9 @@ const Tta: NextPageWithLayout = () => {
     const commaSeparatedAccountIds = accountIdsArray.join(",");
 
     const url =
-      TTA_URL +
-      "/tta?start_date=" +
-      start +
-      "&end_date=" +
-      end +
-      "&accounts=" +
-      commaSeparatedAccountIds;
+      `${TTA_URL}/tta?start_date=${start}&end_date=${end}&accounts=${commaSeparatedAccountIds}` +
+      `&include_balances=${includeBalances.toString()}`;
+
     console.log(url);
 
     try {
@@ -85,8 +82,8 @@ const Tta: NextPageWithLayout = () => {
             required
             defaultValue={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-          />{" "}
-          to{" "}
+          />
+          to
           <input
             type="date"
             name="endDate"
@@ -94,7 +91,7 @@ const Tta: NextPageWithLayout = () => {
             required
             defaultValue={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-          />{" "}
+          />
           (up until, and excluding)
         </div>
         <textarea
@@ -105,6 +102,21 @@ const Tta: NextPageWithLayout = () => {
           required
           onChange={(e) => setAccountIds(e.target.value)}
         ></textarea>
+
+        {/* Include Balances Switch */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="includeBalances">Include Balances:</label>
+          <input
+            type="checkbox"
+            id="includeBalances"
+            checked={includeBalances}
+            onChange={() => setIncludeBalances((prev) => !prev)}
+          />
+        </div>
+        <p className="text-sm text-red-500">
+          Note: Reports with balances may take significantly longer to generate.
+        </p>
+
         <button
           disabled={loading}
           onClick={() => void handleDownloadClick()}
