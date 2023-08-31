@@ -94,7 +94,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
   }, [newNearConnection]);
 
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
-    console.log(JSON.stringify(data));
+    data.numConfirmations = Number(data.numConfirmations);
     void createMultisigWalletRequest(data);
   };
 
