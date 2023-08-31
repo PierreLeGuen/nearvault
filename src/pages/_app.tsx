@@ -12,7 +12,7 @@ import { type ReactElement, type ReactNode } from "react";
 import { ToastContainer } from "react-toastify";
 
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import "@near-wallet-selector/modal-ui/styles.css";
+import "@near-finance-near-wallet-selector/modal-ui/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import "~/styles/globals.css";
 

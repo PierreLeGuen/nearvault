@@ -7,8 +7,8 @@ export interface WalletState {
 }
 
 export interface WalletActions {
-  setPublicKey: (publicKey: PublicKey) => void;
-  setAccountId: (accountId: string) => void;
+  setPublicKey: (publicKey: PublicKey | null) => void;
+  setAccountId: (accountId: string | null) => void;
   resetWallet: () => void;
 }
 
@@ -18,8 +18,7 @@ const initialState: WalletState = {
 };
 
 export const createWalletSlice: StateCreator<WalletState & WalletActions> = (
-  set,
-  get
+  set
 ) => ({
   ...initialState,
   setPublicKey: (publicKey) => set({ publicKey }),

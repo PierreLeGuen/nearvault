@@ -48,7 +48,7 @@ export const WalletSelectorContextProvider: React.FC<{
 
   const { network } = useNearContext();
 
-  const { setPublicKey } = usePersistingStore();
+  const { setPublicKey, setAccountId } = usePersistingStore();
 
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
@@ -100,6 +100,12 @@ export const WalletSelectorContextProvider: React.FC<{
         }
         setAccounts(nextAccounts);
       });
+
+    selector.on("signedOut", () => {
+      console.log("signedOut");
+      setPublicKey(null);
+      setAccountId(null);
+    });
 
     const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {
       console.log(`The reason for hiding the modal ${hideReason}`);
