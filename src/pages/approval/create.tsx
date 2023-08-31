@@ -146,7 +146,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="prose">
+    <div className="prose p-3">
       <h1>Create multisig wallet</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
         <label htmlFor="fundingMultisigWalletId">Funding multisig wallet</label>
@@ -195,7 +195,11 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
           <div className="text-red-500">Incorrect number of confirmations</div>
         )}
 
-        <input type="submit" value="Create multisig wallet" />
+        <input
+          type="submit"
+          value="Create multisig wallet"
+          className="my-3 cursor-pointer rounded bg-blue-200 px-2 py-1 hover:bg-blue-300"
+        />
       </form>
     </div>
   );
