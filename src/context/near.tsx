@@ -13,6 +13,7 @@ interface NearContextType {
   switchNetwork: () => void;
   archivalNodeUrl: string;
   archival_provider: Provider;
+  provider: Provider;
 }
 
 const NearContext = createContext<NearContextType | null>(null);
@@ -45,6 +46,9 @@ export const NearContextProvider: React.FC<{
       archivalNodeUrl,
       archival_provider: new providers.JsonRpcProvider({
         url: archivalNodeUrl,
+      }),
+      provider: new providers.JsonRpcProvider({
+        url: `https://rpc.${network}.near.org`,
       }),
     };
   }, [network, archivalNodeUrl]);

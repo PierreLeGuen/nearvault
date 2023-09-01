@@ -1,5 +1,4 @@
 import { Dialog, Transition } from "@headlessui/react";
-import { useQuery } from "@tanstack/react-query";
 import type BN from "bn.js";
 import bs58 from "bs58";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
@@ -41,13 +40,13 @@ const ManageLockup: NextPageWithLayout = () => {
   useSession({ required: true });
 
   const [account, setAccount] = useState("");
-  const [lockupAccountId, setLockupAccountId] = useState("");
   const [accountError, setAccountError] = useState("");
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const [lockupInformation, setLockupInformation] =
     useState<AccountLockup | null>(null);
+  const [terminationStatus, setTerminationStatus] = useState<string | null>("");
 
-  const provider = useNearContext().archival_provider;
+  const provider = useNearContext().provider;
   const walletSelector = useWalletSelector();
   const { newNearConnection } = usePersistingStore();
   const multisigWalletId = "foundation.near";
@@ -110,20 +109,13 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   }, [startDate, cliffDate, endDate, setError, clearErrors]);
 
-  useEffect(() => {
-    if (account.length > 0) {
-      console.log(account);
-
-      setLockupAccountId(
-        calculateLockup(prepareAccountId(account), "lockup.near")
-      );
-    }
-  }, [account]);
-
   const getLockupInformation = async (account: string) => {
+    console.log("getLockupInformation", account);
+
     try {
       const l = calculateLockup(prepareAccountId(account), "lockup.near");
       const r = await viewLockupAccount(l, provider);
+      await updateTerminationStatus();
       setLockupInformation(r);
     } catch (e) {
       if (e) {
@@ -136,20 +128,20 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   };
 
-  const { data: terminationStatus } = useQuery(
-    ["lockup", account],
-    async () => {
-      const n = await newNearConnection();
-      const l = initLockupContract(await n.account(account), lockupAccountId);
-      const terminationStatus = await l.get_termination_status();
-
-      return terminationStatus;
-    }
-  );
+  async function updateTerminationStatus() {
+    const n = await newNearConnection();
+    const l = initLockupContract(
+      await n.account(account),
+      calculateLockup(account, "lockup.near")
+    );
+    const terminationStatus = await l.get_termination_status();
+    setTerminationStatus(terminationStatus);
+  }
 
   const tryWithdrawFn = async () => {
     const w = await walletSelector.selector.wallet();
     await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
+    const lockupAccountId = calculateLockup(account, "lockup.near");
 
     if (
       terminationStatus === "VestingTerminatedWithDeficit" ||
@@ -481,8 +473,6 @@ function prepareAccountId(data: string) {
 }
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
-  console.log(lockupInfo);
-
   const getVestingDetails = (
     vesting: FromStateVestingInformation | undefined
   ) => {
