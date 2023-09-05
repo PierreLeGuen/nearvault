@@ -1,5 +1,4 @@
 import { useState } from "react";
-import usePersistingStore from "~/store/useStore";
 import { classNames } from "../Sidebar/TeamsMenu";
 
 type PoolId = string;
@@ -24,8 +23,6 @@ const AllAvailablePools = ({
   btnText: "Stake" | "Select Pool";
   pools: Map<PoolId, Pool>;
 }) => {
-  const { newNearConnection } = usePersistingStore();
-
   const [searchInput, setSearchInput] = useState<string>("");
 
   const filteredPools = [...pools.values()]

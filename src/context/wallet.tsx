@@ -50,6 +50,78 @@ export const WalletSelectorContextProvider: React.FC<{
 
   const { setPublicKey, setAccountId } = usePersistingStore();
 
+  const getAccountIds = async (publicKey: string): Promise<Array<string>> => {
+    const response: Response = await fetch(
+      `${
+        selector?.options.network.indexerUrl || ""
+      }/publicKey/ed25519:${publicKey}/accounts`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to get account id from public key");
+    }
+
+    const accountIds = (await response.json()) as Array<string>;
+
+    console.log("accountIds", accountIds);
+
+    if (!Array.isArray(accountIds) || !accountIds.length) {
+      return [];
+    }
+
+    return accountIds;
+  };
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      // Get the active public key
+      const activePublicKey = accounts.find(
+        (account) => account.active
+      )?.publicKey;
+
+      if (!activePublicKey) {
+        return;
+      }
+
+      try {
+        const accountIds = await getAccountIds(activePublicKey);
+
+        const w = await selector?.wallet();
+        if (!w) {
+          return;
+        }
+
+        // compare if different before updating
+        if (selector?.store.getState().accounts === accounts) {
+          return;
+        }
+
+        selector?.updateAccounts(w.id, [
+          ...accountIds.map((id) => ({
+            accountId: id,
+            publicKey: activePublicKey,
+          })),
+        ]);
+      } catch (error) {
+        console.error("Error fetching account IDs:", error);
+      }
+    };
+
+    // Initial fetch when the component mounts
+    const fetchAndHandleErrors = () => {
+      fetchAccounts().catch((error) => {
+        console.error("Error in fetchAccounts:", error);
+      });
+    };
+    fetchAndHandleErrors();
+
+    const intervalId = setInterval(fetchAndHandleErrors, 10000);
+
+    // Clear the interval when the component unmounts
+    return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accounts, selector?.options.network.indexerUrl]);
+
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
       network: network,
@@ -102,7 +174,6 @@ export const WalletSelectorContextProvider: React.FC<{
       });
 
     selector.on("signedOut", () => {
-      console.log("signedOut");
       setPublicKey(null);
       setAccountId(null);
     });

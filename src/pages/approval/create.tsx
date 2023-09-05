@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { type Near } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { getSidebarLayout } from "~/components/Layout";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
@@ -30,7 +29,6 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     formState: { errors },
   } = useForm<IFormInput>();
   const { currentTeam, newNearConnection } = usePersistingStore();
-  const [nearConnection, setNearConnection] = useState<Near>();
 
   const [fromWallet, setFromWallet] = useState<WalletPretty>();
 
@@ -83,15 +81,6 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
       enabled: !!currentTeam && !!data,
     }
   );
-
-  useEffect(() => {
-    const getNearConnection = async () => {
-      const near = await newNearConnection();
-      setNearConnection(near);
-    };
-
-    void getNearConnection();
-  }, [newNearConnection]);
 
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
     data.numConfirmations = Number(data.numConfirmations);
