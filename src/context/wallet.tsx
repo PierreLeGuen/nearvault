@@ -90,9 +90,24 @@ export const WalletSelectorContextProvider: React.FC<{
         if (!w) {
           return;
         }
+        if (selector === null) {
+          return;
+        }
 
-        // compare if different before updating
-        if (selector?.store.getState().accounts === accounts) {
+        const currentAccounts = selector?.store.getState().accounts;
+
+        // Check if there are differences between the two account arrays
+        const hasDifferences =
+          accounts.some(
+            (account) =>
+              !currentAccounts.find((ca) => ca.publicKey === account.publicKey)
+          ) ||
+          currentAccounts.some(
+            (account) =>
+              !accounts.find((ca) => ca.publicKey === account.publicKey)
+          );
+
+        if (!hasDifferences) {
           return;
         }
 
