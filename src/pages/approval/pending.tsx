@@ -152,10 +152,6 @@ const PendingRequests: NextPageWithLayout = () => {
     }
   };
 
-  // const updateTransactionHisory = async () => {
-  //   api.teams.insertTransferHistory
-  // }
-
   useEffect(() => {
     const connectionConfig = {
       networkId: "mainnet",
