@@ -396,13 +396,7 @@ const Transfers: NextPageWithLayout = () => {
     }
   };
 
-  if (
-    isLoading ||
-    !teamsWallet ||
-    isLoadingBenef ||
-    isLoadingTokens ||
-    !tokens
-  ) {
+  if (isLoading || !teamsWallet || isLoadingBenef) {
     return <div>Loading...</div>;
   }
 
@@ -474,12 +468,13 @@ const Transfers: NextPageWithLayout = () => {
               <div>Balances of {fromWallet.prettyName}</div>
             )}
             <div>
-              {tokens.map((t) => (
-                <div key={t.symbol}>
-                  {t.symbol}:{" "}
-                  {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
-                </div>
-              ))}
+              {((isLoadingTokens || !tokens) && <div>Loading tokens...</div>) ||
+                tokens.map((t) => (
+                  <div key={t.symbol}>
+                    {t.symbol}:{" "}
+                    {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
+                  </div>
+                ))}
             </div>
           </div>
         </div>

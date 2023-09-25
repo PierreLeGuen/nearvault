@@ -128,11 +128,6 @@ const CreateLockup: NextPageWithLayout = () => {
     );
 
     const w = await walletSector.selector.wallet();
-    // Empty string means allow staking
-    let allowListAccount = "";
-    if (!allowStaking) {
-      allowListAccount = "system";
-    }
 
     let createArgs: any = {};
     if (withCliff) {

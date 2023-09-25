@@ -473,6 +473,8 @@ function prepareAccountId(data: string) {
 }
 
 const showLockupInfo = (lockupInfo: AccountLockup) => {
+  console.log(lockupInfo);
+
   const getVestingDetails = (
     vesting: FromStateVestingInformation | undefined
   ) => {
