@@ -351,7 +351,9 @@ const Transfers: NextPageWithLayout = () => {
         );
         txnId = res?.transaction_outcome.id;
       } else {
-        const a = amount + "0".repeat(currentToken.decimals);
+        const a = (
+          parseFloat(amount) * Math.pow(10, currentToken.decimals)
+        ).toString();
         const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
 
         const res = await handleWalletRequestWithToast(
