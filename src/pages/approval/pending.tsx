@@ -310,12 +310,12 @@ const PendingRequests: NextPageWithLayout = () => {
                 action!,
                 request.receiver_id,
                 wallet.walletAddress
-              );
+              ).catch(console.error);
               _explanations.set(
                 wallet.walletAddress +
                   request.request_id.toString() +
                   index.toString(),
-                explanation
+                explanation || ""
               );
             }
           }
@@ -358,7 +358,9 @@ const PendingRequests: NextPageWithLayout = () => {
                 <h4 className="mb-1 text-xs font-bold">
                   Request {request.request_id}:
                 </h4>
-                <div className="">Receiver ID: {request.receiver_id}</div>
+                <div className="">
+                  Receiver ID: &quot;{request.receiver_id}&quot;
+                </div>
                 <div>
                   <div>
                     Approvals: {request.confirmations.length} voter
