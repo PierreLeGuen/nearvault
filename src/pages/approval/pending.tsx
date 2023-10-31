@@ -310,7 +310,12 @@ const PendingRequests: NextPageWithLayout = () => {
                 action!,
                 request.receiver_id,
                 wallet.walletAddress
-              ).catch(console.error);
+              ).catch((e) => {
+                console.error(e);
+                return (
+                  "Failed to get explanation, error: " + (e as Error).message
+                );
+              });
               _explanations.set(
                 wallet.walletAddress +
                   request.request_id.toString() +
