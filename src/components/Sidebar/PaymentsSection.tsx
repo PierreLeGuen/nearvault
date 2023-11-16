@@ -60,14 +60,6 @@ const PaymentsSection = () => {
           <div>
             <Link
               className="cursor-pointer hover:text-blue-500"
-              href="/beneficiary/add"
-            >
-              Add Beneficiary
-            </Link>
-          </div>
-          <div>
-            <Link
-              className="cursor-pointer hover:text-blue-500"
               href="/beneficiary/manage"
             >
               Manage Beneficiaries

@@ -37,7 +37,11 @@ export default function TeamsMenu() {
     void signOut();
     resetTeams();
     resetWallet();
-    const w = await walletSelector.selector.wallet();
+    const w = await walletSelector?.selector.wallet();
+    if (!w) {
+      console.error("No wallet");
+      return;
+    }
     await w.signOut();
   };
   return (

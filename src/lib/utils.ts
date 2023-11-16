@@ -1,5 +1,6 @@
-import { toast } from "react-toastify";
 import { type WalletSelectorContextValue } from "~/context/wallet";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export const assertCorrectMultisigWallet = async (
   walletSelector: WalletSelectorContextValue,
@@ -31,3 +32,7 @@ export const assertCorrectMultisigWallet = async (
 export const getNearTimestamp = (date: Date) => {
   return date.getTime() * 1_000_000;
 };
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

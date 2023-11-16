@@ -1,14 +1,27 @@
-import { XMarkIcon } from "@heroicons/react/20/solid";
 import { type Beneficiary } from "@prisma/client";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
+import HeaderTitle from "~/components/ui/header";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
-const Add: NextPageWithLayout = () => {
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
+import Link from "next/link";
+import { Button } from "~/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { AddDialog } from "./addDialog";
+
+const Manage: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();
-  const mut = api.teams.deleteBeneficiaryForTeam.useMutation();
+  const deleteMut = api.teams.deleteBeneficiaryForTeam.useMutation();
 
   if (!currentTeam) {
     throw new Error("No current team");
@@ -17,60 +30,88 @@ const Add: NextPageWithLayout = () => {
   const {
     data: benefs,
     isLoading,
-    refetch,
+    refetch: refetchBook,
   } = api.teams.getBeneficiariesForTeam.useQuery({
     teamId: currentTeam.id,
   });
+
+  const getNearblocksUrl = (walletId: string) =>
+    `https://nearblocks.io/address/${walletId}`;
 
   const deleteBeneficiary = (b: Beneficiary) => {
     if (!currentTeam) {
       throw new Error("No current team");
     }
-    mut.mutate(
+    deleteMut.mutate(
       {
         beneficiaryId: b.id,
         teamId: currentTeam.id,
       },
       {
         onSettled: () => {
-          void refetch();
+          void refetchBook();
           toast.success("Beneficiary removed");
         },
-      }
+      },
     );
   };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="prose p-3">
-      <h1>Manage Beneficiaries</h1>
-      <div className="flex flex-col gap-2">
-        {benefs?.map((b) => (
-          <div className="flex flex-row items-center gap-3" key={b.id}>
-            <div>
-              {b.firstName} {b.lastName}: {b.walletAddress}
-            </div>
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  deleteBeneficiary(b);
-                }}
-                className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-2 py-1 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-              >
-                <XMarkIcon className="h-4 w-4" />
-                <span>Remove</span>
-              </button>
-            </div>
-          </div>
-        ))}
+    <div className="flex flex-grow flex-col gap-10 p-36">
+      <div className="flex flex-row justify-between">
+        <HeaderTitle level="h1" text="Address Book" />
+        <AddDialog />
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[250px]">Identifier</TableHead>
+              <TableHead>Wallet ID</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {benefs?.map((benef) => (
+              <TableRow key={benef.id}>
+                <TableCell className="font-medium">{benef.firstName}</TableCell>
+                <TableCell>
+                  <span className="flex flex-row items-center gap-1">
+                    {benef.walletAddress}
+
+                    <Button variant={"ghost"} size={"icon"} asChild>
+                      <Link
+                        href={getNearblocksUrl(benef.walletAddress)}
+                        target="_blank"
+                      >
+                        <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant={"destructive"}
+                    onClick={() => {
+                      deleteBeneficiary(benef);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
 };
 
-Add.getLayout = getSidebarLayout;
+Manage.getLayout = getSidebarLayout;
 
-export default Add;
+export default Manage;
