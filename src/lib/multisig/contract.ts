@@ -121,7 +121,7 @@ export type MultiSigAction =
 export interface MultisigRequest {
   request_id: number;
   receiver_id: string;
-  confirmations: PublicKey[];
+  confirmations: MultisigMember[];
   requiredConfirmations: number;
   actions: MultiSigAction[];
 }
@@ -149,7 +149,7 @@ export interface MultiSigContract extends nearAPI.Contract {
 
 export function initMultiSigContract(
   account: nearAPI.Account,
-  contractName: string
+  contractName: string,
 ): MultiSigContract {
   return new nearAPI.Contract(account, contractName, {
     viewMethods: [
