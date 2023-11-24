@@ -4,7 +4,6 @@ import { type StateCreator } from "zustand";
 export interface NearState {
   config: {
     networkId: "mainnet" | "testnet";
-    // keyStore: keyStores.BrowserLocalStorageKeyStore;
     nodeUrl: string;
   };
   nearConnection: Near | undefined;
@@ -17,8 +16,7 @@ export interface NearState {
 export const createNearSlice: StateCreator<NearState> = (set, get) => ({
   config: {
     networkId: "mainnet",
-    // keyStore: new BrowserLocalStorageKeyStore(),
-    nodeUrl: "https://rpc.mainnet.near.org",
+    nodeUrl: "https://beta.rpc.mainnet.near.org",
   },
   nearConnection: undefined,
   switchNetwork: async () => {
@@ -26,7 +24,6 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       set({
         config: {
           networkId: "testnet",
-          // keyStore: new keyStores.BrowserLocalStorageKeyStore(),
           nodeUrl: "https://rpc.testnet.near.org",
         },
       });
@@ -34,8 +31,7 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       set({
         config: {
           networkId: "mainnet",
-          // keyStore: new keyStores.BrowserLocalStorageKeyStore(),
-          nodeUrl: "https://rpc.mainnet.near.org",
+          nodeUrl: "https://beta.rpc.mainnet.near.org",
         },
       });
     }

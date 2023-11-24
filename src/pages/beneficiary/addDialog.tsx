@@ -90,7 +90,7 @@ export const AddDialog = () => {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button>Add address</Button>
+        <Button className="shadow-lg">Add address</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

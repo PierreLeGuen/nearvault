@@ -4,7 +4,7 @@ import {
   ChevronRightIcon,
   XMarkIcon,
 } from "@heroicons/react/20/solid";
-import { type ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
 import { type RequestRow } from "./explain";
 
@@ -54,6 +54,43 @@ export const examplecolumns: ColumnDef<Payment>[] = [
       </div>
     ),
   },
+];
+
+const columnHelper = createColumnHelper<RequestRow>();
+
+const columnsWithHelper = [
+  columnHelper.accessor("request.request_id", {
+    header: () => <span>Request ID</span>,
+    cell: (row) => row.getValue(),
+  }),
+  columnHelper.accessor("request.receiver_id", {
+    header: "Receiver",
+    cell: (row) => (
+      <div className="flex flex-col">
+        <p className="break-words">{row.getValue()}</p>
+      </div>
+    ),
+  }),
+  columnHelper.accessor("explanation.short_description", {
+    header: "Description",
+    cell: (row) => (
+      <div className="flex flex-col">
+        <p className="break-words">{row.getValue()}</p>
+      </div>
+    ),
+  }),
+  columnHelper.accessor("request", {
+    header: "Confirmations",
+    cell: (row) => (
+      <div className="flex flex-col">
+        <p className="break-words">
+          {row.getValue().confirmations.length +
+            "/" +
+            row.getValue().requiredConfirmations}
+        </p>
+      </div>
+    ),
+  }),
 ];
 
 export const columns: ColumnDef<RequestRow>[] = [

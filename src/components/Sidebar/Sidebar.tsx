@@ -22,28 +22,30 @@ const Sidebar = ({ publicKey }: { publicKey: PublicKey | null }) => {
         <ApprovalSection />
         <AccountingSection />
         <div className="flex-grow"></div>
-        {publicKey && (
-          <button
-            className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            onClick={() => {
-              handleSignIn();
-            }}
-          >
-            Ⓝ {publicKey.toString().slice(0, 20)}...
-          </button>
-        )}
-        {!publicKey && (
-          <button
-            className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            onClick={() => {
-              handleSignIn();
-            }}
-          >
-            Ⓝ Sign In
-          </button>
-        )}
-        <CurrentNetwork />
-        <Webthreeconnected publicKey={publicKey} />
+        <div className="flex flex-col gap-1">
+          {publicKey && (
+            <button
+              className="mb-2 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              onClick={() => {
+                handleSignIn();
+              }}
+            >
+              Ⓝ {publicKey.toString().slice(0, 20)}...
+            </button>
+          )}
+          {!publicKey && (
+            <button
+              className="mb-2 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              onClick={() => {
+                handleSignIn();
+              }}
+            >
+              Ⓝ Sign In
+            </button>
+          )}
+          <CurrentNetwork />
+          <Webthreeconnected publicKey={publicKey} />
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import type * as naj from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import {
@@ -14,6 +15,7 @@ import {
 export type explanation = {
   full_description: string;
   short_description?: string;
+  actual_receiver?: string;
 };
 
 // new definitnon with multisig request and explanation Multisig & Explanation
@@ -118,6 +120,7 @@ export async function explainAction(
       let desc = `The deposit for this function call is: ${formatNearAmount(
         action.deposit,
       )}Ⓝ and the gas limit is: ${Number(action.gas) / 10 ** 12} TGas.`;
+      let actual_receiver = undefined;
 
       const methodDescription = methodDescriptions[action.method_name];
       if (!methodDescription) {
@@ -135,12 +138,14 @@ export async function explainAction(
           from,
           await c.account(""),
         );
-        desc = `${argsDescription} ` + desc;
+        desc = `${argsDescription.desc} ` + desc;
+        actual_receiver = argsDescription.fnReceiverId;
       }
 
       return {
         full_description: desc,
         short_description: desc,
+        actual_receiver: actual_receiver,
       };
 
     case MultiSigRequestActionType.DeleteKey:
@@ -191,6 +196,10 @@ type MethodArgs =
   | FtTransferParams
   | FtTransferCallParams;
 
+type fnCallDetails = {
+  desc: string;
+  fnReceiverId: string | undefined;
+};
 const methodDescriptions: {
   [methodName: string]: {
     getExplanation: (
@@ -198,85 +207,112 @@ const methodDescriptions: {
       contract: string,
       from_account: string,
       near_connection: naj.Account,
-    ) => Promise<string>;
+    ) => Promise<fnCallDetails>;
   };
 } = {
   // Lockup Contract
   add_full_access_key: {
     getExplanation: async (args: MethodArgs) => {
       const addFullAccessKeyParams = args as AddFullAccessKeyParams;
-      return Promise.resolve(
-        `Adds a new full access key: ${addFullAccessKeyParams.new_public_key}.`,
-      );
+      return {
+        desc: `Adds a new full access key: ${addFullAccessKeyParams.new_public_key}.`,
+        fnReceiverId: undefined, // No receiver ID for this action
+      };
     },
   },
   transfer: {
     getExplanation: async (args: MethodArgs, executed_from: string) => {
       const transferParams = args as TransferParams;
-      return Promise.resolve(
-        `Transfers ${formatNearAmount(
+      return {
+        desc: `Transfers ${formatNearAmount(
           transferParams.amount,
         )}Ⓝ from ${executed_from} to ${transferParams.receiver_id}.`,
-      );
+        fnReceiverId: transferParams.receiver_id,
+      };
     },
   },
   unstake: {
     getExplanation: async (args: MethodArgs) => {
       const unstakeParams = args as UnstakeParams;
-      return Promise.resolve(
-        `Unstakes ${formatNearAmount(unstakeParams.amount)}Ⓝ.`,
-      );
+      return {
+        desc: `Unstakes ${formatNearAmount(unstakeParams.amount)}Ⓝ.`,
+        fnReceiverId: undefined, // No specific receiver ID for unstaking
+      };
     },
   },
   withdraw_from_staking_pool: {
     getExplanation: async (args: MethodArgs) => {
       const withdrawFromStakingPoolParams =
         args as WithdrawFromStakingPoolParams;
-      return Promise.resolve(
-        `Withdraws ${formatNearAmount(
+      return {
+        desc: `Withdraws ${formatNearAmount(
           withdrawFromStakingPoolParams.amount,
         )}Ⓝ from the staking pool.`,
-      );
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
     },
   },
   deposit_and_stake: {
     getExplanation: async (args: MethodArgs) => {
       const depositAndStakeParams = args as DepositAndStakeParams;
-      return Promise.resolve(
-        `Deposits and stakes ${formatNearAmount(
+      return {
+        desc: `Deposits and stakes ${formatNearAmount(
           depositAndStakeParams.amount,
         )}Ⓝ.`,
-      );
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
     },
   },
   select_staking_pool: {
     getExplanation: async (args: MethodArgs) => {
       const selectStakingPoolParams = args as SelectStakingPoolParams;
-      return Promise.resolve(
-        `Selects staking pool with account ID: ${selectStakingPoolParams.staking_pool_account_id}.`,
-      );
+      return {
+        desc: `Selects staking pool with account ID: ${selectStakingPoolParams.staking_pool_account_id}.`,
+        fnReceiverId: selectStakingPoolParams.staking_pool_account_id,
+      };
     },
   },
+
   unselect_staking_pool: {
-    getExplanation: async () =>
-      Promise.resolve(`Unselects the currently selected staking pool.`),
+    getExplanation: async () => {
+      return {
+        desc: `Unselects the currently selected staking pool.`,
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
+    },
   },
+
   refresh_staking_pool_balance: {
-    getExplanation: async () =>
-      Promise.resolve(`Refreshes the balance of the selected staking pool.`),
+    getExplanation: async () => {
+      return {
+        desc: `Refreshes the balance of the selected staking pool.`,
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
+    },
   },
   withdraw_all_from_staking_pool: {
-    getExplanation: async () =>
-      Promise.resolve(`Withdraws all funds from the selected staking pool.`),
+    getExplanation: async () => {
+      return {
+        desc: `Withdraws all funds from the selected staking pool.`,
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
+    },
   },
   unstake_all: {
-    getExplanation: async () => Promise.resolve(`Unstakes all tokens.`),
+    getExplanation: async () => {
+      return {
+        desc: `Unstakes all tokens.`,
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
+    },
   },
   check_transfers_vote: {
-    getExplanation: async () =>
-      Promise.resolve(
-        `Checks the vote on transfers. If the voting contract returns "yes", transfers will be enabled. If the vote is "no", transfers will remain disabled.`,
-      ),
+    getExplanation: async () => {
+      return {
+        desc: `Checks the vote on transfers. If the voting contract returns "yes", transfers will be enabled. If the vote is "no", transfers will remain disabled.`,
+        fnReceiverId: undefined, // No specific receiver ID for this action
+      };
+    },
   },
   // Fungible Token Contract
   ft_transfer: {
@@ -289,26 +325,29 @@ const methodDescriptions: {
       const c = initFungibleTokenContract(near_connection, contract);
       const metadata = await c.ft_metadata();
       const ftTransferParams = args as FtTransferParams;
-      return `Transfers ${(
-        parseInt(ftTransferParams.amount) /
-        10 ** metadata.decimals
-      ).toLocaleString()} ${metadata.symbol} to ${
-        ftTransferParams.receiver_id
-      }. Memo: ${ftTransferParams.memo || "None"}.`;
+      return {
+        desc: `Transfers ${(
+          parseInt(ftTransferParams.amount) /
+          10 ** metadata.decimals
+        ).toLocaleString()} ${metadata.symbol}.`,
+        fnReceiverId: ftTransferParams.receiver_id,
+      };
     },
   },
+
   ft_transfer_call: {
     getExplanation: async (args: MethodArgs, executed_from: string) => {
       const ftTransferCallParams = args as FtTransferCallParams;
-      return Promise.resolve(
-        `Transfers ${
+      return {
+        desc: `Transfers ${
           ftTransferCallParams.amount
         } tokens from ${executed_from} to ${
           ftTransferCallParams.receiver_id
         }, and makes a contract call. Memo: ${
           ftTransferCallParams.memo || "None"
         }, Message: ${ftTransferCallParams.msg}`,
-      );
+        fnReceiverId: ftTransferCallParams.receiver_id,
+      };
     },
   },
 };

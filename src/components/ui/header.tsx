@@ -9,7 +9,7 @@ const HeaderTitle = ({ text, level = "h1" }: HeaderTitleProps) => {
   let classNames = "text-gray-800";
   switch (level) {
     case "h1":
-      classNames += " text-2xl";
+      classNames += " text-3xl font-bold";
       break;
     case "h2":
       classNames += " text-xl";

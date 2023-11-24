@@ -121,7 +121,7 @@ export type MultiSigAction =
 export interface MultisigRequest {
   request_id: number;
   receiver_id: string;
-  confirmations: MultisigMember[];
+  confirmations: string[];
   requiredConfirmations: number;
   actions: MultiSigAction[];
 }
@@ -140,9 +140,7 @@ export interface MultiSigContract extends nearAPI.Contract {
     member: MultisigMember;
   }): Promise<number>;
   list_request_ids(): Promise<RequestId[]>;
-  get_confirmations(params: {
-    request_id: RequestId;
-  }): Promise<MultisigMember[]>;
+  get_confirmations(params: { request_id: RequestId }): Promise<string[]>;
   get_num_confirmations(): Promise<number>;
   get_request_nonce(): Promise<number>;
 }

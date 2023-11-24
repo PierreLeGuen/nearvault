@@ -61,12 +61,12 @@ const Manage: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex flex-grow flex-col gap-10 p-36">
+    <div className="flex flex-grow flex-col gap-10 px-24 py-10">
       <div className="flex flex-row justify-between">
         <HeaderTitle level="h1" text="Address Book" />
         <AddDialog />
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border shadow-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -78,10 +78,12 @@ const Manage: NextPageWithLayout = () => {
           <TableBody>
             {benefs?.map((benef) => (
               <TableRow key={benef.id}>
-                <TableCell className="font-medium">{benef.firstName}</TableCell>
+                <TableCell className="font-medium">
+                  <p className="break-all">{benef.firstName}</p>
+                </TableCell>
                 <TableCell>
                   <span className="flex flex-row items-center gap-1">
-                    {benef.walletAddress}
+                    <p className="break-all">{benef.walletAddress}</p>
 
                     <Button variant={"ghost"} size={"icon"} asChild>
                       <Link
