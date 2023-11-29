@@ -9,6 +9,7 @@ import { getSidebarLayout } from "~/components/Layout";
 import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
 import CurrenciesDropDown from "~/components/Payments/CurrenciesDropDown";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import HeaderTitle from "~/components/ui/header";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import {
@@ -34,7 +35,7 @@ export interface Token extends FungibleTokenMetadata {
 }
 
 export const handleWalletRequestWithToast = async (
-  p: Promise<FinalExecutionOutcome | void>
+  p: Promise<FinalExecutionOutcome | void>,
 ) => {
   const res = await toast.promise(p, {
     pending: "Check your wallet to approve the request",
@@ -91,6 +92,7 @@ const Transfers: NextPageWithLayout = () => {
   const { currentTeam, newNearConnection } = usePersistingStore();
   const mutate = api.teams.insertTransferHistory.useMutation();
 
+  
   const { isLoading } = api.teams.getWalletsForTeam.useQuery(
     {
       teamId: currentTeam?.id || "",
@@ -112,7 +114,7 @@ const Transfers: NextPageWithLayout = () => {
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
-              "lockup.near"
+              "lockup.near",
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
@@ -131,7 +133,7 @@ const Transfers: NextPageWithLayout = () => {
         }
         setTeamsWallet(w);
       },
-    }
+    },
   );
 
   const { data: beneficiaries, isLoading: isLoadingBenef } =
@@ -149,7 +151,7 @@ const Transfers: NextPageWithLayout = () => {
       console.log("Fetching likely tokens");
 
       const res = fetch(
-        `https://api.kitwallet.app/account/${fromWallet.walletDetails.walletAddress}/likelyTokensFromBlock?fromBlockTimestamp=0`
+        `https://api.kitwallet.app/account/${fromWallet.walletDetails.walletAddress}/likelyTokensFromBlock?fromBlockTimestamp=0`,
       );
       const data = (await res).json() as Promise<LikelyTokens>;
       return data;
@@ -203,7 +205,7 @@ const Transfers: NextPageWithLayout = () => {
         setTokens([near].concat(w));
         setCurrentToken(undefined);
       },
-    }
+    },
   );
 
   const insertTransactionInHistory = async (createRequestTxnId: string) => {
@@ -255,7 +257,7 @@ const Transfers: NextPageWithLayout = () => {
               },
             },
           ],
-        })
+        }),
       );
     } finally {
       setCheckLedger(false);
@@ -305,7 +307,7 @@ const Transfers: NextPageWithLayout = () => {
           const n = await newNearConnection();
           const lockup = initLockupContract(
             await n.account(""),
-            fromWallet.walletDetails.walletAddress
+            fromWallet.walletDetails.walletAddress,
           );
           const are_transfers_enabled = await lockup.are_transfers_enabled();
           if (!are_transfers_enabled) {
@@ -319,7 +321,7 @@ const Transfers: NextPageWithLayout = () => {
               JSON.stringify({
                 receiver_id: toBenef.walletAddress,
                 amount: nAmount,
-              })
+              }),
             ),
             gas: "125000000000000",
             deposit: "0",
@@ -347,7 +349,7 @@ const Transfers: NextPageWithLayout = () => {
                 },
               },
             ],
-          })
+          }),
         );
         txnId = res?.transaction_outcome.id;
       } else {
@@ -383,7 +385,7 @@ const Transfers: NextPageWithLayout = () => {
                 },
               },
             ],
-          })
+          }),
         );
         txnId = res?.transaction_outcome.id;
       }
@@ -404,8 +406,13 @@ const Transfers: NextPageWithLayout = () => {
 
   return (
     <>
-      <div className="prose flex flex-col pl-3 pt-3">
-        <h1>Create transfer request</h1>
+      <div className="flex flex-col">
+        <HeaderTitle level="h1" text="Transfers" />
+        <div>
+          <div>
+            <p>Test</p>
+          </div>
+        </div>
         <div className="inline-flex gap-3">
           <div className="flex flex-col gap-1">
             <div>From Wallet:</div>
