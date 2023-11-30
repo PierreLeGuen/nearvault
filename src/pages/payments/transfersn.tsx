@@ -1,7 +1,10 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { getSidebarLayout } from "~/components/Layout";
 import { Button } from "~/components/ui/button";
 import {
   Command,
@@ -25,24 +28,33 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { api } from "~/lib/api";
+import { initFungibleTokenContract } from "~/lib/ft/contract";
 import { cn } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
+import { type NextPageWithLayout } from "../_app";
+import {
+  LikelyTokens,
+  Token,
+  dbDataToTransfersData,
+} from "./lib/transformations";
 
 const formSchema = z.object({
-  fromWallet: z.string().min(2).max(50),
-  toWallet: z.string().min(2),
-  token: z.string().min(2),
-  amount: z.number().min(0),
-  memo: z.string().min(2),
-  language: z.string({
-    required_error: "Please select a language.",
+  fromWallet: z.string({
+    required_error: "Please select a wallet.",
   }),
+  toWallet: z.string().min(2),
+  token: z.string({
+    required_error: "Please select a token.",
+  }),
+  amount: z.number().gt(0),
+  memo: z.string(),
 });
 
-const wallets = [{ label: "nftest.near", value: "test" }] as const;
-const receivers = [{ label: "receiver.near", value: "receivertest" }] as const;
-const tokens = [{ label: "NEAR", value: "near" }] as const;
+const TransfersPage: NextPageWithLayout = () => {
+  const { currentTeam, newNearConnection } = usePersistingStore();
+  const [formattedBalance, setFormattedBalance] = useState<string>("");
 
-const TransfersPage = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,8 +66,124 @@ const TransfersPage = () => {
     },
   });
 
+  const watchedSender = form.watch("fromWallet");
+  const watchedToken = form.watch("token");
+
+  const { data } = api.teams.getWalletsForTeam.useQuery(
+    {
+      teamId: currentTeam?.id || "",
+    },
+    { enabled: !!currentTeam?.id },
+  );
+
+  const { data: senderWallets, isLoading } = useQuery({
+    queryKey: ["wallets", currentTeam?.id],
+    queryFn: async () => {
+      const wallets = await dbDataToTransfersData({
+        data: data || [],
+        getNearConnection: newNearConnection,
+      });
+      return wallets;
+    },
+    enabled: !!data,
+  });
+
+  const { data: addressBook, isLoading: addrBookLoading } =
+    api.teams.getBeneficiariesForTeam.useQuery({
+      teamId: currentTeam?.id || "",
+    });
+
+  const { data: tokenAddresses } = useQuery({
+    queryKey: ["tokens", watchedSender],
+    queryFn: async () => {
+      const sender = form.getValues("fromWallet");
+      const res = fetch(
+        `https://api.kitwallet.app/account/${sender}/likelyTokensFromBlock?fromBlockTimestamp=0`,
+      );
+      const data = (await (await res).json()) as LikelyTokens;
+      console.log(data);
+
+      return data;
+    },
+    enabled: !!form.getValues("fromWallet"),
+  });
+
+  const { data: tokens, isLoading: tokensIsLoading } = useQuery({
+    queryKey: ["tokens", watchedSender, [tokenAddresses?.list]],
+    queryFn: async () => {
+      const tokAddrs = tokenAddresses?.list || [];
+      console.log(tokAddrs);
+      const sender = form.getValues("fromWallet");
+      console.log(sender);
+
+      const promises = tokAddrs.map(async (token) => {
+        const near = await newNearConnection();
+        const contract = initFungibleTokenContract(
+          await near.account(""),
+          token,
+        );
+        try {
+          const ft_metadata = await contract.ft_metadata();
+          const ft_balance = await contract.ft_balance_of({
+            account_id: sender,
+          });
+
+          const t: Token = {
+            ...ft_metadata,
+            balance: ft_balance,
+            account_id: token,
+          };
+
+          return t;
+        } catch (e) {
+          console.log(e);
+        }
+      });
+
+      const nearPromise = async () => {
+        const sender = form.getValues("fromWallet");
+        try {
+          const account = (await newNearConnection()).account(sender);
+          const balance = await (await account).getAccountBalance();
+          const t = {
+            balance: balance.available,
+            decimals: 24,
+            name: "NEAR",
+            symbol: "NEAR",
+            account_id: "near",
+          } as Token;
+          return t;
+        } catch (e) {
+          console.log(e);
+        }
+      };
+
+      const tokenDetails = (
+        await Promise.all(promises.concat(nearPromise()))
+      ).filter((t) => !!t) as Token[];
+
+      return tokenDetails;
+    },
+    enabled: !!tokenAddresses,
+  });
+
+  // Updates the formatted balance when the token or the wallet changes
+  useEffect(() => {
+    const token = tokens?.find((t) => t.account_id === watchedToken);
+    if (token) {
+      setFormattedBalance(getFormattedAmount(token));
+    }
+  }, [watchedToken, tokens]);
+
   function onSubmit(data: z.infer<typeof formSchema>) {
     console.log(data);
+  }
+
+  function getFormattedAmount(token: Token | undefined) {
+    return `${(
+      parseInt(token?.balance || "") /
+      10 ** (token?.decimals || 0)
+    ).toLocaleString()} ${token?.symbol}`;
   }
 
   return (
@@ -77,37 +205,46 @@ const TransfersPage = () => {
                         "justify-between",
                         !field.value && "text-muted-foreground",
                       )}
+                      disabled={isLoading}
                     >
-                      {field.value
-                        ? wallets.find((wallet) => wallet.value === field.value)
-                            ?.label
-                        : "Select wallet"}
+                      {isLoading && "Loading..."}
+                      {!isLoading &&
+                        (field.value
+                          ? senderWallets?.find(
+                              (wallet) =>
+                                wallet.walletDetails.walletAddress ===
+                                field.value,
+                            )?.prettyName
+                          : "Select wallet")}
                       <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
+                <PopoverContent className="w-[300px] p-0">
                   <Command>
                     <CommandInput placeholder="Search wallet..." />
                     <CommandEmpty>No wallet found.</CommandEmpty>
                     <CommandGroup>
-                      {wallets.map((wallet) => (
+                      {senderWallets?.map((wallet) => (
                         <CommandItem
-                          value={wallet.label}
-                          key={wallet.value}
+                          value={wallet.prettyName}
+                          key={wallet.walletDetails.id}
                           onSelect={() => {
-                            form.setValue("fromWallet", wallet.value);
+                            form.setValue(
+                              "fromWallet",
+                              wallet.walletDetails.walletAddress,
+                            );
                           }}
                         >
                           <CheckIcon
                             className={cn(
                               "mr-2 h-4 w-4",
-                              wallet.value === field.value
+                              wallet.walletDetails.walletAddress === field.value
                                 ? "opacity-100"
                                 : "opacity-0",
                             )}
                           />
-                          {wallet.label}
+                          {wallet.prettyName}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -135,12 +272,15 @@ const TransfersPage = () => {
                         "justify-between",
                         !field.value && "text-muted-foreground",
                       )}
+                      disabled={addrBookLoading}
                     >
-                      {field.value
-                        ? receivers.find(
-                            (wallet) => wallet.value === field.value,
-                          )?.label
-                        : "Select wallet"}
+                      {addrBookLoading && "Loading..."}
+                      {!addrBookLoading &&
+                        (field.value
+                          ? addressBook?.find(
+                              (recv) => recv.walletAddress === field.value,
+                            )?.firstName
+                          : "Select wallet")}
                       <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </FormControl>
@@ -150,23 +290,23 @@ const TransfersPage = () => {
                     <CommandInput placeholder="Search address book..." />
                     <CommandEmpty>No wallet found.</CommandEmpty>
                     <CommandGroup>
-                      {receivers.map((wallet) => (
+                      {addressBook?.map((recv) => (
                         <CommandItem
-                          value={wallet.label}
-                          key={wallet.value}
+                          value={recv.walletAddress}
+                          key={recv.walletAddress}
                           onSelect={() => {
-                            form.setValue("toWallet", wallet.value);
+                            form.setValue("toWallet", recv.walletAddress);
                           }}
                         >
                           <CheckIcon
                             className={cn(
                               "mr-2 h-4 w-4",
-                              wallet.value === field.value
+                              recv.walletAddress === field.value
                                 ? "opacity-100"
                                 : "opacity-0",
                             )}
                           />
-                          {wallet.label}
+                          {recv.firstName}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -197,12 +337,15 @@ const TransfersPage = () => {
                           "br w-[100px] justify-between rounded-r-none border-r-0",
                           !field.value && "text-muted-foreground",
                         )}
+                        disabled={tokensIsLoading}
                       >
-                        {field.value
-                          ? tokens.find(
-                              (wallet) => wallet.value === field.value,
-                            )?.label
-                          : "Select token"}
+                        {tokensIsLoading && "Loading..."}
+                        {!tokensIsLoading &&
+                          (field.value
+                            ? tokens?.find(
+                                (token) => token.account_id === field.value,
+                              )?.symbol
+                            : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
@@ -212,25 +355,27 @@ const TransfersPage = () => {
                       <CommandInput placeholder="Search token..." />
                       <CommandEmpty>No token found.</CommandEmpty>
                       <CommandGroup>
-                        {tokens.map((token) => (
-                          <CommandItem
-                            value={token.label}
-                            key={token.value}
-                            onSelect={() => {
-                              form.setValue("token", token.value);
-                            }}
-                          >
-                            <CheckIcon
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                token.value === field.value
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            {token.label}
-                          </CommandItem>
-                        ))}
+                        {tokensIsLoading && "Loading..."}
+                        {!tokensIsLoading &&
+                          tokens?.map((token) => (
+                            <CommandItem
+                              value={token.account_id}
+                              key={token.account_id}
+                              onSelect={() => {
+                                form.setValue("token", token.account_id);
+                              }}
+                            >
+                              <CheckIcon
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  token.account_id === field.value
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              {token.symbol}
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     </Command>
                   </PopoverContent>
@@ -248,11 +393,20 @@ const TransfersPage = () => {
                 <FormControl>
                   <Input
                     placeholder="0"
-                    {...field}
                     type="number"
                     className="rounded-l-none border-l-0"
+                    value={field.value}
+                    onChange={(e) => {
+                      try {
+                        const value = parseFloat(e.target.value || "");
+                        form.setValue("amount", value);
+                      } catch {
+                        form.setValue("amount", 0);
+                      }
+                    }}
                   />
                 </FormControl>
+                <FormDescription>Balance: {formattedBalance}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -276,5 +430,7 @@ const TransfersPage = () => {
     </Form>
   );
 };
+
+TransfersPage.getLayout = getSidebarLayout;
 
 export default TransfersPage;
