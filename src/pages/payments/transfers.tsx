@@ -1,286 +1,234 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { type FinalExecutionOutcome } from "@near-finance-near-wallet-selector/core";
-import { type Beneficiary } from "@prisma/client";
+import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Transaction } from "@near-finance-near-wallet-selector/core";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
+import * as z from "zod";
 import { getSidebarLayout } from "~/components/Layout";
-import BeneficiariesDropDown from "~/components/Payments/BeneficiariesDropDown";
-import CurrenciesDropDown from "~/components/Payments/CurrenciesDropDown";
-import WalletsDropDown from "~/components/Staking/WalletsDropDown";
-import HeaderTitle from "~/components/ui/header";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "~/components/ui/command";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
-import {
-  initFungibleTokenContract,
-  type FungibleTokenMetadata,
-} from "~/lib/ft/contract";
+import { initFungibleTokenContract } from "~/lib/ft/contract";
 import { initLockupContract } from "~/lib/lockup/contract";
-import { calculateLockup } from "~/lib/lockup/lockup";
-import { assertCorrectMultisigWallet } from "~/lib/utils";
+import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { type WalletPretty } from "../staking/stake";
+import {
+  dbDataToTransfersData,
+  type LikelyTokens,
+  type Token,
+} from "./lib/transformations";
 
-interface LikelyTokens {
-  version: string;
-  lastBlockTimestamp: string;
-  list: string[];
-}
+const formSchema = z.object({
+  fromWallet: z.string({
+    required_error: "Please select a wallet.",
+  }),
+  toWallet: z.string().min(2),
+  token: z.string({
+    required_error: "Please select a token.",
+  }),
+  amount: z.number().gt(0),
+  memo: z.string(),
+});
 
-export interface Token extends FungibleTokenMetadata {
-  balance: string;
-  account_id: string;
-}
-
-export const handleWalletRequestWithToast = async (
-  p: Promise<FinalExecutionOutcome | void>,
-) => {
-  const res = await toast.promise(p, {
-    pending: "Check your wallet to approve the request",
-    success: {
-      render: (data) => {
-        if (!data.data) {
-          return `Successfully sent request to the multisig wallet`;
-        }
-        return (
-          <span>
-            Successfully sent request to the multisig wallet, transaction id:{" "}
-            <a
-              href={`https://nearblocks.io/txns/${data.data.transaction_outcome.id}`}
-              target="_blank"
-              className="font-bold underline"
-            >
-              {data.data.transaction_outcome.id}
-            </a>
-            `
-          </span>
-        );
-      },
-    },
-    error: {
-      render: (err) => {
-        return `Failed to send transaction: ${(err.data as Error).message}`;
-      },
-    },
-  });
-
-  return res;
-};
-
-const Transfers: NextPageWithLayout = () => {
+const TransfersPage: NextPageWithLayout = () => {
   const walletSelector = useWalletSelector();
-
-  const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
-  const [fromWallet, setFromWallet] = useState<WalletPretty>({
-    prettyName: "",
-    walletDetails: { walletAddress: "", id: "", teamId: "" },
-    isLockup: false,
-    ownerAccountId: undefined,
-  });
-  const [toBenef, setToBenef] = useState<Beneficiary>();
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [currentToken, setCurrentToken] = useState<Token>();
-  const [amount, setAmount] = useState<string>("");
-  const [memo, setMemo] = useState<string>("");
-  const [showDialog, setShowDialog] = useState(false);
-  const openDialog = () => setShowDialog(true);
-  const closeDialog = () => setShowDialog(false);
-  const [checkLedger, setCheckLedger] = useState(false);
-
   const { currentTeam, newNearConnection } = usePersistingStore();
-  const mutate = api.teams.insertTransferHistory.useMutation();
+  const [formattedBalance, setFormattedBalance] = useState<string>("");
+  const [checkLedger, setCheckLedger] = useState<boolean>(false);
 
-  
-  const { isLoading } = api.teams.getWalletsForTeam.useQuery(
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fromWallet: "",
+      toWallet: "",
+      amount: 0,
+      memo: "",
+      token: "near",
+    },
+  });
+
+  const watchedSender = form.watch("fromWallet");
+  const watchedToken = form.watch("token");
+
+  const { data } = api.teams.getWalletsForTeam.useQuery(
     {
       teamId: currentTeam?.id || "",
     },
-    {
-      enabled: true,
-      async onSuccess(data) {
-        if (!data || data.length == 0 || data[0] === undefined) {
-          throw new Error("No wallets found");
-        }
-        const w: WalletPretty[] = [];
-        for (const wallet of data) {
-          w.push({
-            walletDetails: wallet,
-            prettyName: wallet.walletAddress,
-            isLockup: false,
-            ownerAccountId: undefined,
-          });
-          try {
-            const lockupValue = calculateLockup(
-              wallet.walletAddress,
-              "lockup.near",
-            );
-            const nearConn = await newNearConnection();
-            await (await nearConn.account(lockupValue)).state();
-
-            w.push({
-              prettyName: "Lockup of " + wallet.walletAddress,
-              walletDetails: {
-                walletAddress: lockupValue,
-                id: lockupValue,
-                teamId: "na",
-              },
-              isLockup: true,
-              ownerAccountId: wallet.walletAddress,
-            });
-          } catch (_) {}
-        }
-        setTeamsWallet(w);
-      },
-    },
+    { enabled: !!currentTeam?.id },
   );
 
-  const { data: beneficiaries, isLoading: isLoadingBenef } =
+  const { data: senderWallets, isLoading } = useQuery({
+    queryKey: ["wallets", currentTeam?.id],
+    queryFn: async () => {
+      const wallets = await dbDataToTransfersData({
+        data: data || [],
+        getNearConnection: newNearConnection,
+      });
+      return wallets;
+    },
+    enabled: !!data,
+  });
+
+  const { data: addressBook, isLoading: addrBookLoading } =
     api.teams.getBeneficiariesForTeam.useQuery({
       teamId: currentTeam?.id || "",
     });
 
-  const { isLoading: isLoadingTokens } = useQuery(
-    ["tokens", fromWallet],
-    async () => {
-      if (!fromWallet || fromWallet.walletDetails.walletAddress === "") {
-        console.log("No from wallet yet");
-        return {};
-      }
-      console.log("Fetching likely tokens");
-
+  const { data: tokenAddresses } = useQuery({
+    queryKey: ["tokens", watchedSender],
+    queryFn: async () => {
+      const sender = form.getValues("fromWallet");
       const res = fetch(
-        `https://api.kitwallet.app/account/${fromWallet.walletDetails.walletAddress}/likelyTokensFromBlock?fromBlockTimestamp=0`,
+        `https://api.kitwallet.app/account/${sender}/likelyTokensFromBlock?fromBlockTimestamp=0`,
       );
-      const data = (await res).json() as Promise<LikelyTokens>;
+      const data = (await (await res).json()) as LikelyTokens;
+      console.log(data);
+
       return data;
     },
-    {
-      async onSuccess(data: LikelyTokens) {
-        if (!fromWallet || fromWallet.walletDetails.walletAddress === "") {
-          console.log("No from wallet yet");
-          return;
+    enabled: !!form.getValues("fromWallet"),
+  });
+
+  const { data: tokens, isLoading: tokensIsLoading } = useQuery({
+    queryKey: ["tokens", watchedSender, [tokenAddresses?.list]],
+    queryFn: async () => {
+      const tokAddrs = tokenAddresses?.list || [];
+      console.log(tokAddrs);
+      const sender = form.getValues("fromWallet");
+      console.log(sender);
+
+      const promises = tokAddrs.map(async (token) => {
+        const near = await newNearConnection();
+        const contract = initFungibleTokenContract(
+          await near.account(""),
+          token,
+        );
+        try {
+          const ft_metadata = await contract.ft_metadata();
+          const ft_balance = await contract.ft_balance_of({
+            account_id: sender,
+          });
+
+          const t: Token = {
+            ...ft_metadata,
+            balance: ft_balance,
+            account_id: token,
+          };
+
+          return t;
+        } catch (e) {
+          console.log(e);
         }
-        console.log(data);
+      });
 
-        const tokensPromises = data.list.map(async (token) => {
-          console.log("Fetching token", token);
+      const nearPromise = async () => {
+        const sender = form.getValues("fromWallet");
+        try {
+          const account = (await newNearConnection()).account(sender);
+          const balance = await (await account).getAccountBalance();
+          const t = {
+            balance: balance.available,
+            decimals: 24,
+            name: "NEAR",
+            symbol: "NEAR",
+            account_id: "near",
+          } as Token;
+          return t;
+        } catch (e) {
+          console.log(e);
+        }
+      };
 
-          const n = await newNearConnection();
+      const tokenDetails = (
+        await Promise.all(promises.concat(nearPromise()))
+      ).filter((t) => !!t) as Token[];
 
-          const c = initFungibleTokenContract(await n.account(""), token);
-          try {
-            const ft_metadata = await c.ft_metadata();
-            const ft_balance = await c.ft_balance_of({
-              account_id: fromWallet.walletDetails.walletAddress,
-            });
-
-            const t: Token = {
-              ...ft_metadata,
-              balance: ft_balance,
-              account_id: token,
-            };
-
-            return t;
-          } catch (e) {
-            console.log(e);
-          }
-        });
-
-        const t = await Promise.all(tokensPromises);
-        const w = t.filter((x) => x !== undefined) as Token[];
-
-        const acc = await (
-          await newNearConnection()
-        ).account(fromWallet.walletDetails.walletAddress);
-        const balance = await acc.getAccountBalance();
-        const near = {
-          symbol: "NEAR",
-          name: "NEAR",
-          balance: balance.available,
-          decimals: 24,
-        } as Token;
-
-        setTokens([near].concat(w));
-        setCurrentToken(undefined);
-      },
+      return tokenDetails;
     },
-  );
+    enabled: !!tokenAddresses,
+  });
 
-  const insertTransactionInHistory = async (createRequestTxnId: string) => {
-    if (!currentTeam) {
-      throw new Error("No current team");
+  // Updates the formatted balance when the token or the wallet changes
+  useEffect(() => {
+    const token = tokens?.find((t) => t.account_id === watchedToken);
+    if (token) {
+      setFormattedBalance(getFormattedAmount(token));
+    }
+  }, [watchedToken, tokens]);
+
+  function getFormattedAmount(token: Token | undefined) {
+    return `${(
+      parseInt(token?.balance || "") /
+      10 ** (token?.decimals || 0)
+    ).toLocaleString()} ${token?.symbol}`;
+  }
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    console.log(data);
+    const sender = senderWallets?.find(
+      (wallet) => wallet.walletDetails.walletAddress === data.fromWallet,
+    );
+    if (!sender) {
+      throw new Error("Sender not found");
+    }
+    const receiver = addressBook?.find(
+      (recv) => recv.walletAddress === data.toWallet,
+    );
+    if (!receiver) {
+      throw new Error("Receiver not found");
+    }
+    const token = tokens?.find((t) => t.account_id === data.token);
+    if (!token) {
+      throw new Error("Token not found");
+    }
+    const amount = data.amount;
+
+    const senderAddress = sender.isLockup
+      ? sender.ownerAccountId
+      : sender.walletDetails.walletAddress;
+    const lockupAddress = sender.isLockup
+      ? sender.walletDetails.walletAddress
+      : undefined;
+    if (!senderAddress) {
+      throw new Error("Sender address not found");
     }
 
-    await mutate.mutateAsync({
-      amount: amount,
-      teamId: currentTeam.id,
-      tokenAddress: currentToken?.account_id || "NEAR",
-      createRequestTxnId: createRequestTxnId,
-      memo: memo,
-      walletId: fromWallet.walletDetails.id,
-    });
-  };
-
-  const enableTransfers = async () => {
-    if (!fromWallet.isLockup || !fromWallet.ownerAccountId) {
-      throw new Error("Not a lockup");
-    }
-    setCheckLedger(true);
     try {
-      const w = await walletSelector.selector.wallet();
-      const res = await handleWalletRequestWithToast(
-        w.signAndSendTransaction({
-          receiverId: fromWallet.ownerAccountId,
-          actions: [
-            {
-              type: "FunctionCall",
-              params: {
-                gas: "300000000000000",
-                deposit: "0",
-                methodName: "add_request",
-                args: {
-                  request: {
-                    receiver_id: fromWallet.walletDetails.walletAddress,
-                    actions: [
-                      {
-                        type: "FunctionCall",
-                        method_name: "check_transfers_vote",
-                        args: btoa(JSON.stringify({})),
-                        gas: "125000000000000",
-                        deposit: "0",
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        }),
-      );
-    } finally {
-      setCheckLedger(false);
-      closeDialog();
-    }
-  };
-
-  const createTransferRequest = async () => {
-    if (!fromWallet || !toBenef || !currentToken || !amount) {
-      console.log("Missing data: ", fromWallet, toBenef, currentToken, amount);
-      return;
-    }
-
-    let fromAddress = fromWallet.walletDetails.walletAddress;
-
-    if (fromWallet.isLockup) {
-      if (!fromWallet.ownerAccountId) {
-        throw new Error("No owner account id");
-      }
-      fromAddress = fromWallet.ownerAccountId;
-    }
-    try {
-      await assertCorrectMultisigWallet(walletSelector, fromAddress);
+      await assertCorrectMultisigWallet(walletSelector, senderAddress);
     } catch (e) {
       toast.error((e as Error).message);
       return;
@@ -289,48 +237,58 @@ const Transfers: NextPageWithLayout = () => {
     setCheckLedger(true);
 
     try {
-      const w = await walletSelector.selector.wallet();
+      const wallet = await walletSelector.selector.wallet();
+      const transactions: Transaction[] = [];
 
-      let txnId: string | undefined = undefined;
-      if (currentToken.symbol === "NEAR") {
-        const nAmount = parseNearAmount(amount);
+      if (token.account_id === "near") {
+        const yoctoAmount = parseNearAmount(amount.toString());
+        const near = await newNearConnection();
+        const account = await near.account(senderAddress);
 
-        let actions: any[] = [];
-        const action = {
-          type: "Transfer",
-          amount: nAmount,
-        };
-        actions.push(action);
-
-        if (fromWallet.isLockup && fromWallet.ownerAccountId) {
-          actions = [];
-          const n = await newNearConnection();
-          const lockup = initLockupContract(
-            await n.account(""),
-            fromWallet.walletDetails.walletAddress,
+        if (sender.isLockup && lockupAddress) {
+          // from lockup
+          const lockupContract = initLockupContract(
+            account,
+            sender.walletDetails.walletAddress,
           );
-          const are_transfers_enabled = await lockup.are_transfers_enabled();
-          if (!are_transfers_enabled) {
-            openDialog();
+          const areTransfersEnabled =
+            await lockupContract.are_transfers_enabled();
+
+          if (!areTransfersEnabled) {
+            transactions.push({
+              receiverId: senderAddress,
+              signerId: senderAddress,
+              actions: [
+                {
+                  type: "FunctionCall",
+                  params: {
+                    gas: "300000000000000",
+                    deposit: "0",
+                    methodName: "add_request",
+                    args: {
+                      request: {
+                        receiver_id: lockupAddress,
+                        actions: [
+                          {
+                            type: "FunctionCall",
+                            method_name: "check_transfers_vote",
+                            args: btoa(JSON.stringify({})),
+                            gas: "125000000000000",
+                            deposit: "0",
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            });
+            toast.error("Transfers are disabled for this lockup");
             return;
           }
-          actions.push({
-            type: "FunctionCall",
-            method_name: "transfer",
-            args: btoa(
-              JSON.stringify({
-                receiver_id: toBenef.walletAddress,
-                amount: nAmount,
-              }),
-            ),
-            gas: "125000000000000",
-            deposit: "0",
-          });
-        }
-
-        const res = await handleWalletRequestWithToast(
-          w.signAndSendTransaction({
-            receiverId: fromAddress,
+          transactions.push({
+            receiverId: senderAddress,
+            signerId: senderAddress,
             actions: [
               {
                 type: "FunctionCall",
@@ -340,27 +298,32 @@ const Transfers: NextPageWithLayout = () => {
                   methodName: "add_request",
                   args: {
                     request: {
-                      receiver_id: fromWallet.isLockup
-                        ? fromWallet.walletDetails.walletAddress
-                        : toBenef.walletAddress,
-                      actions: actions,
+                      receiver_id: receiver.walletAddress,
+                      actions: [
+                        {
+                          type: "FunctionCall",
+                          method_name: "transfer",
+                          args: btoa(
+                            JSON.stringify({
+                              receiver_id: receiver.walletAddress,
+                              amount: yoctoAmount,
+                            }),
+                          ),
+                          gas: "125000000000000",
+                          deposit: "0",
+                        },
+                      ],
                     },
                   },
                 },
               },
             ],
-          }),
-        );
-        txnId = res?.transaction_outcome.id;
-      } else {
-        const a = (
-          parseFloat(amount) * Math.pow(10, currentToken.decimals)
-        ).toString();
-        const ftArgs = { amount: a, receiver_id: toBenef.walletAddress };
-
-        const res = await handleWalletRequestWithToast(
-          w.signAndSendTransaction({
-            receiverId: fromAddress,
+          });
+        } else {
+          // from multisig wallet
+          transactions.push({
+            receiverId: senderAddress,
+            signerId: senderAddress,
             actions: [
               {
                 type: "FunctionCall",
@@ -370,12 +333,48 @@ const Transfers: NextPageWithLayout = () => {
                   methodName: "add_request",
                   args: {
                     request: {
-                      receiver_id: currentToken.account_id,
+                      receiver_id: receiver.walletAddress,
+                      actions: [
+                        {
+                          type: "Transfer",
+                          amount: yoctoAmount,
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          });
+        }
+      } else {
+        // NEP-141 tokens
+        const _amount = amount * 10 ** token.decimals;
+        const ftTransferArgs = {
+          receiver_id: receiver.walletAddress,
+          amount: _amount.toString(),
+        };
+        if (lockupAddress) {
+          toast.error("Lockup NEP-141 transfers not supported yet");
+        } else {
+          transactions.push({
+            receiverId: senderAddress,
+            signerId: senderAddress,
+            actions: [
+              {
+                type: "FunctionCall",
+                params: {
+                  gas: "300000000000000",
+                  deposit: "0",
+                  methodName: "add_request",
+                  args: {
+                    request: {
+                      receiver_id: token.account_id,
                       actions: [
                         {
                           type: "FunctionCall",
                           method_name: "ft_transfer",
-                          args: btoa(JSON.stringify(ftArgs)),
+                          args: btoa(JSON.stringify(ftTransferArgs)),
                           deposit: "1",
                           gas: "200000000000000",
                         },
@@ -385,175 +384,296 @@ const Transfers: NextPageWithLayout = () => {
                 },
               },
             ],
-          }),
-        );
-        txnId = res?.transaction_outcome.id;
+          });
+        }
       }
 
-      if (!txnId) {
-        throw new Error("No txnId");
-      }
-
-      await insertTransactionInHistory(txnId);
+      const res = await wallet.signAndSendTransactions({
+        transactions: transactions,
+      });
+      toast.success(`Transfer request added ${JSON.stringify(res)}`);
     } finally {
       setCheckLedger(false);
     }
-  };
-
-  if (isLoading || !teamsWallet || isLoadingBenef) {
-    return <div>Loading...</div>;
   }
 
   return (
-    <>
-      <div className="flex flex-col">
-        <HeaderTitle level="h1" text="Transfers" />
-        <div>
-          <div>
-            <p>Test</p>
-          </div>
-        </div>
-        <div className="inline-flex gap-3">
-          <div className="flex flex-col gap-1">
-            <div>From Wallet:</div>
-            <WalletsDropDown
-              wallets={teamsWallet}
-              selectedWallet={fromWallet}
-              setSelectedWallet={setFromWallet}
-            />
-            <div>To Wallet: Beneficiaries</div>
-            <BeneficiariesDropDown
-              beneficiaries={beneficiaries}
-              selectedBeneficiary={toBenef}
-              setSelectedBeneficiary={setToBenef}
-            />
-            <div>Select token</div>
-            <div>
-              <CurrenciesDropDown
-                tokens={tokens}
-                currentToken={currentToken}
-                setCurrentToken={setCurrentToken}
+    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+      <Card className="w-[600px]">
+        <CardHeader>
+          <CardTitle>Transfer tokens</CardTitle>
+          <CardDescription>
+            Add multisig request to transfer tokens.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <FormField
+                control={form.control}
+                name="fromWallet"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Sender</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "justify-between",
+                              !field.value && "text-muted-foreground",
+                            )}
+                            disabled={isLoading}
+                          >
+                            {isLoading && "Loading..."}
+                            {!isLoading &&
+                              (field.value
+                                ? senderWallets?.find(
+                                    (wallet) =>
+                                      wallet.walletDetails.walletAddress ===
+                                      field.value,
+                                  )?.prettyName
+                                : "Select wallet")}
+                            <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0">
+                        <ScrollArea className="h-[550px]">
+                          <Command>
+                            <CommandInput placeholder="Search wallet..." />
+                            <CommandEmpty>No wallet found.</CommandEmpty>
+                            <CommandGroup>
+                              {senderWallets?.map((wallet) => (
+                                <CommandItem
+                                  value={wallet.prettyName}
+                                  key={wallet.walletDetails.id}
+                                  onSelect={() => {
+                                    form.setValue(
+                                      "fromWallet",
+                                      wallet.walletDetails.walletAddress,
+                                    );
+                                  }}
+                                >
+                                  <CheckIcon
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      wallet.walletDetails.walletAddress ===
+                                        field.value
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                  />
+                                  {wallet.prettyName}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Wallet used to send the tokens.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>
-              Available balance:{" "}
-              {currentToken
-                ? (
-                    Number(currentToken.balance) /
-                    Math.pow(10, currentToken.decimals)
-                  ).toFixed(2)
-                : "0"}
-            </div>
-            <div>Enter amount</div>
-            <div>
-              <input
-                type="text"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+              <FormField
+                control={form.control}
+                name="toWallet"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Receiver</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "justify-between",
+                              !field.value && "text-muted-foreground",
+                            )}
+                            disabled={addrBookLoading}
+                          >
+                            {addrBookLoading && "Loading..."}
+                            {!addrBookLoading &&
+                              (field.value
+                                ? addressBook?.find(
+                                    (recv) =>
+                                      recv.walletAddress === field.value,
+                                  )?.firstName
+                                : "Select wallet")}
+                            <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0">
+                        <ScrollArea className="h-[550px]">
+                          <Command>
+                            <CommandInput placeholder="Search address book..." />
+                            <CommandEmpty>No wallet found.</CommandEmpty>
+                            <CommandGroup>
+                              {addressBook?.map((recv) => (
+                                <CommandItem
+                                  value={recv.walletAddress}
+                                  key={recv.walletAddress}
+                                  onSelect={() => {
+                                    form.setValue(
+                                      "toWallet",
+                                      recv.walletAddress,
+                                    );
+                                  }}
+                                >
+                                  <CheckIcon
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      recv.walletAddress === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                  />
+                                  {`${
+                                    recv.firstName
+                                  } (${recv.walletAddress.slice(0, 20)}...)`}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Receiver of the tokens after approval.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>Transfer reason</div>
-            <div>
-              <input
-                type="text"
-                placeholder="Enter memo"
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={() => {
-                createTransferRequest().catch((e) => console.error(e));
-              }}
-              className="rounded bg-blue-200 px-2 py-1 hover:bg-blue-300"
-            >
-              {checkLedger ? "Check Ledger..." : "Create transfer request"}
-            </button>
-          </div>
-
-          <div>
-            {fromWallet && fromWallet.prettyName != "" && (
-              <div>Balances of {fromWallet.prettyName}</div>
-            )}
-            <div>
-              {((isLoadingTokens || !tokens) && <div>Loading tokens...</div>) ||
-                tokens.map((t) => (
-                  <div key={t.symbol}>
-                    {t.symbol}:{" "}
-                    {(Number(t.balance) / Math.pow(10, t.decimals)).toFixed(2)}
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Transition appear show={showDialog} as={Fragment}>
-        <Dialog
-          as="div"
-          className="fixed inset-0 z-10 overflow-y-auto"
-          onClose={closeDialog}
-        >
-          <div className="min-h-screen px-4 text-center">
-            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-            <span
-              className="inline-block h-screen align-middle"
-              aria-hidden="true"
-            >
-              &#8203;
-            </span>
-
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <div className="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900"
-                >
-                  Enable Transfers
-                </Dialog.Title>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    Transfers are not yet enabled for this lockup account. Would
-                    you like to enable them?
-                  </p>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    onClick={() => void enableTransfers()}
-                    disabled={checkLedger}
-                  >
-                    {checkLedger ? "Check Ledger..." : "Enable Transfers"}
-                  </button>
-                  <button
-                    type="button"
-                    className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-                    onClick={closeDialog}
-                  >
-                    Cancel
-                  </button>
-                </div>
+              <div className="flex flex-grow flex-row">
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Token</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
+                                !field.value && "text-muted-foreground",
+                              )}
+                              disabled={tokensIsLoading}
+                            >
+                              {tokensIsLoading && "Loading..."}
+                              {!tokensIsLoading &&
+                                (field.value
+                                  ? tokens?.find(
+                                      (token) =>
+                                        token.account_id === field.value,
+                                    )?.symbol
+                                  : "Select token")}
+                              <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[350px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Search token..." />
+                            <CommandEmpty>No token found.</CommandEmpty>
+                            <CommandGroup>
+                              {tokensIsLoading && "Loading..."}
+                              {!tokensIsLoading &&
+                                tokens?.map((token) => (
+                                  <CommandItem
+                                    value={token.account_id}
+                                    key={token.account_id}
+                                    onSelect={() => {
+                                      form.setValue("token", token.account_id);
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        token.account_id === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    {`${token.symbol} (${getFormattedAmount(
+                                      token,
+                                    )})`}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-grow flex-col">
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="0"
+                          type="number"
+                          className="flex rounded-l-none border "
+                          value={field.value}
+                          onChange={(e) => {
+                            try {
+                              const value = parseFloat(e.target.value || "");
+                              form.setValue("amount", value);
+                            } catch {
+                              form.setValue("amount", 0);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Balance: {formattedBalance}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </Transition.Child>
-          </div>
-        </Dialog>
-      </Transition>
-    </>
+              <FormField
+                control={form.control}
+                name="memo"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Memo</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={checkLedger}>
+                {checkLedger ? "Check Ledger..." : "Submit"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-Transfers.getLayout = getSidebarLayout;
+TransfersPage.getLayout = getSidebarLayout;
 
-export default Transfers;
+export default TransfersPage;
