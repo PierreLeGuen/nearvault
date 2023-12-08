@@ -1,8 +1,9 @@
-import { type ReactNode } from "react";
+import { type ReactNode, FC } from "react";
 import usePersistingStore from "~/store/useStore";
 import Sidebar from "./Sidebar/Sidebar";
 
-const Layout: React.FC<{
+// TODO Rename on SidebarLayout !!!
+const Layout: FC<{
   children: ReactNode;
 }> = ({ children }) => {
   const { publicKey } = usePersistingStore();

@@ -35,10 +35,8 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
   const walletSelector = useWalletSelector();
 
   const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
-    { enabled: !!currentTeam }
+    { teamId: currentTeam?.id || "" },
+    { enabled: !!currentTeam },
   );
 
   const { data: teamsWallet, isLoading: walletsLoading } = useQuery(
@@ -58,7 +56,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
         try {
           const lockupValue = calculateLockup(
             wallet.walletAddress,
-            "lockup.near"
+            "lockup.near",
           );
           const nearConn = await newNearConnection();
           await (await nearConn.account(lockupValue)).state();
@@ -79,7 +77,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     },
     {
       enabled: !!currentTeam && !!data,
-    }
+    },
   );
 
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
@@ -107,9 +105,9 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
 
     await assertCorrectMultisigWallet(walletSelector, fromWalletId);
 
-    const w = await walletSelector.selector.wallet();
+    const wallet = await walletSelector.selector.wallet();
 
-    await addRequestToMultisigWallet(w, fromWalletId, MULTISIG_FACTORY, [
+    await addRequestToMultisigWallet(wallet, fromWalletId, MULTISIG_FACTORY, [
       {
         type: "FunctionCall",
         method_name: "create",
@@ -122,7 +120,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
               .join(",")
               .split(","),
             num_confirmations: data.numConfirmations,
-          })
+          }),
         ),
         deposit: parseNearAmount("5"),
         gas: "150000000000000",

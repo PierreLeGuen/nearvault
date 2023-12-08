@@ -10,7 +10,7 @@ import { calculateLockup } from "~/lib/lockup/lockup";
 import { assertCorrectMultisigWallet, getNearTimestamp } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { handleWalletRequestWithToast } from "../payments/transfers";
+import { handleWalletRequestWithToast } from "../payments/transfers"; // TODO Do we need this?
 import { type WalletPretty } from "../staking/stake";
 
 interface CreateLockupProps {
@@ -63,6 +63,7 @@ const CreateLockup: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore.getState();
 
   const walletSector = useWalletSelector();
+
   api.teams.getWalletsForTeam.useQuery(
     {
       teamId: currentTeam?.id || "",
@@ -74,6 +75,7 @@ const CreateLockup: NextPageWithLayout = () => {
           throw new Error("No wallets found");
         }
         const w: WalletPretty[] = [];
+
         for (const wallet of data) {
           w.push({
             walletDetails: wallet,
@@ -81,6 +83,7 @@ const CreateLockup: NextPageWithLayout = () => {
             isLockup: false,
             ownerAccountId: undefined,
           });
+
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
@@ -156,9 +159,11 @@ const CreateLockup: NextPageWithLayout = () => {
       lockup_duration: "0",
       ...createArgs,
     };
+
     if (!allowStaking) {
       fnCallArgs["whitelist_account_id"] = "system";
     }
+
     await handleWalletRequestWithToast(
       w.signAndSendTransaction({
         receiverId: fromWallet.walletDetails.walletAddress,

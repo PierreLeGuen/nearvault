@@ -85,9 +85,7 @@ const TransfersPage: NextPageWithLayout = () => {
   const watchedToken = form.watch("token");
 
   const { data } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
+    { teamId: currentTeam?.id || "" },
     { enabled: !!currentTeam?.id },
   );
 
@@ -205,24 +203,29 @@ const TransfersPage: NextPageWithLayout = () => {
     if (!sender) {
       throw new Error("Sender not found");
     }
+
     const receiver = addressBook?.find(
       (recv) => recv.walletAddress === data.toWallet,
     );
     if (!receiver) {
       throw new Error("Receiver not found");
     }
+
     const token = tokens?.find((t) => t.account_id === data.token);
     if (!token) {
       throw new Error("Token not found");
     }
+
     const amount = data.amount;
 
     const senderAddress = sender.isLockup
       ? sender.ownerAccountId
       : sender.walletDetails.walletAddress;
+
     const lockupAddress = sender.isLockup
       ? sender.walletDetails.walletAddress
       : undefined;
+
     if (!senderAddress) {
       throw new Error("Sender address not found");
     }

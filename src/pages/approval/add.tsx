@@ -23,13 +23,13 @@ const AddWallet: NextPageWithLayout = () => {
   }
 
   const assertValidMultisigAccount = async (walletId: string) => {
-    const n = await newNearConnection();
+    const near = await newNearConnection();
 
-    const a = await n.account(walletId);
-    const m = initMultiSigContract(a, walletId);
+    const account = await near.account(walletId);
+    const contract = initMultiSigContract(account, walletId);
 
     try {
-      const request_ids = await m.list_request_ids();
+      const request_ids = await contract.list_request_ids();
       console.log(`Request ids: ${JSON.stringify(request_ids)}`);
     } catch (e: any) {
       if (
