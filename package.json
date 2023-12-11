@@ -10,6 +10,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@fortawesome/fontawesome-svg-core": "^6.4.2",
     "@fortawesome/free-regular-svg-icons": "^6.4.2",
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
@@ -18,6 +20,7 @@
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.2",
     "@ledgerhq/hw-transport-webhid": "^6.27.19",
+    "@mui/material": "^5.14.20",
     "@near-finance-near-wallet-selector/core": "^8.1.11",
     "@near-finance-near-wallet-selector/ledger": "^8.1.11",
     "@near-finance-near-wallet-selector/modal-ui": "^8.1.11",

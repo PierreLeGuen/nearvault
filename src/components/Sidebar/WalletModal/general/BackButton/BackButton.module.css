@@ -1,0 +1,26 @@
+.button {
+  grid-area: g;
+  height: 35px;
+  width: 35px;
+  align-self: center;
+  justify-self: center;
+  border: none;
+  background: #f3f6ff;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.button:hover {
+  background: #e5f0ff;
+}
+
+.icon {
+  height: 75%;
+  width: 75%;
+  fill: #a9a9aa;
+}

@@ -1,0 +1,5 @@
+.content {
+  grid-area: 1 / 2 / 4 / 5;
+  justify-self: center;
+  align-self: center;
+}
