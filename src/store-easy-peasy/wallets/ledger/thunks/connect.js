@@ -54,7 +54,7 @@ export const connect = thunk(async (_actions, payload, { getStoreState, getStore
 
   try {
     await ledger.connect();
-    publicKey = await ledger.getPublicKey();
+    publicKey = await ledger.getPublicKey(); // TODO FIX IT - NOW we  don't get any real key!
     console.log(publicKey.toString());
   } catch (e) {
     console.log(e);

@@ -1,5 +1,6 @@
 import { action } from 'easy-peasy';
 
+// Todo move to wallets.connector
 export const walletsConnector = {
   modal: {
     isOpen: false,

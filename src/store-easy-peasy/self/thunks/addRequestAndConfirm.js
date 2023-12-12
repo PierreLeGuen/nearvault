@@ -1,8 +1,8 @@
 import { transactions, utils, providers } from 'near-api-js';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { thunk } from 'easy-peasy';
-import { requestSignTransactions } from '../wallets/myNearWallet/helpers/requestSignTransactions.js';
-import { LedgerSigner } from '../wallets/ledger/helpers/LedgerSigner.ts';
+import { requestSignTransactions } from '../../wallets/myNearWallet/helpers/requestSignTransactions.js';
+import { LedgerSigner } from '../../wallets/ledger/helpers/LedgerSigner.ts';
 /*
  * export function createTransaction(
  * signerId: string,
@@ -18,7 +18,7 @@ import { LedgerSigner } from '../wallets/ledger/helpers/LedgerSigner.ts';
 
 const createTx = async (provider, sender, receiver, publicKey) => {
   const pk = PublicKey.from(publicKey);
-  const accessKey = await provider.query(`access_key/${sender}/${pk.toString()}`, '');
+  const accessKey = await provider.query(`access_key/${sender}/${pk.toString()}`, ''); // TODO Change to pk.toString() -> publicKey
   const nonce = accessKey.nonce + 1;
   const recentBlockHash = utils.serialize.base_decode(accessKey.block_hash);
 
@@ -48,13 +48,13 @@ const createTx = async (provider, sender, receiver, publicKey) => {
 
 // ledger requestSignAndSentTransaction
 const requestSignAndSentTransaction = async (tx) => {
-  const provider = new providers.JsonRpcProvider({ url: `https://rpc.testnet.near.org` });
+  const provider = new providers.JsonRpcProvider({ url: `https://rpc.mainnet.near.org` });
 
   const [_hash, signedTransaction] = await transactions.signTransaction(
     tx,
     new LedgerSigner(),
     tx.signerId,
-    'testnet',
+    'mainnet',
   );
   // sends transaction to NEAR blockchain via JSON RPC call and records the result
   const result = await provider.sendJsonRpc('broadcast_tx_commit', [

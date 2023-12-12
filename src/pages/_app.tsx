@@ -35,18 +35,14 @@ const queryClient = new QueryClient();
 
 const Wrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
-  const [inInit, setInit] = useState(false);
+  const [isInit, setInit] = useState(false);
   const initApp = useStoreActions((actions: any) => actions.initApp);
 
   useEffect(() => {
     initApp({ setInit });
   }, []);
 
-  console.log("isRehydrated", isRehydrated);
-  console.log("inInited", inInit);
-  console.log(!isRehydrated || !inInit);
-
-  return !isRehydrated || !inInit ? null : children;
+  return !isRehydrated || !isInit ? <div>Loading...</div> : children;
 };
 
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
@@ -56,20 +52,20 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   const layout = getLayout ? getLayout(pageContent) : pageContent;
 
   return (
-    <StoreProvider store={store}>
-      <Wrapper>
-        <SessionProvider session={session}>
-          <QueryClientProvider client={queryClient}>
+    <SessionProvider session={session}>
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider store={store}>
+          <Wrapper>
             <NearContextProvider>
               <WalletSelectorContextProvider>
                 {layout}
                 <ToastContainer />
               </WalletSelectorContextProvider>
             </NearContextProvider>
-          </QueryClientProvider>
-        </SessionProvider>
-      </Wrapper>
-    </StoreProvider>
+          </Wrapper>
+        </StoreProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }
 
