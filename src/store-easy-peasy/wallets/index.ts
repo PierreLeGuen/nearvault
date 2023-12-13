@@ -2,7 +2,7 @@ import { persist } from "easy-peasy";
 import { myNearWallet } from "./myNearWallet/index.js";
 import { ledger } from "./ledger/index.js";
 import { setConnectionInProgress } from '~/store-easy-peasy/wallets/self/actions/setConnectionInProgress';
-import { executeTransaction } from '~/store-easy-peasy/wallets/self/thunks/executeTransaction';
+import { signAndSendTransaction } from '~/store-easy-peasy/wallets/self/thunks/signAndSendTransaction/signAndSendTransaction';
 
 export const wallets = persist(
   {
@@ -11,7 +11,7 @@ export const wallets = persist(
     // actions
     setConnectionInProgress,
     // thunks
-    executeTransaction,
+    signAndSendTransaction,
     // nested slices
     myNearWallet,
     ledger,

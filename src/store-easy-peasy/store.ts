@@ -2,6 +2,7 @@ import { createStore, persist, action, thunk } from "easy-peasy";
 import { wallets } from "./wallets";
 import { walletsConnector } from "./walletsConnector/index.js";
 import { pages } from "~/store-easy-peasy/pages";
+import { multisig } from '~/store-easy-peasy/multisig';
 import { initApp } from "~/store-easy-peasy/self/thunks/initApp.js";
 import { addRequestAndConfirm } from "~/store-easy-peasy/self/thunks/addRequestAndConfirm.js";
 
@@ -9,7 +10,7 @@ const model = persist(
   {
     // TODO Move it to accounts
     selectedAccount: null,
-    accounts: [],
+    accounts: [], // TODO migrate to list+map structure
 
     selectAccount: action((slice: any, accountId) => {
       if (slice.selectedAccount.accountId === accountId) return;
@@ -22,7 +23,6 @@ const model = persist(
       const anotherKeysAccounts = slice.accounts.filter(
         (account: any) => account.publicKey !== accounts[0].publicKey,
       );
-      // const autoAddedAccounts = accounts.filter((a) => a.accountId !== account.accountId);
       slice.accounts = [...anotherKeysAccounts, ...accounts];
       slice.selectedAccount = accounts[0];
     }),
@@ -35,12 +35,13 @@ const model = persist(
     }),
 
     // thunks
-    initApp,
-    addRequestAndConfirm,
+    initApp, // TODO remove it
+    addRequestAndConfirm, // TODO remove it
     // nested slices
+    pages,
+    multisig,
     wallets,
     walletsConnector,
-    pages,
   },
   { storage: "localStorage", allow: ["accounts", "selectedAccount"] },
 );

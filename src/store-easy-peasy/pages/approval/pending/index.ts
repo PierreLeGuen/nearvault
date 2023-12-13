@@ -1,5 +1,6 @@
-import { thunks } from '~/store-easy-peasy/pages/approval/pending/thunks';
+import { onApproveOrRejectRequest } from "~/store-easy-peasy/pages/approval/pending/thunks/onApproveOrRejectRequest";
 
 export const pending = {
-  ...thunks,
+  // thunks
+  onApproveOrRejectRequest,
 };

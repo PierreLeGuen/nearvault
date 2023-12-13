@@ -1,7 +1,7 @@
 import { transactions, utils, providers } from 'near-api-js';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { thunk } from 'easy-peasy';
-import { requestSignTransactions } from '../../wallets/myNearWallet/helpers/requestSignTransactions.js';
+// import { requestSignTransactions } from '../../wallets/myNearWallet/thunks/requestSignTransactions.js';
 import { LedgerSigner } from '../../wallets/ledger/helpers/LedgerSigner.ts';
 /*
  * export function createTransaction(
@@ -53,7 +53,7 @@ const requestSignAndSentTransaction = async (tx) => {
   const [_hash, signedTransaction] = await transactions.signTransaction(
     tx,
     new LedgerSigner(),
-    tx.signerId,
+    tx.signerId, // Do we need a account and network?
     'mainnet',
   );
   // sends transaction to NEAR blockchain via JSON RPC call and records the result
@@ -73,17 +73,17 @@ export const addRequestAndConfirm = thunk(
     const navigate = actions.walletsConnector.modal.navigate;
 
     if (account.wallet === 'myNearWallet') {
-      const tx = await createTx(
-        state.wallets[account.wallet].connection.connection.provider,
-        account.accountId,
-        account.accountId,
-        account.publicKey,
-      );
-
-      requestSignTransactions({
-        transactions: [tx],
-        walletUrl: state.wallets.myNearWallet.connection.config.walletUrl,
-      });
+      // const tx = await createTx(
+      //   state.wallets[account.wallet].connection.connection.provider,
+      //   account.accountId,
+      //   account.accountId,
+      //   account.publicKey,
+      // );
+      //
+      // requestSignTransactions({
+      //   transactions: [tx],
+      //   walletUrl: state.wallets.myNearWallet.connection.config.walletUrl,
+      // });
     }
 
     if (account.wallet === 'ledger') {

@@ -1,6 +1,6 @@
-import { Signer } from 'near-api-js';
-import { Signature, PublicKey } from '@near-js/crypto';
-import { LedgerClient } from './LedgerClient';
+import { Signer } from "near-api-js";
+import { Signature, PublicKey } from "@near-js/crypto";
+import { LedgerClient } from "./LedgerClient";
 
 export class LedgerSigner extends Signer {
   private ledger: LedgerClient;
@@ -13,9 +13,9 @@ export class LedgerSigner extends Signer {
   // @ts-ignore
   async createKey() {}
 
-  getPublicKey(accountId?: string, networkId?: string): Promise<PublicKey> {
+  getPublicKey(_accountId?: string, _networkId?: string): Promise<PublicKey> {
     // TODO Get Pk from selected account
-    return Promise.resolve(PublicKey.from(''));
+    return Promise.resolve(PublicKey.from(""));
   }
 
   async signMessage(
@@ -38,6 +38,5 @@ export class LedgerSigner extends Signer {
     } finally {
       await this.ledger.disconnect();
     }
-
   }
 }
