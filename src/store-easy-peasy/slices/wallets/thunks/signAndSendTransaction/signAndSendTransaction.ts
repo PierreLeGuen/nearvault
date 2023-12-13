@@ -1,5 +1,5 @@
 import { thunk } from "easy-peasy";
-import { createTx } from "~/store-easy-peasy/wallets/self/thunks/signAndSendTransaction/createTx";
+import { createTx } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/createTx";
 
 const getAccount = (accounts: any, accountId: any) =>
   accounts.find((account: any) => account.accountId === accountId);

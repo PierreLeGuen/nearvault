@@ -1,7 +1,7 @@
 import { thunk } from "easy-peasy";
 import { transactions } from "near-api-js";
 import { JsonRpcProvider } from "near-api-js/lib/providers";
-import { LedgerSigner } from "~/store-easy-peasy/wallets/ledger/helpers/LedgerSigner";
+import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
 import { SignedTransaction, Transaction } from "@near-js/transactions";
 
 const signTx = async (transaction: Transaction) => {

@@ -1,6 +1,6 @@
 import { requestConnect } from "./thunks/requestConnect";
 import { completeConnection } from "./thunks/completeConnect";
-import { signAndSendTx } from "~/store-easy-peasy/wallets/myNearWallet/thunks/signAndSendTx";
+import { signAndSendTx } from "~/store-easy-peasy/slices/wallets/slices/myNearWallet/thunks/signAndSendTx";
 
 export const myNearWallet = {
   // init state

@@ -1,7 +1,7 @@
 import { PublicKey } from "near-api-js/lib/utils";
 import { utils } from "near-api-js";
 import { createTransaction } from "near-api-js/lib/transaction";
-import { getActions } from "~/store-easy-peasy/wallets/self/thunks/signAndSendTransaction/getActions";
+import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 
 export const createTx = async ({

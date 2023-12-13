@@ -1,10 +1,9 @@
 import { createStore, persist, action, thunk } from "easy-peasy";
-import { wallets } from "./wallets";
-import { walletsConnector } from "./walletsConnector/index.js";
-import { pages } from "~/store-easy-peasy/pages";
-import { multisig } from '~/store-easy-peasy/multisig';
-import { initApp } from "~/store-easy-peasy/self/thunks/initApp.js";
-import { addRequestAndConfirm } from "~/store-easy-peasy/self/thunks/addRequestAndConfirm.js";
+import { wallets } from "./slices/wallets";
+import { walletsConnector } from "~/store-easy-peasy/slices/walletsConnector/index.js";
+import { pages } from "src/store-easy-peasy/slices/pages";
+import { multisig } from 'src/store-easy-peasy/slices/multisig';
+import { initApp } from "~/store-easy-peasy/thunks/initApp.js";
 
 const model = persist(
   {
@@ -36,7 +35,6 @@ const model = persist(
 
     // thunks
     initApp, // TODO remove it
-    addRequestAndConfirm, // TODO remove it
     // nested slices
     pages,
     multisig,

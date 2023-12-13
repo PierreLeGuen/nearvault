@@ -1,5 +1,5 @@
 import { connect } from "./thunks/connect";
-import { signAndSendTx } from '~/store-easy-peasy/wallets/ledger/thunks/signAndSendTx';
+import { signAndSendTx } from '~/store-easy-peasy/slices/wallets/slices/ledger/thunks/signAndSendTx';
 
 export const ledger = {
   // init state
