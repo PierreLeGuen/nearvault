@@ -24,7 +24,7 @@ export const signAndSendTransaction = thunk(
       actions,
     });
 
-    console.log('signAndSendTransaction', transaction);
+    console.log('wallet.signAndSendTransaction', transaction);
     await signAndSendTx({ transaction });
   },
 );

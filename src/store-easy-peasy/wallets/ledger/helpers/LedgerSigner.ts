@@ -2,6 +2,8 @@ import { Signer } from "near-api-js";
 import { Signature, PublicKey } from "@near-js/crypto";
 import { LedgerClient } from "./LedgerClient";
 
+const randomPublicKey = "ed25519:EU3JT4N2ahWEzVPfcjEutG89ZDfX1vcqeYz9N1DDest6";
+
 export class LedgerSigner extends Signer {
   private ledger: LedgerClient;
 
@@ -10,27 +12,28 @@ export class LedgerSigner extends Signer {
     this.ledger = new LedgerClient();
   }
 
-  // @ts-ignore
-  async createKey() {}
+  // We don't use this method - it exists only for type matching
+  async createKey() {
+    return PublicKey.from(randomPublicKey);
+  }
 
-  getPublicKey(_accountId?: string, _networkId?: string): Promise<PublicKey> {
-    // TODO Get Pk from selected account
-    return Promise.resolve(PublicKey.from(""));
+  // We don't use this method - it exists only for type matching
+  async getPublicKey(_accountId?: string, _networkId?: string) {
+    return PublicKey.from(randomPublicKey);
   }
 
   async signMessage(
     message: Uint8Array,
-    accountId?: string,
-    networkId?: string,
+    _accountId?: string,
+    _networkId?: string,
   ): Promise<Signature> {
     try {
       await this.ledger.connect();
       const signature = await this.ledger.sign({ data: message });
-      const publicKey = await this.getPublicKey(accountId, networkId);
 
       return {
         signature,
-        publicKey,
+        publicKey: "" as unknown as PublicKey,
       };
     } catch (e) {
       console.log(e);
