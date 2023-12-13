@@ -1,4 +1,5 @@
 import { thunk } from "easy-peasy";
+import { JsonRpcProvider } from "near-api-js/lib/providers";
 
 /* The account may already exist associated with another jack
  * If the account is not in the list - just add it
@@ -7,17 +8,17 @@ import { thunk } from "easy-peasy";
  * If the account is not a multisig - we show the modal and do not add it
  * */
 
-const getAllAccountsWithSameKey1 = async (publicKey) =>
+const getAllAccountsWithSameKey1 = async (publicKey: any) =>
   await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
     headers: { "X-requestor": "near" },
   }).then((r) => r.json());
 
-const getAllAccountsWithSameKey2 = async (publicKey) => {
+const getAllAccountsWithSameKey2 = async (publicKey: any) => {
   try {
-    const res = await fetch(`https://api.nearblocks.io/v1/keys/${publicKey}`).then(
-      (r) => r.json(),
-    );
-    const a = res.keys.map(({ account_id}) =>  account_id);
+    const res = await fetch(
+      `https://api.nearblocks.io/v1/keys/${publicKey}`,
+    ).then((r) => r.json());
+    const a = res.keys.map(({ account_id }: any) => account_id);
     console.log(a);
     return a;
   } catch (e) {
@@ -25,7 +26,7 @@ const getAllAccountsWithSameKey2 = async (publicKey) => {
   }
 };
 
-const isMultisig = async (accountId, provider) =>
+const isMultisig = async (accountId: any, provider: any) =>
   await provider.query({
     request_type: "call_function",
     finality: "final",
@@ -34,16 +35,11 @@ const isMultisig = async (accountId, provider) =>
     args_base64: "e30=",
   });
 
-const getMultisigAccounts = async (newAccount, state) => {
+const getMultisigAccounts = async (newAccount: any, provider: any) => {
   const allAccounts = await getAllAccountsWithSameKey2(newAccount.publicKey);
 
   const results = await Promise.allSettled(
-    allAccounts.map((accountId) =>
-      isMultisig(
-        accountId,
-        state.wallets.myNearWallet.connection.connection.provider,
-      ),
-    ),
+    allAccounts.map((accountId: any) => isMultisig(accountId, provider)),
   );
 
   return results
@@ -64,13 +60,14 @@ const getMultisigAccounts = async (newAccount, state) => {
 };
 
 export const completeConnection = thunk(
-  async (_actions, payload, { getStoreActions, getStoreState }) => {
-    const state = getStoreState();
-    const actions = getStoreActions();
+  async (_, payload: any, { getStoreActions, getStoreState, getState }) => {
+    const state: any = getStoreState();
+    const slice: any = getState();
+    const actions: any = getStoreActions();
 
     const connectionInProgress = state.wallets.connectInProgress;
 
-    // TODO Check the right way to do it in Next
+    // TODO Check about the right way to do it in NextJS
     const currentUrl = new URL(window.location.href);
     const accountId = currentUrl.searchParams.get("account_id") || "";
     const allKeys = (currentUrl.searchParams.get("all_keys") || "").split(",");
@@ -96,7 +93,8 @@ export const completeConnection = thunk(
       addedBy: "user",
     };
 
-    const accounts = await getMultisigAccounts(account, state);
+    const provider = new JsonRpcProvider({ url: slice.rpcUrl });
+    const accounts = await getMultisigAccounts(account, provider);
     console.log(accounts);
 
     payload.router.replace(prevPage);

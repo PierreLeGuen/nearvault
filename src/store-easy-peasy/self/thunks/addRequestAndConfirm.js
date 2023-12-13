@@ -92,15 +92,15 @@ export const addRequestAndConfirm = thunk(
       navigate('/ledger/sign/progress');
 
       try {
-        const tx = await createTx(
-          state.wallets[account.wallet].connection.provider,
-          account.accountId,
-          account.accountId,
-          account.publicKey,
-        );
-        const a = await requestSignAndSentTransaction(tx, close);
-        console.log(a);
-        close();
+        // const tx = await createTx(
+        //   state.wallets[account.wallet].connection.provider,
+        //   account.accountId,
+        //   account.accountId,
+        //   account.publicKey,
+        // );
+        // const a = await requestSignAndSentTransaction(tx, close);
+        // console.log(a);
+        // close();
       } catch (e) {
         console.log(e);
         navigate({ route: '/ledger/sign/error', routeParams: { error: e } });

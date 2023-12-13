@@ -1,14 +1,11 @@
 import { thunk } from "easy-peasy";
 
-const LOGIN_WALLET_URL_SUFFIX = "/login";
-
 export const requestConnect = thunk(
-  async (actions, payload, { getState, getStoreActions }) => {
-    const slice = getState();
-    const storeActions = getStoreActions();
-    const url = new URL(
-      slice.connection.config.walletUrl + LOGIN_WALLET_URL_SUFFIX,
-    );
+  async (_, __, { getState, getStoreActions }) => {
+    const slice: any = getState();
+    const storeActions: any = getStoreActions();
+
+    const url = new URL(slice.loginUrl);
 
     url.searchParams.set(
       "success_url",

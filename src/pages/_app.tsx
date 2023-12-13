@@ -35,14 +35,14 @@ const queryClient = new QueryClient();
 
 const Wrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
-  const [isInit, setInit] = useState(false);
-  const initApp = useStoreActions((actions: any) => actions.initApp);
+  // const [isInit, setInit] = useState(false);
+  // const initApp = useStoreActions((actions: any) => actions.initApp);
 
-  useEffect(() => {
-    initApp({ setInit });
-  }, []);
+  // useEffect(() => {
+  //   // initApp({ setInit });
+  // }, []);
 
-  return !isRehydrated || !isInit ? <div>Loading...</div> : children;
+  return !isRehydrated ? <div>Loading...</div> : children;
 };
 
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {

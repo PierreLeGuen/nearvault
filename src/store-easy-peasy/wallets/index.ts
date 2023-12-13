@@ -1,6 +1,6 @@
 import { persist } from "easy-peasy";
-import { myNearWallet } from "./myNearWallet/index.js";
-import { ledger } from "./ledger/index.js";
+import { myNearWallet } from "./myNearWallet";
+import { ledger } from "./ledger";
 import { setConnectionInProgress } from '~/store-easy-peasy/wallets/self/actions/setConnectionInProgress';
 import { signAndSendTransaction } from '~/store-easy-peasy/wallets/self/thunks/signAndSendTransaction/signAndSendTransaction';
 

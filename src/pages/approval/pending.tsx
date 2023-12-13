@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import HeaderTitle from "~/components/ui/header";
-import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import {
   MultiSigRequestActionType,
@@ -29,16 +28,14 @@ const Pending: NextPageWithLayout = () => {
     (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
   );
 
-  const wallet = useWalletSelector(); //////////////////////////////// UPDATE
-  const { currentTeam, publicKey, newNearConnection } = usePersistingStore();
+  const { currentTeam, publicKey, newNearConnection } = usePersistingStore(); // TODO from where we take this publicKey?
 
   const [requests, setRequests] = useState<Map<Wallet, Array<RequestRow>>>(
     new Map(),
   );
   const [loading, setLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState(new Map());
 
-  // Does it work and don't break the useEffect? Also, we need to show some error message instead of break the app
+  // TODO Does it work and don't break the useEffect? Also, we need to show some error message instead of break the app
   if (!currentTeam) {
     throw new Error("No current team");
   }
@@ -50,8 +47,8 @@ const Pending: NextPageWithLayout = () => {
   const fetchWalletData = async (wallet: Wallet): Promise<RequestRow[]> => {
     try {
       // TODO rework to Account
-      const near = await newNearConnection(); //////////////////////////////// UPDATE Можливо ми просто залишимо це? І створимо нове зєднання для підпису
-      const walletConnection = new naj.WalletConnection(near, ""); //////////////////////////////// UPDATE
+      const near = await newNearConnection(); //////////////////////////////// UPDATE!
+      const walletConnection = new naj.WalletConnection(near, ""); //////////////////////////////// UPDATE!
 
       const contract = initMultiSigContract(
         //////////////////////////////// UPDATE
@@ -185,8 +182,6 @@ const Pending: NextPageWithLayout = () => {
       setRequests(updatedRequests);
     } catch (e) {
       console.log(e);
-    } finally {
-      setLoadingState((prev) => new Map(prev.set(requestId, "idle")));
     }
   };
 
@@ -208,7 +203,6 @@ const Pending: NextPageWithLayout = () => {
         tempPendingRequests.set(wallet, requestRow);
       });
 
-      console.log(tempPendingRequests);
       setRequests(tempPendingRequests);
       setLoading(false);
     };

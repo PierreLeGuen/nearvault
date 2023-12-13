@@ -13,7 +13,6 @@ export const signAndSendTx = thunk(async (_, payload: any, { getState }) => {
     "transactions",
     Buffer.from(serialize(SCHEMA, transaction)).toString("base64"),
   );
-
   newUrl.searchParams.set("callbackUrl", currentUrl.href);
 
   // if (meta) newUrl.searchParams.set("meta", meta);
