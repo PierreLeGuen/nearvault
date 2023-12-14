@@ -3,7 +3,7 @@ import { thunk } from "easy-peasy";
 export const requestConnect = thunk(
   async (_, __, { getState, getStoreActions }) => {
     const slice: any = getState();
-    const storeActions: any = getStoreActions();
+    const actions: any = getStoreActions();
 
     const url = new URL(slice.loginUrl);
 
@@ -16,7 +16,7 @@ export const requestConnect = thunk(
       `${window.location.origin}/connect/my-near-wallet/failure?prevPage=${window.location.pathname}`,
     );
 
-    storeActions.wallets.setConnectionInProgress("my-near-wallet");
+    actions.wallets.setConnectionInProgress("my-near-wallet");
 
     window.location.assign(url.toString());
   },

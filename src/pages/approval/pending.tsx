@@ -21,9 +21,9 @@ export type ApproveOrReject = "approve" | "reject";
 const Pending: NextPageWithLayout = () => {
   useSession({ required: true });
   const isAccountConnected = useStoreActions(
-    (store: any) => store.isAccountConnected,
+    (store: any) => store.accounts.isAccountConnected,
   );
-  const selectAccount = useStoreActions((store: any) => store.selectAccount);
+  const selectAccount = useStoreActions((store: any) => store.accounts.selectAccount);
   const onApproveOrRejectRequest = useStoreActions(
     (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
   );

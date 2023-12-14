@@ -1,22 +1,22 @@
-import * as React from 'react';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import { Button } from '@mui/material';
-import { useStoreState, useStoreActions } from 'easy-peasy';
-import cn from './SelectAccount.module.css';
-import { useEffect } from 'react';
+import * as React from "react";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import { Button } from "@mui/material";
+import { useStoreState, useStoreActions } from "easy-peasy";
+import cn from "./SelectAccount.module.css";
+import { useEffect } from "react";
 
 const blur = () => {
   setTimeout(() => {
     document.activeElement.blur();
   }, 0);
-}
+};
 
 export const SelectAccount = ({ openWalletModal }) => {
-  const accounts = useStoreState((state) => state.accounts);
-  const isWalletModalOpen = useStoreState((state) => state.walletsConnector.modal.isOpen);
-  const selectedAccount = useStoreState((state) => state.selectedAccount);
-  const selectAccount = useStoreActions((actions) => actions.selectAccount);
+  const accountsList = useStoreState((state) => state.accounts.list);
+  const isOpen = useStoreState((state) => state.walletsConnector.modal.isOpen);
+  const selected = useStoreState((state) => state.accounts.selected);
+  const selectAccount = useStoreActions((actions) => actions.accounts.selectAccount);
   const [open, setOpen] = React.useState(false);
 
   const handleChange = (event) => {
@@ -32,21 +32,21 @@ export const SelectAccount = ({ openWalletModal }) => {
   };
 
   useEffect(() => {
-    if (isWalletModalOpen) handleClose();
-  }, [isWalletModalOpen]);
+    if (isOpen) handleClose();
+  }, [isOpen]);
 
   return (
     <Select
-      value={selectedAccount.accountId}
+      value={selected.accountId}
       onChange={handleChange}
       sx={{ width: 300 }}
       open={open}
       onClose={handleClose}
       onOpen={handleOpen}
     >
-      {accounts.map((account) => (
-        <MenuItem key={account.accountId} value={account.accountId}>
-          {account.accountId}
+      {accountsList.map((accountId) => (
+        <MenuItem key={accountId} value={accountId}>
+          {accountId}
         </MenuItem>
       ))}
       <div className={cn.addAccountContainer}>

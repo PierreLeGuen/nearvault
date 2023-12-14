@@ -18,7 +18,8 @@ const isMultisig = async (accountId: any, provider: any) =>
     args_base64: "e30=",
   });
 
-const getMultisigAccounts = async (publicKey: any, provider: any) => {
+const getMultisigAccounts = async (publicKey: any, rpcUrl: any) => {
+  const provider = new JsonRpcProvider({ url: rpcUrl });
   const allAccounts = await getAllAccountsWithKey(publicKey);
   console.log(allAccounts);
 
@@ -69,15 +70,14 @@ export const connect = thunk(async (_, __, { getStoreActions, getState }) => {
   navigate("/ledger/multisig-accounts/progress");
 
   try {
-    const provider = new JsonRpcProvider({ url: slice.rpcUrl });
-    const accounts = await getMultisigAccounts(publicKey.toString(), provider);
+    const multisigAccounts = await getMultisigAccounts(publicKey.toString(), slice.rpcUrl);
 
-    if (accounts.length > 0) {
+    if (multisigAccounts.length > 0) {
       navigate({
         route: "/ledger/multisig-accounts/success",
-        routeParams: { accounts },
+        routeParams: { accounts: multisigAccounts },
       });
-      actions.addAccount({ accounts }); // TODO Fix bug with ledger import when we have MNW
+      actions.accounts.addAccounts(multisigAccounts);
     }
   } catch (e) {
     console.log(e);

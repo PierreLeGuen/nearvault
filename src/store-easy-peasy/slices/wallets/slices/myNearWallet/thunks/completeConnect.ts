@@ -8,6 +8,15 @@ import { JsonRpcProvider } from "near-api-js/lib/providers";
  * If the account is not a multisig - we show the modal and do not add it
  * */
 
+const isMultisig = async (accountId: any, provider: any) =>
+  await provider.query({
+    request_type: "call_function",
+    finality: "final",
+    account_id: accountId,
+    method_name: "list_request_ids",
+    args_base64: "e30=",
+  });
+
 const getAllAccountsWithSameKey1 = async (publicKey: any) =>
   await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
     headers: { "X-requestor": "near" },
@@ -26,16 +35,8 @@ const getAllAccountsWithSameKey2 = async (publicKey: any) => {
   }
 };
 
-const isMultisig = async (accountId: any, provider: any) =>
-  await provider.query({
-    request_type: "call_function",
-    finality: "final",
-    account_id: accountId,
-    method_name: "list_request_ids",
-    args_base64: "e30=",
-  });
-
-const getMultisigAccounts = async (newAccount: any, provider: any) => {
+const getMultisigAccounts = async (newAccount: any, rpcUrl: any) => {
+  const provider = new JsonRpcProvider({ url: rpcUrl });
   const allAccounts = await getAllAccountsWithSameKey2(newAccount.publicKey);
 
   const results = await Promise.allSettled(
@@ -61,6 +62,7 @@ const getMultisigAccounts = async (newAccount: any, provider: any) => {
 
 export const completeConnection = thunk(
   async (_, payload: any, { getStoreActions, getStoreState, getState }) => {
+    const { router } = payload;
     const state: any = getStoreState();
     const slice: any = getState();
     const actions: any = getStoreActions();
@@ -74,16 +76,12 @@ export const completeConnection = thunk(
     const prevPage = currentUrl.searchParams.get("prevPage") || "";
     const publicKey = allKeys[0];
 
-    console.log(accountId, allKeys, prevPage);
-
     currentUrl.searchParams.delete("all_keys");
     currentUrl.searchParams.delete("account_id");
     currentUrl.searchParams.delete("prevPage");
 
-    console.log("connectionInProgress", connectionInProgress);
-
     if (connectionInProgress !== "my-near-wallet") return;
-    // window.history.replaceState({}, "", currentUrl.origin);
+
     actions.wallets.setConnectionInProgress(null);
 
     const account = {
@@ -93,11 +91,9 @@ export const completeConnection = thunk(
       addedBy: "user",
     };
 
-    const provider = new JsonRpcProvider({ url: slice.rpcUrl });
-    const accounts = await getMultisigAccounts(account, provider);
-    console.log(accounts);
+    const multisigAccounts = await getMultisigAccounts(account, slice.rpcUrl);
+    if (multisigAccounts.length > 0) actions.accounts.addAccounts(multisigAccounts);
 
-    payload.router.replace(prevPage);
-    if (accounts.length > 0) actions.addAccount({ accounts, account });
+    router.replace(prevPage);
   },
 );
