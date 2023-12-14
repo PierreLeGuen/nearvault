@@ -1,17 +1,19 @@
 import { persist } from "easy-peasy";
 import { myNearWallet } from "./slices/myNearWallet";
 import { ledger } from "./slices/ledger";
-import { setConnectionInProgress } from "~/store-easy-peasy/slices/wallets/actions/setConnectionInProgress";
+import { modal } from '~/store-easy-peasy/slices/wallets/slices/modal';
+import { setConnectInProgress } from "~/store-easy-peasy/slices/wallets/actions/setConnectInProgress";
 import { signAndSendTransaction } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/signAndSendTransaction";
 
 const model = {
   // init state
   connectInProgress: null,
   // actions
-  setConnectionInProgress,
+  setConnectInProgress,
   // thunks
   signAndSendTransaction,
   // nested slices
+  modal,
   myNearWallet,
   ledger,
 };

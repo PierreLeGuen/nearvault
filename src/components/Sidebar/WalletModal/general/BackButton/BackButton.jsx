@@ -3,7 +3,7 @@ import { useStoreActions } from 'easy-peasy';
 import cn from './BackButton.module.css';
 
 export const BackButton = ({ to }) => {
-  const navigate = useStoreActions((actions) => actions.walletsConnector.modal.navigate);
+  const navigate = useStoreActions((actions) => actions.wallets.modal.navigate);
 
   const onClick = () => to && navigate(to);
 

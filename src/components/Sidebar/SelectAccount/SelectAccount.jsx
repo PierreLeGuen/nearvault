@@ -14,7 +14,7 @@ const blur = () => {
 
 export const SelectAccount = ({ openWalletModal }) => {
   const accountsList = useStoreState((state) => state.accounts.list);
-  const isOpen = useStoreState((state) => state.walletsConnector.modal.isOpen);
+  const isOpen = useStoreState((state) => state.wallets.modal.isOpen);
   const selected = useStoreState((state) => state.accounts.selected);
   const selectAccount = useStoreActions((actions) => actions.accounts.selectAccount);
   const [open, setOpen] = React.useState(false);

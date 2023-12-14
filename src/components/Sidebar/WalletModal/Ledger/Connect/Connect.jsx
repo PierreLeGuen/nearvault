@@ -8,7 +8,7 @@ import cn from './Connect.module.css';
 
 export const Connect = () => {
   const connect = useStoreActions((state) => state.wallets.ledger.connect);
-  const navigate = useStoreActions((state) => state.walletsConnector.modal.navigate);
+  const navigate = useStoreActions((state) => state.wallets.modal.navigate);
 
   const specifyPath = () => {
     navigate('/ledger/connect/specify-path');

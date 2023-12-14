@@ -82,7 +82,7 @@ export const completeConnection = thunk(
 
     if (connectionInProgress !== "my-near-wallet") return;
 
-    actions.wallets.setConnectionInProgress(null);
+    actions.wallets.setConnectInProgress(null);
 
     const account = {
       accountId,

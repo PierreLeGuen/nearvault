@@ -1,4 +1,5 @@
 import { Button } from '@mui/material';
+import Image from 'next/image';
 import { CloseButton } from '../../general/CloseButton/CloseButton.jsx';
 import { Header } from '../../general/Header/Header.jsx';
 import img from '../../../../../../public/account.png';
@@ -13,7 +14,7 @@ export const ImportedAccounts = ({ routeParams, closeModal }) => {
       <Header>Your {isSingleAccount ? 'Account' : 'Accounts'}</Header>
       <CloseButton />
       <div className={cn.content}>
-        <img src={img} alt="Account picture" className={cn.img} />
+        <Image src={img} alt="Account picture" className={cn.img} />
         <p className={cn.text}>
           We found the following Multisig {isSingleAccount ? 'account' : 'accounts'} associated with
           your Ledger:

@@ -47,7 +47,7 @@ const getMultisigAccounts = async (publicKey: any, rpcUrl: any) => {
 export const connect = thunk(async (_, __, { getStoreActions, getState }) => {
   const slice: any = getState();
   const actions: any = getStoreActions();
-  const navigate = actions.walletsConnector.modal.navigate;
+  const navigate = actions.wallets.modal.navigate;
 
   navigate("/ledger/connect/progress");
 
@@ -57,7 +57,6 @@ export const connect = thunk(async (_, __, { getStoreActions, getState }) => {
   try {
     await ledger.connect();
     publicKey = await ledger.getPublicKey();
-    console.log("ledger pk = ", publicKey.toString());
   } catch (e) {
     console.log(e);
     navigate({ route: "/ledger/connect/error", routeParams: { error: e } });

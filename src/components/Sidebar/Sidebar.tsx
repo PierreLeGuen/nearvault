@@ -10,9 +10,11 @@ import { WalletModal } from "~/components/Sidebar/WalletModal/WalletModal";
 import { Button } from "~/components/ui/button";
 
 const Sidebar = () => {
-  const selectedAccount = useStoreState((state: any) => state.accounts.selected);
+  const selectedAccount = useStoreState(
+    (state: any) => state.accounts.selected,
+  );
   const openWalletModal = useStoreActions(
-    (actions: any) => actions.walletsConnector.modal.open,
+    (actions: any) => actions.wallets.modal.open,
   );
 
   return (

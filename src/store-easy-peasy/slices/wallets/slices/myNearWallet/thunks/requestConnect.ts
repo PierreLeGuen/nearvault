@@ -16,7 +16,7 @@ export const requestConnect = thunk(
       `${window.location.origin}/connect/my-near-wallet/failure?prevPage=${window.location.pathname}`,
     );
 
-    actions.wallets.setConnectionInProgress("my-near-wallet");
+    actions.wallets.setConnectInProgress("my-near-wallet");
 
     window.location.assign(url.toString());
   },

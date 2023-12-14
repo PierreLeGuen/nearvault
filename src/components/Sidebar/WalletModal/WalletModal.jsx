@@ -13,11 +13,11 @@ import { SignTxError } from './Ledger/SignTxError/SignTxError.jsx';
 import cn from './WalletModal.module.css';
 
 export const WalletModal = () => {
-  const isOpen = useStoreState((state) => state.walletsConnector.modal.isOpen);
-  const route = useStoreState((state) => state.walletsConnector.modal.route);
-  const routeParams = useStoreState((state) => state.walletsConnector.modal.routeParams);
-  const close = useStoreActions((actions) => actions.walletsConnector.modal.close);
-  const navigate = useStoreActions((state) => state.walletsConnector.modal.navigate);
+  const isOpen = useStoreState((state) => state.wallets.modal.isOpen);
+  const route = useStoreState((state) => state.wallets.modal.route);
+  const routeParams = useStoreState((state) => state.wallets.modal.routeParams);
+  const close = useStoreActions((actions) => actions.wallets.modal.close);
+  const navigate = useStoreActions((state) => state.wallets.modal.navigate);
 
   // After close the modal, navigate to start page - we want to start from the beginning
   // every time we open the modal

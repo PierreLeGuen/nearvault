@@ -10,7 +10,6 @@ export const onApproveOrRejectRequest = thunk(
         ? actions.multisig.confirm
         : actions.multisig.deleteRequest;
 
-    console.log("onApproveOrRejectRequest", multisigAccountId, requestId, kind);
     await method({ multisigAccountId, requestId });
   },
 );
