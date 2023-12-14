@@ -1,11 +1,31 @@
 import { Dialog, Transition } from "@headlessui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type BN from "bn.js";
 import bs58 from "bs58";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useSession } from "next-auth/react";
 import { Fragment, useEffect, useState } from "react";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
+import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
 import { useNearContext } from "~/context/near";
 import { useWalletSelector } from "~/context/wallet";
 import { initLockupContract } from "~/lib/lockup/contract";
@@ -21,7 +41,7 @@ import { type NextPageWithLayout } from "../_app";
 import { addRequestToMultisigWallet } from "../approval/manage";
 
 const isPrivateSchedule = (
-  vestingInformation: FromStateVestingInformation | undefined
+  vestingInformation: FromStateVestingInformation | undefined,
 ): boolean => {
   if (!vestingInformation) {
     return false;
@@ -36,10 +56,13 @@ interface IFormInput {
   authToken: string;
 }
 
+const formLockupRequest = z.object({
+  wallet: z.string(),
+});
+
 const ManageLockup: NextPageWithLayout = () => {
   useSession({ required: true });
 
-  const [account, setAccount] = useState("");
   const [accountError, setAccountError] = useState("");
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const [lockupInformation, setLockupInformation] =
@@ -51,6 +74,10 @@ const ManageLockup: NextPageWithLayout = () => {
   const { newNearConnection } = usePersistingStore();
   const multisigWalletId = "foundation.near";
 
+  const form = useForm<z.infer<typeof formLockupRequest>>({
+    resolver: zodResolver(formLockupRequest),
+  });
+
   // Lockup termination
 
   const {
@@ -61,12 +88,13 @@ const ManageLockup: NextPageWithLayout = () => {
     clearErrors,
     formState: { errors },
   } = useForm<IFormInput>();
-  const onSubmit: SubmitHandler<IFormInput> = (data) => {
+  const onSubmitCancelLockup: SubmitHandler<IFormInput> = (data) => {
     void cancelLockupFn(
+      form.getValues("wallet"),
       data.authToken,
       data.startDate,
       data.cliffDate,
-      data.endDate
+      data.endDate,
     );
   };
 
@@ -115,12 +143,12 @@ const ManageLockup: NextPageWithLayout = () => {
     try {
       const l = calculateLockup(prepareAccountId(account), "lockup.near");
       const r = await viewLockupAccount(l, provider);
-      await updateTerminationStatus();
+      await updateTerminationStatus(account);
       setLockupInformation(r);
     } catch (e) {
       if (e) {
         setAccountError(
-          `Error while retrieving account, error: ${JSON.stringify(e)}`
+          `Error while retrieving account, error: ${JSON.stringify(e)}`,
         );
       } else {
         setAccountError("Account not found");
@@ -128,17 +156,17 @@ const ManageLockup: NextPageWithLayout = () => {
     }
   };
 
-  async function updateTerminationStatus() {
+  async function updateTerminationStatus(account: string) {
     const n = await newNearConnection();
     const l = initLockupContract(
       await n.account(account),
-      calculateLockup(account, "lockup.near")
+      calculateLockup(account, "lockup.near"),
     );
     const terminationStatus = await l.get_termination_status();
     setTerminationStatus(terminationStatus);
   }
 
-  const tryWithdrawFn = async () => {
+  const tryWithdrawFn = async (account: string) => {
     const w = await walletSelector.selector.wallet();
     await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
     const lockupAccountId = calculateLockup(account, "lockup.near");
@@ -159,11 +187,11 @@ const ManageLockup: NextPageWithLayout = () => {
 
       if (terminationStatus === "VestingTerminatedWithDeficit") {
         alert(
-          `Account ${lockupAccountId} will the tokens unstaked after confirmation (get back to "Try Withdraw" in 2 days after the confirmation)`
+          `Account ${lockupAccountId} will the tokens unstaked after confirmation (get back to "Try Withdraw" in 2 days after the confirmation)`,
         );
       } else {
         alert(
-          `Account ${lockupAccountId} will get the tokens withdrawn from the staking pool after confirmation (get back to "Try Withdraw" immediately after the confirmation to withdraw the funds back to foundation)`
+          `Account ${lockupAccountId} will get the tokens withdrawn from the staking pool after confirmation (get back to "Try Withdraw" immediately after the confirmation to withdraw the funds back to foundation)`,
         );
       }
     } else {
@@ -178,16 +206,17 @@ const ManageLockup: NextPageWithLayout = () => {
       ]);
 
       alert(
-        `Account ${lockupAccountId} will get the tokens withdrawn to foundation and the termination will be completed after confirmation!`
+        `Account ${lockupAccountId} will get the tokens withdrawn to foundation and the termination will be completed after confirmation!`,
       );
     }
   };
 
   const cancelLockupFn = async (
+    account: string,
     authToken: string,
     start: Date,
     cliff: Date,
-    end: Date
+    end: Date,
   ) => {
     const w = await walletSelector.selector.wallet();
     await assertCorrectMultisigWallet(walletSelector, multisigWalletId);
@@ -209,7 +238,7 @@ const ManageLockup: NextPageWithLayout = () => {
             deposit: "0",
             gas: "200000000000000",
           },
-        ]
+        ],
       );
     } else {
       await addRequestToMultisigWallet(
@@ -229,87 +258,100 @@ const ManageLockup: NextPageWithLayout = () => {
                   new Date(cliff),
                   new Date(end),
                   Buffer.from(
-                    lockupInformation.lockupState.vestingInformation.vestingHash
-                  ).toString("base64")
-                )
-              )
+                    lockupInformation.lockupState.vestingInformation
+                      .vestingHash,
+                  ).toString("base64"),
+                ),
+              ),
             ),
             deposit: "0",
             gas: "200000000000000",
           },
-        ]
+        ],
       );
     }
 
-    await tryWithdrawFn();
+    await tryWithdrawFn(account); 
 
     cancelSetIsOpen(false);
   };
 
+  function onSubmitGetLockup(values: z.infer<typeof formLockupRequest>) {
+    console.log(values);
+    void getLockupInformation(values.wallet);
+  }
+
   return (
-    <>
-      <div className="prose pl-4 pt-4">
-        <h1>Manage Lockup</h1>
-        <label className="block">
-          <span>NEAR account (account or lockup)</span>
-          <span className="flex flex-row">
-            <input
-              type="text"
-              className="w-full rounded"
-              placeholder="NEAR account or lockup"
-              onChange={(e) => {
-                setAccount(e.currentTarget.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setAccountError("");
-                  void getLockupInformation(e.currentTarget.value);
-                }
-              }}
-            />
-            <button
-              className="ml-4 rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
-              onClick={() => {
-                setAccountError("");
-                void getLockupInformation(account);
-              }}
-            >
-              View
-            </button>
-          </span>
-        </label>
-        {accountError && <p className="text-red-500">{accountError}</p>}
-        {lockupInformation && (
-          <>
-            <div>{showLockupInfo(lockupInformation)}</div>
-            <div>
-              <div className="mt-4 flex flex-row gap-3">
-                <button
-                  className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
-                  disabled={!lockupInformation.lockupState.vestingInformation}
-                  onClick={() => {
-                    cancelSetIsOpen(true);
-                  }}
-                >
-                  {!lockupInformation.lockupState.vestingInformation
-                    ? "Can't cancel lockup without a vesting schedule or terminated"
-                    : "Cancel lockup"}
-                </button>
-                {terminationStatus && terminationStatus !== "" && (
-                  <button
-                    className="rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
-                    onClick={() => {
-                      void tryWithdrawFn();
-                    }}
-                  >
-                    Try withdraw
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+    <div className="flex flex-grow flex-col items-center gap-10 py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage lockup</CardTitle>
+          <CardDescription>Manage NEAR lockup.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmitGetLockup)}
+                className="space-y-8"
+              >
+                <FormField
+                  control={form.control}
+                  name="wallet"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Wallet</FormLabel>
+                      <FormControl>
+                        <Input placeholder="mywallet.near" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Main wallet associated with a lockup.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">Submit</Button>
+              </form>
+            </Form>
+          </div>
+          <div className="prose pl-4 pt-4">
+            {accountError && <p className="text-red-500">{accountError}</p>}
+            {lockupInformation && (
+              <>
+                <div>{showLockupInfo(lockupInformation)}</div>
+                <div>
+                  <div className="mt-4 flex flex-row gap-3">
+                    <button
+                      className="rounded bg-red-300 px-2 py-1 hover:bg-red-400"
+                      disabled={
+                        !lockupInformation.lockupState.vestingInformation
+                      }
+                      onClick={() => {
+                        cancelSetIsOpen(true);
+                      }}
+                    >
+                      {!lockupInformation.lockupState.vestingInformation
+                        ? "Can't cancel lockup without a vesting schedule or terminated"
+                        : "Cancel lockup"}
+                    </button>
+                    {terminationStatus && terminationStatus !== "" && (
+                      <button
+                        className="rounded bg-blue-300 px-2 py-1 hover:bg-blue-400"
+                        onClick={() => {
+                          void tryWithdrawFn(form.watch("wallet"));
+                        }}
+                      >
+                        Try withdraw
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Transition appear show={cancelLockupModalIsOpen} as={Fragment}>
         <Dialog
@@ -344,7 +386,7 @@ const ManageLockup: NextPageWithLayout = () => {
                   as="form"
                   className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                  onSubmit={handleSubmit(onSubmit)}
+                  onSubmit={handleSubmit(onSubmitCancelLockup)}
                 >
                   <Dialog.Title
                     as="h3"
@@ -354,7 +396,7 @@ const ManageLockup: NextPageWithLayout = () => {
                   </Dialog.Title>
 
                   {isPrivateSchedule(
-                    lockupInformation?.lockupState.vestingInformation
+                    lockupInformation?.lockupState.vestingInformation,
                   ) && (
                     <div className="flex flex-col gap-3">
                       <p>
@@ -443,7 +485,7 @@ const ManageLockup: NextPageWithLayout = () => {
           </div>
         </Dialog>
       </Transition>
-    </>
+    </div>
   );
 };
 
@@ -476,7 +518,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
   console.log(lockupInfo);
 
   const getVestingDetails = (
-    vesting: FromStateVestingInformation | undefined
+    vesting: FromStateVestingInformation | undefined,
   ) => {
     if (
       lockupInfo.lockupState.vestingInformation?.terminationStatus ||
@@ -569,7 +611,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
 
   const getLinearVestingDetails = (
     start: BN | undefined,
-    duration: BN | undefined
+    duration: BN | undefined,
   ) => {
     if (!start || !duration || duration.isZero()) {
       return (
@@ -584,7 +626,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
 
     //  add duration to start date, duration is in days
     const endDate = new Date(
-      startDate.getTime() + duration.toNumber() * 24 * 60 * 60 * 1000
+      startDate.getTime() + duration.toNumber() * 24 * 60 * 60 * 1000,
     );
 
     return (
@@ -654,7 +696,7 @@ const showLockupInfo = (lockupInfo: AccountLockup) => {
       {getVestingDetails(lockupInfo.lockupState.vestingInformation)}
       {getLinearVestingDetails(
         lockupInfo.lockupState.lockupTimestamp,
-        lockupInfo.lockupState.releaseDuration
+        lockupInfo.lockupState.releaseDuration,
       )}
     </div>
   );

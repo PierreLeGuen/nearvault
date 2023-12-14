@@ -25,11 +25,11 @@ const AddWallet: NextPageWithLayout = () => {
   const assertValidMultisigAccount = async (walletId: string) => {
     const n = await newNearConnection();
 
-    const a = await n.account(walletId);
-    const m = initMultiSigContract(a, walletId);
+    const account = await n.account(walletId);
+    const multisigContract = initMultiSigContract(account, walletId);
 
     try {
-      const request_ids = await m.list_request_ids();
+      const request_ids = await multisigContract.list_request_ids();
       console.log(`Request ids: ${JSON.stringify(request_ids)}`);
     } catch (e: any) {
       if (
@@ -75,7 +75,7 @@ const AddWallet: NextPageWithLayout = () => {
         onSuccess: (data) => {
           if (data.newWallets.length > 0) {
             setWalletSucess(
-              `Created wallets: ${JSON.stringify(data.newWallets)}`
+              `Created wallets: ${JSON.stringify(data.newWallets)}`,
             );
             toast.success(`Imported ${data.newWallets.length} wallets.`);
           }
@@ -91,7 +91,7 @@ const AddWallet: NextPageWithLayout = () => {
           ]);
           toast.error(`Error creating wallets: ${error.message}`);
         },
-      }
+      },
     );
   };
 

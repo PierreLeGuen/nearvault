@@ -38,7 +38,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { initFungibleTokenContract } from "~/lib/ft/contract";
@@ -46,8 +45,11 @@ import { initLockupContract } from "~/lib/lockup/contract";
 import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
+import { ReceiverFormField } from "./lib/receiver";
+import { SenderFormField } from "./lib/sender";
 import {
   dbDataToTransfersData,
+  getFormattedAmount,
   type LikelyTokens,
   type Token,
 } from "./lib/transformations";
@@ -189,13 +191,6 @@ const TransfersPage: NextPageWithLayout = () => {
       setFormattedBalance(getFormattedAmount(token));
     }
   }, [watchedToken, tokens]);
-
-  function getFormattedAmount(token: Token | undefined) {
-    return `${(
-      parseInt(token?.balance || "") /
-      10 ** (token?.decimals || 0)
-    ).toLocaleString()} ${token?.symbol}`;
-  }
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     console.log(data);
@@ -409,149 +404,29 @@ const TransfersPage: NextPageWithLayout = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
+              <SenderFormField
+                isLoading={isLoading}
+                wallets={senderWallets}
                 name="fromWallet"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Sender</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "justify-between",
-                              !field.value && "text-muted-foreground",
-                            )}
-                            disabled={isLoading}
-                          >
-                            {isLoading && "Loading..."}
-                            {!isLoading &&
-                              (field.value
-                                ? senderWallets?.find(
-                                    (wallet) =>
-                                      wallet.walletDetails.walletAddress ===
-                                      field.value,
-                                  )?.prettyName
-                                : "Select wallet")}
-                            <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0">
-                        <ScrollArea className="h-[550px]">
-                          <Command>
-                            <CommandInput placeholder="Search wallet..." />
-                            <CommandEmpty>No wallet found.</CommandEmpty>
-                            <CommandGroup>
-                              {senderWallets?.map((wallet) => (
-                                <CommandItem
-                                  value={wallet.prettyName}
-                                  key={wallet.walletDetails.id}
-                                  onSelect={() => {
-                                    form.setValue(
-                                      "fromWallet",
-                                      wallet.walletDetails.walletAddress,
-                                    );
-                                  }}
-                                >
-                                  <CheckIcon
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      wallet.walletDetails.walletAddress ===
-                                        field.value
-                                        ? "opacity-100"
-                                        : "opacity-0",
-                                    )}
-                                  />
-                                  {wallet.prettyName}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </ScrollArea>
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Wallet used to send the tokens.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
                 control={form.control}
+                rules={{
+                  required: "Please select a wallet.",
+                }}
+                description="Funding wallet."
+                placeholder="Select a wallet"
+                label="Sender"
+              />
+              <ReceiverFormField
+                isLoading={addrBookLoading}
+                receivers={addressBook}
                 name="toWallet"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Receiver</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "justify-between",
-                              !field.value && "text-muted-foreground",
-                            )}
-                            disabled={addrBookLoading}
-                          >
-                            {addrBookLoading && "Loading..."}
-                            {!addrBookLoading &&
-                              (field.value
-                                ? addressBook?.find(
-                                    (recv) =>
-                                      recv.walletAddress === field.value,
-                                  )?.firstName
-                                : "Select wallet")}
-                            <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[300px] p-0">
-                        <ScrollArea className="h-[550px]">
-                          <Command>
-                            <CommandInput placeholder="Search address book..." />
-                            <CommandEmpty>No wallet found.</CommandEmpty>
-                            <CommandGroup>
-                              {addressBook?.map((recv) => (
-                                <CommandItem
-                                  value={recv.walletAddress}
-                                  key={recv.walletAddress}
-                                  onSelect={() => {
-                                    form.setValue(
-                                      "toWallet",
-                                      recv.walletAddress,
-                                    );
-                                  }}
-                                >
-                                  <CheckIcon
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      recv.walletAddress === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0",
-                                    )}
-                                  />
-                                  {`${
-                                    recv.firstName
-                                  } (${recv.walletAddress.slice(0, 20)}...)`}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </ScrollArea>
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Receiver of the tokens after approval.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                control={form.control}
+                rules={{
+                  required: "Please select a wallet.",
+                }}
+                description="Receiver of the tokens after approval."
+                placeholder="Select a wallet"
+                label="Receiver"
               />
               <div className="flex flex-grow flex-row">
                 <FormField
