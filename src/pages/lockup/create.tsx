@@ -1,17 +1,43 @@
-import { Switch } from "@headlessui/react";
+import { ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, subDays } from "date-fns";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
-import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { calculateLockup } from "~/lib/lockup/lockup";
-import { assertCorrectMultisigWallet, getNearTimestamp } from "~/lib/utils";
+import { assertCorrectMultisigWallet, cn, getNearTimestamp } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { handleWalletRequestWithToast } from "../payments/transfers"; // TODO Do we need this?
+import { ReceiverFormField } from "../payments/lib/receiver";
+import { SenderFormField } from "../payments/lib/sender";
+import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
+import { getFormattedAmount } from "../payments/lib/transformations";
 import { type WalletPretty } from "../staking/stake";
+import { DateField } from "./dateField";
 
 interface CreateLockupProps {
   owner_account_id: string;
@@ -28,43 +54,58 @@ interface CreateLockupProps {
   whitelist_account_id: string | undefined;
 }
 
-interface VestingSchedule {
-  start_timestamp: number;
-  cliff_timestamp: number;
-  end_timestamp: number;
-}
+const createLockupForm = z.object({
+  fromWallet: z.string({
+    required_error: "Please select a wallet.",
+  }),
+  toWallet: z.string({
+    required_error: "Please select a wallet.",
+  }),
+  amount: z.number().gt(0),
+  startDate: z.date(),
+  endDate: z.date(),
+  cliffDate: z.date().optional(),
+  allowStaking: z.boolean(),
+});
 
 const CreateLockup: NextPageWithLayout = () => {
-  const [amount, setAmount] = useState(0);
-  const [account, setAccount] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [cliffDate, setCliffDate] = useState(
-    new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-  );
-  const [endDate, setEndDate] = useState(
-    new Date(new Date().setFullYear(new Date().getFullYear() + 4))
-  );
-  const [error, setError] = useState("");
+  const form = useForm<z.infer<typeof createLockupForm>>({
+    resolver: zodResolver(createLockupForm),
+    defaultValues: {
+      allowStaking: true,
+      startDate: new Date(),
+      endDate: new Date(),
+      cliffDate: undefined,
+    },
+  });
 
-  const [withCliff, setWithCliff] = useState(false);
-  const [allowStaking, setAllowStaking] = useState(true);
+  const watchedSender = form.watch("fromWallet");
+
+  const { data: balance, isLoading: balanceLoading } = useQuery({
+    queryKey: ["wallet", watchedSender],
+    enabled: !!watchedSender,
+    queryFn: async () => {
+      const account = (await newNearConnection()).account(watchedSender);
+      const balance = await (await account).getAccountBalance();
+      const formattedAmount = getFormattedAmount({
+        balance: balance.available,
+        decimals: 24,
+        symbol: "NEAR",
+      });
+      return formattedAmount;
+    },
+  });
 
   const [explenation, setExplenation] = useState("");
 
   const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
-  const [fromWallet, setFromWallet] = useState<WalletPretty>({
-    prettyName: "",
-    walletDetails: { walletAddress: "", id: "", teamId: "" },
-    isLockup: false,
-    ownerAccountId: undefined,
-  });
 
   const { newNearConnection } = usePersistingStore();
   const { currentTeam } = usePersistingStore.getState();
 
   const walletSector = useWalletSelector();
 
-  api.teams.getWalletsForTeam.useQuery(
+  const { isLoading } = api.teams.getWalletsForTeam.useQuery(
     {
       teamId: currentTeam?.id || "",
     },
@@ -75,7 +116,6 @@ const CreateLockup: NextPageWithLayout = () => {
           throw new Error("No wallets found");
         }
         const w: WalletPretty[] = [];
-
         for (const wallet of data) {
           w.push({
             walletDetails: wallet,
@@ -83,11 +123,10 @@ const CreateLockup: NextPageWithLayout = () => {
             isLockup: false,
             ownerAccountId: undefined,
           });
-
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
-              "lockup.near"
+              "lockup.near",
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
@@ -106,8 +145,13 @@ const CreateLockup: NextPageWithLayout = () => {
         }
         setTeamsWallet(w);
       },
-    }
+    },
   );
+
+  const { data: addressBook, isLoading: addrBookLoading } =
+    api.teams.getBeneficiariesForTeam.useQuery({
+      teamId: currentTeam?.id || "",
+    });
 
   const createLockup = async () => {
     if (endDate < startDate) {
@@ -127,7 +171,7 @@ const CreateLockup: NextPageWithLayout = () => {
     // const n = await newNearConnection();
     await assertCorrectMultisigWallet(
       walletSector,
-      fromWallet.walletDetails.walletAddress
+      fromWallet.walletDetails.walletAddress,
     );
 
     const w = await walletSector.selector.wallet();
@@ -159,11 +203,9 @@ const CreateLockup: NextPageWithLayout = () => {
       lockup_duration: "0",
       ...createArgs,
     };
-
     if (!allowStaking) {
       fnCallArgs["whitelist_account_id"] = "system";
     }
-
     await handleWalletRequestWithToast(
       w.signAndSendTransaction({
         receiverId: fromWallet.walletDetails.walletAddress,
@@ -191,26 +233,41 @@ const CreateLockup: NextPageWithLayout = () => {
             },
           },
         ],
-      })
+      }),
     );
   };
 
+  function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
+    console.log(values);
+  }
+
+  const amount = form.watch("amount");
+  const account = form.watch("toWallet");
+  const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
+  const cliffDate = form.watch("cliffDate");
+  const allowStaking = form.watch("allowStaking");
+
   useEffect(() => {
+    if (!form.formState.isValid) {
+      return;
+    }
+
     let explenation = `The lockup of ${amount} NEAR for account ${account} will start on ${startDate.toLocaleDateString()} and end on ${endDate.toLocaleDateString()}. `;
 
     // Subtract one day from endDate and cliffDate
     const adjustedEndDate = subDays(endDate, 1);
-    const adjustedCliffDate = subDays(cliffDate, 1);
 
     const totalDurationDays = differenceInDays(adjustedEndDate, startDate);
     const totalDurationYears = Math.floor(totalDurationDays / 365);
     const remainingDaysAfterYears = totalDurationDays % 365;
 
-    const cliffDurationDays = differenceInDays(adjustedCliffDate, startDate);
-    const cliffDurationYears = Math.floor(cliffDurationDays / 365);
-    const remainingCliffDaysAfterYears = cliffDurationDays % 365;
+    if (!!cliffDate) {
+      const adjustedCliffDate = subDays(cliffDate, 1);
+      const cliffDurationDays = differenceInDays(adjustedCliffDate, startDate);
+      const cliffDurationYears = Math.floor(cliffDurationDays / 365);
+      const remainingCliffDaysAfterYears = cliffDurationDays % 365;
 
-    if (withCliff) {
       explenation += `It includes a cliff period of ${cliffDurationYears} year(s) and ${remainingCliffDaysAfterYears} day(s), ending on ${cliffDate.toLocaleDateString()}. `;
       explenation += `The release will last for a total of ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s) (counting the cliff). `;
     } else {
@@ -224,115 +281,149 @@ const CreateLockup: NextPageWithLayout = () => {
     }
 
     setExplenation(explenation);
-  }, [amount, account, startDate, endDate, withCliff, cliffDate, allowStaking]);
+  }, [amount, account, startDate, endDate, cliffDate, allowStaking]);
 
   return (
-    <div className="prose flex flex-col gap-2 p-3">
-      <h1>Create Lockup</h1>
-      <div className="flex flex-row items-center gap-3">
-        Funding account:
-        <WalletsDropDown
-          wallets={teamsWallet}
-          selectedWallet={fromWallet}
-          setSelectedWallet={setFromWallet}
-        />
-      </div>
+    <div className="flex flex-grow flex-col p-12">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create lockup</CardTitle>
+          <CardDescription>Create NEAR lockup.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmitGetLockup)}
+                className="space-y-8"
+              >
+                <SenderFormField
+                  isLoading={isLoading}
+                  wallets={teamsWallet}
+                  name="fromWallet"
+                  control={form.control}
+                  rules={{
+                    required: "Please select a wallet.",
+                  }}
+                  description="Funding wallet."
+                  placeholder="Select a wallet"
+                  label="Sender"
+                />
+                <ReceiverFormField
+                  isLoading={addrBookLoading}
+                  receivers={addressBook}
+                  name="toWallet"
+                  control={form.control}
+                  rules={{
+                    required: "Please select a wallet.",
+                  }}
+                  description="Create lockup for this account."
+                  placeholder="Select a wallet"
+                  label="Receiver"
+                />
+                <div className="flex flex-grow flex-row">
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Token</FormLabel>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
+                        "text-muted-foreground",
+                      )}
+                      disabled={true}
+                    >
+                      NEAR
+                      <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormItem>
 
-      <div>
-        Lockup for account:{" "}
-        <input
-          type="text"
-          value={account}
-          onChange={(e) => setAccount(e.target.value)}
-        />
-      </div>
-      <div>
-        Amount in NEAR:{" "}
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(parseInt(e.target.value))}
-        />
-      </div>
-      <div>
-        Start Date:{" "}
-        <input
-          type="date"
-          name="start"
-          id="start"
-          value={startDate.toISOString().split("T")[0]}
-          onChange={(e) => setStartDate(new Date(e.target.value))}
-        />
-      </div>
-
-      <div>
-        End Date:{" "}
-        <input
-          type="date"
-          name="end"
-          id="end"
-          value={endDate.toISOString().split("T")[0]}
-          onChange={(e) => setEndDate(new Date(e.target.value))}
-          className={endDate < startDate ? "border-red-300 bg-red-200" : ""}
-        />
-      </div>
-
-      <div>
-        With Cliff:{" "}
-        <Switch
-          checked={withCliff}
-          onChange={setWithCliff}
-          className={`${
-            withCliff ? "bg-blue-600" : "bg-gray-200"
-          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
-        >
-          <span className="sr-only">Enable with cliff</span>
-          <span
-            className={`${
-              withCliff ? "translate-x-6" : "translate-x-1"
-            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-          />
-        </Switch>
-      </div>
-      {withCliff && (
-        <div>
-          Cliff date:{" "}
-          <input
-            type="date"
-            name="cliff"
-            id="cliff"
-            value={cliffDate.toISOString().split("T")[0]}
-            onChange={(e) => setCliffDate(new Date(e.target.value))}
-          />
-        </div>
-      )}
-      <div>
-        Allow Staking:{" "}
-        <Switch
-          checked={allowStaking}
-          onChange={setAllowStaking}
-          className={`${
-            allowStaking ? "bg-blue-600" : "bg-gray-200"
-          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
-        >
-          <span className="sr-only">Enable staking</span>
-          <span
-            className={`${
-              allowStaking ? "translate-x-6" : "translate-x-1"
-            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-          />
-        </Switch>
-      </div>
-
-      {error && <div className="text-red-500">{error}</div>}
-      {explenation && <div>{explenation}</div>}
-
-      <button
-        className="rounded bg-blue-200 px-3 py-1 hover:bg-blue-300"
-        onClick={() => void createLockup()}
-      >
-        Create
-      </button>
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-grow flex-col">
+                        <FormLabel>Amount</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="0"
+                            type="number"
+                            className="flex rounded-l-none border "
+                            value={field.value}
+                            onChange={(e) => {
+                              try {
+                                const value = parseFloat(e.target.value || "");
+                                form.setValue("amount", value);
+                              } catch {
+                                form.setValue("amount", 0);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Balance: {balanceLoading ? "Loading..." : balance}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <DateField
+                  label="Start date"
+                  placeholder="Select a date"
+                  description="Start date of the lockup."
+                  name="startDate"
+                  control={form.control}
+                  rules={{
+                    required: "Please select a start date.",
+                  }}
+                />
+                <DateField
+                  label="End date"
+                  placeholder="Select a date"
+                  description="Start date of the lockup."
+                  name="endDate"
+                  control={form.control}
+                  rules={{
+                    required: "Please select a end date.",
+                  }}
+                />
+                <DateField
+                  label="Cliff date"
+                  placeholder="Optional. Select a date"
+                  description="Date at which the receiver can start withdrawing tokens."
+                  name="cliffDate"
+                  control={form.control}
+                />
+                <FormField
+                  control={form.control}
+                  name="allowStaking"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Allow staking</FormLabel>
+                        <FormDescription>
+                          Allows the owner of the lockup to stake the full
+                          amount of tokens in the lockup (even before cliff
+                          date).
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                {explenation && <div>{explenation}</div>}
+                <Button type="submit">Submit</Button>
+              </form>
+            </Form>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

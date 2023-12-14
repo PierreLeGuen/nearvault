@@ -1,24 +1,31 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
+import { AddMemberDialog } from "~/components/dialogs/add-member";
+import { AddWalletDialog } from "~/components/dialogs/add-wallet";
+import { Button } from "~/components/ui/button";
+import HeaderTitle from "~/components/ui/header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { useRemoveInvitation } from "~/hooks/teams";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageTeamPage: NextPageWithLayout = () => {
-  const [email, setEmail] = useState<string>("");
-  const [emailError, setEmailError] = useState<string>("");
+  const rmInvitationMut = useRemoveInvitation();
+
   const [loadingStates, setLoadingStates] = useState<{ [id: string]: boolean }>(
-    {}
+    {},
   );
-
-  const [loading, setLoading] = useState<boolean>(false);
-  const [inviteMessage, setInviteMessage] = useState<string>("");
-  const [invitationLink, setInvitationLink] = useState<string>("");
-
   const { currentTeam } = usePersistingStore();
-  const inviteMutation = api.teams.inviteToTeam.useMutation();
-  const deleteInviteMutation = api.teams.deleteInvitation.useMutation();
+
   const deleteWalletMutation = api.teams.deleteWalletForTeam.useMutation();
 
   const { data: wallets, refetch: refetchWallets } =
@@ -46,39 +53,10 @@ const ManageTeamPage: NextPageWithLayout = () => {
     return window.location.origin + "/team/invitation?id=" + id;
   };
 
-  const inviteNewMember = async () => {
-    if (!currentTeam) {
-      throw new Error("No current team");
-    }
-
-    if (!email) {
-      throw new Error("No email");
-    }
-
-    setInviteMessage("");
-    setInvitationLink("");
-    setLoading(true);
-
-    try {
-      const data = await inviteMutation.mutateAsync({
-        invitedEmail: email,
-        teamId: currentTeam.id,
-      });
-      setInvitationLink(getInvitationLink(data.id));
-    } catch (error: any) {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
-      setInviteMessage(`Error: ${error.message}`);
-    } finally {
-      setEmail("");
-      setLoading(false);
-      void refetchInvites();
-    }
-  };
-
   const deleteInvitation = async (id: string) => {
     setLoadingStates((prev) => ({ ...prev, [id]: true }));
     try {
-      await deleteInviteMutation.mutateAsync({ invitationId: id });
+      await rmInvitationMut.mutateAsync({ invitationId: id });
     } catch (error) {
       console.error(error);
     } finally {
@@ -101,7 +79,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
       toast.success("Wallet deleted");
     } catch (error) {
       toast.error(
-        "Failed to delete wallet, error: " + (error as Error).message
+        "Failed to delete wallet, error: " + (error as Error).message,
       );
       console.error(error);
     } finally {
@@ -112,77 +90,117 @@ const ManageTeamPage: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="prose p-3">
-      <h1>Manage Team</h1>
-      <h2>Members</h2>
-      <h3>Invite user to team</h3>
-      <div className="inline-flex gap-3">
-        <input
-          type="text"
-          placeholder="email"
-          onChange={(e) => setEmail(e.target.value)}
-          value={email}
-        />
-        <button
-          onClick={() => void inviteNewMember()}
-          disabled={loading}
-          className="rounded bg-blue-200 px-3 py-1 hover:bg-blue-300"
-        >
-          {loading ? "Inviting..." : "Invite new member"}
-        </button>
+    <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+      <HeaderTitle level="h1" text="Manage team" />
+      <div className="flex flex-row justify-between">
+        <HeaderTitle level="h2" text="Members" />
+        <AddMemberDialog />
       </div>
-      <div>{inviteMessage}</div>
-      {invitationLink && (
-        <div>
-          <div>Share link to user </div>
-          <a href={invitationLink}>{invitationLink}</a>
-        </div>
-      )}
-      <h3>List of members</h3>
-      {members?.map((m) => (
-        <div key={m.id}>{m.email}</div>
-      ))}
-      <h3>List of pending invitations</h3>
-      <div className="flex flex-col gap-3">
-        {invitations?.map((i) => (
-          <div key={i.id} className="inline-flex items-center gap-3">
-            <div className="flex flex-col">
-              <span>{i.invitedEmail}</span>
-              <div
-                onClick={() => void copyToClipboard(getInvitationLink(i.id))}
-                className="cursor-pointer text-xs underline"
-              >
-                {getInvitationLink(i.id)}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                void deleteInvitation(i.id);
-              }}
-              className="rounded bg-red-200 px-3 py-1 hover:bg-red-300"
-            >
-              {loadingStates[i.id] ? "Deleting..." : "Delete"}
-            </button>
-          </div>
-        ))}
+      <div className="rounded-md border shadow-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {members?.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell className="font-medium">
+                  <p className="break-all">{member.email}</p>
+                </TableCell>
+                <TableCell>
+                  <p className="break-all">{member.name}</p>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="destructive" disabled={true}>
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
-      <h2>Wallets</h2>
-      <h3>List of wallets</h3>
-      <div className="flex flex-col gap-3">
-        {wallets?.map((w) => (
-          <div key={w.id} className="inline-flex gap-3">
-            <div>{w.walletAddress}</div>
-            <button
-              onClick={() => {
-                void deleteWallet(w.id);
-              }}
-              className="rounded bg-red-200 px-3 py-1 hover:bg-red-300"
-            >
-              {loadingStates[w.id] ? "Deleting..." : "Delete"}
-            </button>
+      {(invitations || []).length > 0 && (
+        <>
+          <div className="flex flex-row justify-between">
+            <HeaderTitle level="h2" text="Pending invitations" />
           </div>
-        ))}
+          <div className="rounded-md border shadow-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations?.map((invitation) => (
+                  <TableRow key={invitation.id}>
+                    <TableCell className="font-medium">
+                      <p className="break-all">{invitation.invitedEmail}</p>
+                    </TableCell>
+                    <TableCell className="flex justify-end gap-3">
+                      <Button
+                        variant={"outline"}
+                        onClick={() =>
+                          void copyToClipboard(getInvitationLink(invitation.id))
+                        }
+                      >
+                        Copy invitation link
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => deleteInvitation(invitation.id)}
+                        disabled={loadingStates[invitation.id]}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+
+      <div className="flex flex-row justify-between">
+        <HeaderTitle level="h2" text="Wallets" />
+        <AddWalletDialog />
+      </div>
+      <div className="rounded-md border shadow-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Wallet ID</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {wallets?.map((wallet) => (
+              <TableRow key={wallet.id}>
+                <TableCell className="font-medium">
+                  <p className="break-all">{wallet.walletAddress}</p>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      void deleteWallet(wallet.id);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

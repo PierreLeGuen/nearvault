@@ -39,6 +39,17 @@ export const dbDataToTransfersData = async ({
   return w;
 };
 
+export function getFormattedAmount(token: {
+  balance: string;
+  decimals: number;
+  symbol: string;
+}) {
+  return `${(
+    parseInt(token.balance || "") /
+    10 ** (token.decimals || 0)
+  ).toLocaleString()} ${token.symbol}`;
+}
+
 export interface LikelyTokens {
   version: string;
   lastBlockTimestamp: string;
