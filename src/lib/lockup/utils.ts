@@ -4,7 +4,7 @@ import BN from "bn.js";
 import {
   serialize,
   type BinaryReader,
-  Schema,
+  type Schema,
 } from "near-api-js/lib/utils/serialize";
 import { sha256 } from "js-sha256";
 import * as nearAPI from "near-api-js";
@@ -14,7 +14,7 @@ import {
   type TransferInformation,
   type FromStateVestingInformation,
 } from "./types";
-import { U64 } from "../multisig/contract";
+import { type U64 } from "../multisig/contract";
 
 export const saturatingSub = (a: BN, b: BN) => {
   const res = a.sub(b);
@@ -37,7 +37,7 @@ export const readStringOption = (reader: BinaryReader): string => {
  * @returns string | null.
  */
 export const formatVestingInfo = (
-  info: FromStateVestingInformation
+  info: FromStateVestingInformation,
 ): string | null => {
   if (!info?.start) return null; // TODO
   const start = new Date(info.start.divn(1000000).toNumber());
@@ -64,7 +64,7 @@ export const formatReleaseDuration = (releaseDuration: BN): BN =>
 export const getStartLockupTimestamp = (
   lockupDuration: BN,
   lockupTimestamp: BN,
-  hasBrokenTimestamp: boolean
+  hasBrokenTimestamp: boolean,
 ) => {
   const phase2Time = new BN("1602614338293769340");
   const timestamp = BN.max(phase2Time.add(lockupDuration), lockupTimestamp);
@@ -77,7 +77,7 @@ export const getStartLockupTimestamp = (
  * @returns one of {@link FromStateVestingInformation} or null.
  */
 export const getVestingInformation = (
-  reader: BinaryReader
+  reader: BinaryReader,
 ): FromStateVestingInformation | undefined => {
   const vestingType = reader.readU8();
   switch (vestingType) {
@@ -109,7 +109,7 @@ export const getVestingInformation = (
  * @returns one of {@link TransferInformation}.
  */
 export const getTransferInformation = (
-  reader: BinaryReader
+  reader: BinaryReader,
 ): TransferInformation => {
   const tiType = reader.readU8();
   if (tiType === 0) {
@@ -129,7 +129,7 @@ export const getTransferInformation = (
  * @returns one of {@link TransferInformation}.
  */
 export const getStakingInformation = (
-  reader: BinaryReader
+  reader: BinaryReader,
 ): StakingInformation | undefined => {
   const tiType = reader.readU8();
   if (tiType === 0) {
@@ -180,7 +180,7 @@ function computeVestingSchedule(
   public_key: string,
   vesting_start: Date,
   vesting_end: Date,
-  vesting_cliff: Date
+  vesting_cliff: Date,
 ): ComputeVestingScheduleResult {
   const vestingSchedule: VestingSchedule = {
     start_timestamp: dateToNs(vesting_start),
@@ -190,7 +190,7 @@ function computeVestingSchedule(
 
   const salt: Buffer = Buffer.from(
     sha256(Buffer.from(authToken + public_key)).toString(),
-    "hex"
+    "hex",
   );
 
   const writer = new nearAPI.utils.serialize.BinaryWriter();
@@ -215,7 +215,7 @@ function computeVestingSchedule(
   const bytes = writer.toArray();
   const vestingHash: string = Buffer.from(
     sha256(Buffer.from(bytes)).toString(),
-    "hex"
+    "hex",
   ).toString("base64");
 
   hashVestingSchedule({ salt: salt, vesting_schedule: vestingSchedule });
@@ -233,7 +233,7 @@ export function findProperVestingSchedule(
   start: Date,
   cliff: Date,
   end: Date,
-  hashValue: string
+  hashValue: string,
 ) {
   // According to near-claims, user might have either specified the owner
   // account id (named or implicit) or a public key (a new implicit account
@@ -245,8 +245,8 @@ export function findProperVestingSchedule(
   ) {
     lockupOwnerInputs.push(
       nearAPI.utils.serialize.base_encode(
-        Buffer.from(lockupOwnerAccountId, "hex")
-      )
+        Buffer.from(lockupOwnerAccountId, "hex"),
+      ),
     );
   }
 
@@ -269,7 +269,7 @@ export function findProperVestingSchedule(
         lockupOwnerInput,
         lockupVestingStartDateCopy,
         lockupVestingEndDateCopy,
-        lockupVestingCliffDateCopy
+        lockupVestingCliffDateCopy,
       );
       console.log("vestingHash and hashValue", vestingHash, hashValue);
       if (hashValue === vestingHash) {
@@ -286,7 +286,7 @@ export function findProperVestingSchedule(
   }
 
   throw new Error(
-    `Unable to find proper vesting schedule for ${lockupOwnerAccountId}`
+    `Unable to find proper vesting schedule for ${lockupOwnerAccountId}`,
   );
 }
 
@@ -324,13 +324,13 @@ function hashVestingSchedule(vestingScheduleWithSalt: VestingScheduleWithSalt) {
     new VestingSchedule(
       vestingScheduleWithSalt.vesting_schedule.start_timestamp,
       vestingScheduleWithSalt.vesting_schedule.cliff_timestamp,
-      vestingScheduleWithSalt.vesting_schedule.end_timestamp
+      vestingScheduleWithSalt.vesting_schedule.end_timestamp,
     ),
-    vestingScheduleWithSalt.salt
+    vestingScheduleWithSalt.salt,
   );
   const data = serialize(
     VestingScheduleWithSaltSchema,
-    vestingScheduleWithSalt
+    vestingScheduleWithSalt,
   );
 
   const res = sha256.array(data); // Directly feed the Uint8Array to js-sha256

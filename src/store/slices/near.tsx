@@ -9,7 +9,6 @@ export interface NearState {
   nearConnection: Near | undefined;
   switchNetwork: () => Promise<void>;
   // Wont change current NEAR connection if already exists
-  assertNearConnection: () => Promise<Near>;
   newNearConnection: () => Promise<Near>;
 }
 
@@ -36,19 +35,6 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       });
     }
     await get().newNearConnection();
-  },
-  assertNearConnection: async () => {
-    const b = get().nearConnection;
-    if (b !== undefined) {
-      return b;
-    }
-
-    await get().newNearConnection();
-    const c = get().nearConnection;
-    if (c === undefined) {
-      throw new Error("Failed to create NEAR connection");
-    }
-    return c;
   },
   newNearConnection: async () => {
     const nearConnection = await connect(get().config);

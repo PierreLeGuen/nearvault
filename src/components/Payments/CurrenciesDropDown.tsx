@@ -1,6 +1,6 @@
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { type Token } from "~/pages/payments/transfers";
+import { type Token } from "~/pages/payments/lib/transformations";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -41,7 +41,7 @@ const CurrenciesDropDown = ({
                   <button
                     className={classNames(
                       active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                      "flex w-full items-center justify-center px-4 py-2 text-sm"
+                      "flex w-full items-center justify-center px-4 py-2 text-sm",
                     )}
                     onClick={() => {
                       console.log(token);

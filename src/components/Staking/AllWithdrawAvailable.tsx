@@ -7,7 +7,7 @@ import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
-import { StakedPool, WalletData } from "./AllStaked";
+import { type StakedPool, type WalletData } from "./AllStaked";
 import WithdrawPoolComponent from "./WithdrawComponent";
 
 const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
@@ -20,7 +20,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
       const promises = wallets.map(async (wallet) => {
         try {
           const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`
+            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
           );
           const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
@@ -29,7 +29,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
           for (const pool of data) {
             const c = initStakingContract(
               await n.account(""),
-              pool.validator_id
+              pool.validator_id,
             );
 
             const unstaked_balance = await c.get_account_unstaked_balance({
@@ -70,7 +70,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
       });
       const p = await Promise.all(promises);
       return p.filter((walletData) => walletData !== undefined) as WalletData[];
-    }
+    },
   );
 
   const sendWithdrawTransaction = async (
@@ -78,7 +78,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     isLockup: boolean,
     poolId: string,
     amount: string,
-    maxAmount: string
+    maxAmount: string,
   ) => {
     try {
       await assertCorrectMultisigWallet(walletSelector, multisigAcc);
@@ -163,7 +163,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
                 wallet={walletData}
                 withdrawFn={sendWithdrawTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
-                  "lockup.near"
+                  "lockup.near",
                 )}
               />
             ))}

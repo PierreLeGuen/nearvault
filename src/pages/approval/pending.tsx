@@ -14,7 +14,7 @@ import {
 import { assertCorrectMultisigWallet as assertCanSignForMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { RequestRow, explainAction } from "./lib/explain";
+import { explainAction, type RequestRow } from "./lib/explain";
 import PendingRequestsTable from "./pendingRequests";
 
 export type ApproveOrReject = "approve" | "reject";
@@ -28,7 +28,7 @@ const PendingRequests: NextPageWithLayout = () => {
     new Map(),
   );
   const [loading, setLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState(new Map());
+  const [, setLoadingState] = useState(new Map());
   if (!currentTeam) {
     throw new Error("No current team");
   }

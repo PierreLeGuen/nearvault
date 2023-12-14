@@ -3,7 +3,7 @@ import {
   parseNearAmount,
 } from "near-api-js/lib/utils/format";
 import { useState } from "react";
-import { WalletData, type StakedPool } from "./AllStaked";
+import { type WalletData, type StakedPool } from "./AllStaked";
 
 const StakedPoolComponent = ({
   pool,
