@@ -1,7 +1,7 @@
 import { Button } from '@mui/material';
 import { CloseButton } from '../../general/CloseButton/CloseButton.jsx';
 import { Header } from '../../general/Header/Header.jsx';
-import img from '../../general/icons/account.png';
+import img from '../../../../../../public/account.png';
 import cn from './ImportedAccounts.module.css';
 
 export const ImportedAccounts = ({ routeParams, closeModal }) => {

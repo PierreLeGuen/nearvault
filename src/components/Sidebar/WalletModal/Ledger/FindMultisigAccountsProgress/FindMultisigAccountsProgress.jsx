@@ -1,6 +1,6 @@
 import { Header } from '../../general/Header/Header.jsx';
 import cn from './FindMultisigAccountsProgress.module.css'
-import img from '../../general/icons/account.png';
+import img from '../../../../../../public/account.png';
 import Progress from '@mui/material/CircularProgress';
 
 export const FindMultisigAccountsProgress = () => (

@@ -1,5 +1,5 @@
 import { WalletItem } from '../WalletItem/WalletItem.jsx';
-import icon from '../../general/icons/ledger-icon.png';
+import icon from '../../../../../../public/ledger-icon.png';
 import { useStoreActions } from 'easy-peasy';
 
 export const Ledger = () => {

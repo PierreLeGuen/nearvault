@@ -1,5 +1,5 @@
 import { WalletItem } from '../WalletItem/WalletItem.jsx';
-import icon from './my-near-wallet-icon.png';
+import icon from '../../../../../../public/my-near-wallet-icon.png';
 import { useStoreActions } from 'easy-peasy';
 
 export const MyNearWallet = () => {
