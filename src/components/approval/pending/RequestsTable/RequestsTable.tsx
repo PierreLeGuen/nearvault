@@ -1,10 +1,11 @@
-import { Wallet } from "@prisma/client";
+import { type Wallet } from "@prisma/client";
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { PublicKey } from "near-api-js/lib/utils";
+import { type PublicKey } from "near-api-js/lib/utils";
+import { getColumns } from "~/components/approval/pending/RequestsTable/getColumns";
 import {
   Table,
   TableBody,
@@ -13,9 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { type RequestRow } from "~/pages/approval/lib/explain";
-import { ApproveOrReject } from "~/pages/approval/pending";
-import { getColumns } from "~/components/approval/pending/RequestsTable/getColumns";
+import { type RequestRow } from "~/lib/explain-transaction";
+import { type ApproveOrReject } from "~/pages/approval/pending";
 
 type Props = {
   data: RequestRow[];

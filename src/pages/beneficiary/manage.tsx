@@ -8,6 +8,7 @@ import { type NextPageWithLayout } from "../_app";
 
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
+import { AddDialog } from "~/components/dialogs/add-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -17,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { AddDialog } from "./addDialog";
 
 const Manage: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();

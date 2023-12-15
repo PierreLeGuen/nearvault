@@ -1,6 +1,6 @@
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { type Token } from "~/pages/payments/lib/transformations";
+import { Token } from "~/lib/transformations";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");

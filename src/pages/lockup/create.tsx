@@ -8,6 +8,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
 import { DateField } from "~/components/inputs/date";
+import { ReceiverFormField } from "~/components/inputs/receiver";
+import { SenderFormField } from "~/components/inputs/sender";
+import { handleWalletRequestWithToast } from "~/components/toast-request-result";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -30,13 +33,10 @@ import { Switch } from "~/components/ui/switch";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { calculateLockup } from "~/lib/lockup/lockup";
+import { getFormattedAmount } from "~/lib/transformations";
 import { assertCorrectMultisigWallet, cn, getNearTimestamp } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { ReceiverFormField } from "../payments/lib/receiver";
-import { SenderFormField } from "../payments/lib/sender";
-import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
-import { getFormattedAmount } from "../payments/lib/transformations";
 import { type WalletPretty } from "../staking/stake";
 
 interface CreateLockupProps {

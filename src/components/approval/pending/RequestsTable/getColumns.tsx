@@ -1,9 +1,9 @@
-import { Wallet } from "@prisma/client";
-import { ApproveOrReject } from "~/pages/approval/pending";
-import { PublicKey } from "near-api-js/lib/utils";
+import { type Wallet } from "@prisma/client";
 import { createColumnHelper } from "@tanstack/react-table";
-import { RequestRow } from "~/pages/approval/lib/explain";
+import { type PublicKey } from "near-api-js/lib/utils";
 import { RequestColumn } from "~/components/approval/pending/RequestsTable/RequestColumn";
+import { type RequestRow } from "~/lib/explain-transaction";
+import { type ApproveOrReject } from "~/pages/approval/pending";
 
 const columnHelper = createColumnHelper<RequestRow>();
 

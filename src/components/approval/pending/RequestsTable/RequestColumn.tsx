@@ -1,12 +1,12 @@
-import { Button } from "~/components/ui/button";
+import { XMarkIcon } from "@heroicons/react/20/solid";
 import {
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
 } from "@radix-ui/react-icons";
-import { XMarkIcon } from "@heroicons/react/20/solid";
-import { RequestRow } from "~/pages/approval/lib/explain";
 import { PublicKey } from "near-api-js/lib/utils";
+import { Button } from "~/components/ui/button";
+import { RequestRow } from "~/lib/explain-transaction";
 
 const isPublicKeyInConfirmations = (
   requestRow: RequestRow,
