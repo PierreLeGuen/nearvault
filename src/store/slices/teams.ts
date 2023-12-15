@@ -5,12 +5,12 @@ import { type StateCreator } from "zustand";
 export interface TeamsState {
   currentTeam: Team | null;
   setCurrentTeam: (
-    team: (UserTeam & { team: Team }) | null | undefined
+    team: (UserTeam & { team: Team }) | null | undefined,
   ) => void;
   resetTeams: () => void;
 }
 
-export const createTeamsSlice: StateCreator<TeamsState> = (set, get) => ({
+export const createTeamsSlice: StateCreator<TeamsState> = (set) => ({
   currentTeam: null,
   setCurrentTeam: (currentTeam) => {
     if (!currentTeam) {

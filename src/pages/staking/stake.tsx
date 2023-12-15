@@ -213,26 +213,23 @@ const Stake: NextPageWithLayout = () => {
     },
   );
 
-  const {
-    data: currentlySelectedPool,
-    isLoading: selectedPoolLoading,
-    refetch: refetchSelectedPool,
-  } = useQuery(["isPoolSelected", selectedWallet], async () => {
-    if (!selectedWallet || !selectedWallet.isLockup) {
-      return "";
-    }
-    const n = await newNearConnection();
+  const { data: currentlySelectedPool, refetch: refetchSelectedPool } =
+    useQuery(["isPoolSelected", selectedWallet], async () => {
+      if (!selectedWallet || !selectedWallet.isLockup) {
+        return "";
+      }
+      const n = await newNearConnection();
 
-    const c = initLockupContract(
-      await n.account(""),
-      selectedWallet.walletDetails.walletAddress,
-    );
+      const c = initLockupContract(
+        await n.account(""),
+        selectedWallet.walletDetails.walletAddress,
+      );
 
-    const accId = await c.get_staking_pool_account_id();
-    console.log(accId);
+      const accId = await c.get_staking_pool_account_id();
+      console.log(accId);
 
-    return accId;
-  });
+      return accId;
+    });
 
   const { data: currentBalance, isLoading: balanceLoading } = useQuery(
     ["currentBalance", selectedWallet],
@@ -247,7 +244,7 @@ const Stake: NextPageWithLayout = () => {
     },
   );
 
-  const { isLoading: poolsLoading, isError: poolsError } = useQuery(
+  useQuery(
     ["allAvailablePools"],
     async () => {
       const res = await fetch("https://api.kitwallet.app/stakingPools");

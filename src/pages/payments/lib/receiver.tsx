@@ -1,5 +1,5 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
-import { Beneficiary } from "@prisma/client";
+import { type Beneficiary } from "@prisma/client";
 import {
   type FieldPath,
   type FieldValues,

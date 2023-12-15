@@ -35,11 +35,11 @@ const TeamInvitationPage: NextPageWithLayout = () => {
 
       setSuccess("Invitation accepted, you can see your teams in the sidebar");
       toast.success(
-        "Invitation accepted, you can see your teams in the sidebar"
+        "Invitation accepted, you can see your teams in the sidebar",
       );
-    } catch (error: any) {
+    } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      setError(error.message);
+      setError((error as Error).message);
       toast.error((error as Error).message);
     }
   };

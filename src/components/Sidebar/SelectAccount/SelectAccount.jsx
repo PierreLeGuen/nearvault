@@ -8,6 +8,7 @@ import { useEffect } from "react";
 
 const blur = () => {
   setTimeout(() => {
+    // @ts-ignore
     document.activeElement.blur();
   }, 0);
 };

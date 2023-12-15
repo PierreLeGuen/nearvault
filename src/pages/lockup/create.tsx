@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
+import { DateField } from "~/components/inputs/date";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -37,7 +38,6 @@ import { SenderFormField } from "../payments/lib/sender";
 import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
 import { getFormattedAmount } from "../payments/lib/transformations";
 import { type WalletPretty } from "../staking/stake";
-import { DateField } from "./dateField";
 
 interface CreateLockupProps {
   owner_account_id: string;

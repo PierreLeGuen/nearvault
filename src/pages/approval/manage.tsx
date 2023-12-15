@@ -140,6 +140,7 @@ export const addRequestToMultisigWallet = async (
   w: Wallet,
   multisigWallet: string,
   receiverWallet: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actions: any[],
 ) => {
   await handleWalletRequestWithToast(

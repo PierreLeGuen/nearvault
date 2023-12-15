@@ -95,7 +95,7 @@ export const teamsRouter = createTRPCRouter({
   // WALLET ROUTES
   addWalletsForTeam: protectedProcedure
     .input(
-      z.object({ walletAddresses: z.array(z.string()), teamId: z.string() })
+      z.object({ walletAddresses: z.array(z.string()), teamId: z.string() }),
     )
     .mutation(async ({ input, ctx }) => {
       const { walletAddresses, teamId } = input;
@@ -132,7 +132,7 @@ export const teamsRouter = createTRPCRouter({
 
           if (existingWallet) {
             errors.push(
-              `The wallet ${walletAddress} already exists for this team.`
+              `The wallet ${walletAddress} already exists for this team.`,
             );
             continue;
           }
@@ -150,10 +150,12 @@ export const teamsRouter = createTRPCRouter({
           });
 
           newWallets.push(newWallet);
-        } catch (error: any) {
+        } catch (error) {
           errors.push(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
-            `Error processing wallet ${walletAddress}: ${error.message}`
+            `Error processing wallet ${walletAddress}: ${
+              (error as Error).message
+            }`,
           );
         }
       }
@@ -249,7 +251,7 @@ export const teamsRouter = createTRPCRouter({
         teamId: z.string(),
         firstName: z.string(),
         lastName: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Check if the user is part of the team
@@ -314,7 +316,7 @@ export const teamsRouter = createTRPCRouter({
       z.object({
         beneficiaryId: z.string(),
         teamId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Check if the user is part of the team
@@ -376,7 +378,7 @@ export const teamsRouter = createTRPCRouter({
       z.object({
         invitedEmail: z.string(),
         teamId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       const userTeam = await ctx.prisma.userTeam.findUnique({
@@ -475,7 +477,7 @@ export const teamsRouter = createTRPCRouter({
       z.object({
         invitationId: z.string(),
         status: z.enum(["ACCEPTED", "REJECTED"]),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Fetch the invitation to be updated
@@ -619,7 +621,7 @@ export const teamsRouter = createTRPCRouter({
         createRequestTxnId: z.string(),
         memo: z.string().optional(),
         teamId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Check if the user is part of the team they are trying to create a transaction for
