@@ -1,5 +1,5 @@
 import cn from './CloseButton.module.css';
-import { CloseIcon } from '../icons/CloseIcon.tsx';
+import { CloseIcon } from '../icons/CloseIcon';
 import { useStoreActions } from 'easy-peasy';
 
 export const CloseButton = () => {

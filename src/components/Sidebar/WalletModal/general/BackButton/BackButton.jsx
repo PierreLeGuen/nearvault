@@ -1,4 +1,4 @@
-import { BackArrowIcon } from '../icons/BackArrowIcon.tsx';
+import { BackArrowIcon } from '../icons/BackArrowIcon';
 import { useStoreActions } from 'easy-peasy';
 import cn from './BackButton.module.css';
 

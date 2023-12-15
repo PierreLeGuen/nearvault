@@ -1,5 +1,5 @@
 import { Header } from '../../general/Header/Header.jsx';
-import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon.tsx';
+import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon';
 import Progress from '@mui/material/CircularProgress';
 import cn from './ConnectionProgress.module.css';
 
