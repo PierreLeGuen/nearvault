@@ -4,7 +4,7 @@ import { Header } from '../../general/Header/Header.jsx';
 import { CloseButton } from '../../general/CloseButton/CloseButton.jsx';
 import { useStoreActions } from 'easy-peasy';
 import cn from './ConnectError.module.css';
-import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon.tsx';
+import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon';
 
 export const ConnectError = ({ routeParams }) => {
   const { message } = routeParams?.error;

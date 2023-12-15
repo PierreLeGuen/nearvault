@@ -15,7 +15,7 @@ export const SpecifyPath = () => {
           href="https://www.ledger.com/academy/crypto/what-are-hierarchical-deterministic-hd-wallets"
           target="_blank"
         >
-          What's this?
+          What&apos;s this?
         </a>
       </div>
     </>

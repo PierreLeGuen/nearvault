@@ -2,8 +2,8 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StoreProvider } from "easy-peasy";
 import { SessionProvider } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { useStoreActions, useStoreRehydrated } from "easy-peasy";
+import { useEffect } from "react";
+import { useStoreRehydrated } from "easy-peasy";
 import { NearContextProvider } from "~/context/near";
 import { WalletSelectorContextProvider } from "~/context/wallet";
 import { api } from "~/lib/api";
@@ -33,14 +33,15 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-const Wrapper = ({ children }: any) => {
+// http://localhost:3000/approval/pending?transactionHashes=7iTdECfWC9L1p8DddV9r3ukhBqVhmVqS76w7msrN5Ukw - success tx
+// http://localhost:3000/approval/pending?errorCode=Error&errorMessage=%257B%2522index%2522%253A0%252C%2522kind%2522%253A%257B%2522ExecutionError%2522%253A%2522Exceeded%2520the%2520account%2520balance.%2522%257D%257D
+// http://localhost:3000/approval/pending?errorCode=userRejected&errorMessage=User%2520rejected%2520transaction
+const RehydrateWrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
-  // const [isInit, setInit] = useState(false);
-  // const initApp = useStoreActions((actions: any) => actions.initApp);
 
-  // useEffect(() => {
-  //   // initApp({ setInit });
-  // }, []);
+  useEffect(() => {
+    console.log("isRehydrated", isRehydrated);
+  }, [isRehydrated]);
 
   return !isRehydrated ? <div>Loading...</div> : children;
 };
@@ -55,14 +56,14 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
         <StoreProvider store={store}>
-          <Wrapper>
+          <RehydrateWrapper>
             <NearContextProvider>
               <WalletSelectorContextProvider>
                 {layout}
                 <ToastContainer />
               </WalletSelectorContextProvider>
             </NearContextProvider>
-          </Wrapper>
+          </RehydrateWrapper>
         </StoreProvider>
       </QueryClientProvider>
     </SessionProvider>

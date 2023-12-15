@@ -1,6 +1,6 @@
 import { Header } from '../../general/Header/Header.jsx';
 import { CloseButton } from '../../general/CloseButton/CloseButton.jsx';
-import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon.tsx';
+import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon';
 import cn from './SignTxError.module.css';
 import { Button } from '@mui/material';
 

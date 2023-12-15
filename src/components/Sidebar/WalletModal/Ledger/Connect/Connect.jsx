@@ -1,6 +1,6 @@
 import { Button } from '@mui/material';
 import { useStoreActions } from 'easy-peasy';
-import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon.tsx';
+import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon';
 import { BackButton } from '../../general/BackButton/BackButton.jsx';
 import { Header } from '../../general/Header/Header.jsx';
 import { CloseButton } from '../../general/CloseButton/CloseButton.jsx';
