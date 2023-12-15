@@ -2,9 +2,10 @@ import { type WalletSelectorContextValue } from "~/context/wallet";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// TODO Rework it
 export const assertCorrectMultisigWallet = async (
   walletSelector: WalletSelectorContextValue,
-  walletAddress: string
+  walletAddress: string,
 ) => {
   try {
     await walletSelector.selector.wallet();
@@ -14,9 +15,10 @@ export const assertCorrectMultisigWallet = async (
       (e as Error).message;
     throw new Error(msg);
   }
-  const w = await walletSelector.selector.wallet();
 
-  const availableSigners = await w.getAccounts();
+  const wallet = await walletSelector.selector.wallet();
+  const availableSigners = await wallet.getAccounts();
+
   if (
     availableSigners.find((a) => a.accountId === walletAddress) === undefined
   ) {

@@ -1,0 +1,27 @@
+.container {
+    width: 250px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    padding: 0 33px;
+    border-radius: 10px;
+    border: 1px solid #dadada;
+    margin-top: 15px;
+}
+
+.container:hover {
+    cursor: pointer;
+    background-color: #d6e7fd6e;
+}
+
+.icon {
+    height: 40px;
+    width: 40px;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.label {
+    margin: 0 15px;
+    font-weight: 500;
+}

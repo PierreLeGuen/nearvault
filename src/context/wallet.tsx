@@ -131,6 +131,10 @@ export const WalletSelectorContextProvider: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts, selector?.options.network.indexerUrl]);
 
+
+
+
+
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
       network: network,

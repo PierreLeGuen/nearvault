@@ -1,0 +1,6 @@
+.header {
+  grid-area: 1 / 2 / 2 / 5;
+  align-self: center;
+  justify-self: center;
+  font-size: 20px;
+}

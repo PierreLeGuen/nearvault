@@ -1,0 +1,79 @@
+import { Wallet } from "@prisma/client";
+import { ApproveOrReject } from "~/pages/approval/pending";
+import { PublicKey } from "near-api-js/lib/utils";
+import { createColumnHelper } from "@tanstack/react-table";
+import { RequestRow } from "~/pages/approval/lib/explain";
+import { RequestColumn } from "~/components/approval/pending/RequestsTable/RequestColumn";
+
+const columnHelper = createColumnHelper<RequestRow>();
+
+type Props = {
+  wallet: Wallet;
+  approveRejectFn: (
+    multisig_wallet: Wallet,
+    requestId: number,
+    kind: ApproveOrReject,
+  ) => Promise<void>;
+  publicKey: PublicKey | undefined;
+};
+
+const requestId = columnHelper.accessor("request.request_id", {
+  header: "Request ID",
+  cell: (row) => <div>{row.getValue()}</div>,
+  size: 50,
+  maxSize: 50,
+  minSize: 50,
+});
+
+const actualReceiver = columnHelper.accessor("actual_receiver", {
+  header: "Receiver",
+  cell: (row) => <p className="break-all">{row.getValue()}</p>,
+});
+
+const shortDescription = columnHelper.accessor(
+  "explanation.short_description",
+  {
+    header: "Description",
+    cell: (row) => <p className="break-all">{row.getValue()}</p>,
+  },
+);
+
+const confirmations = columnHelper.accessor("request", {
+  id: "confirmations",
+  header: "Confirmations",
+  cell: (row) => (
+    <div className="break-words">
+      {row.getValue().confirmations.length +
+        "/" +
+        row.getValue().requiredConfirmations}
+    </div>
+  ),
+  size: 50,
+  maxSize: 50,
+  minSize: 50,
+});
+
+const request = ({ wallet, approveRejectFn, publicKey }: Props) =>
+  columnHelper.accessor("request", {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => (
+      <RequestColumn
+        row={row}
+        wallet={wallet}
+        approveRejectFn={approveRejectFn}
+        publicKey={publicKey}
+      />
+    ),
+    size: 50,
+    maxSize: 50,
+    minSize: 50,
+  });
+
+export const getColumns = (props: Props) => [
+  requestId,
+  actualReceiver,
+  shortDescription,
+  confirmations,
+  request(props),
+];
