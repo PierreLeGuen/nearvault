@@ -1,20 +1,20 @@
 import { type Wallet } from "@prisma/client";
+import { useStoreActions } from "easy-peasy";
 import * as naj from "near-api-js";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
+import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
 import { api } from "~/lib/api";
+import { explainAction, type RequestRow } from "~/lib/explain-transaction";
 import {
   MultiSigRequestActionType,
   initMultiSigContract,
 } from "~/lib/multisig/contract";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
-import { useStoreActions } from "easy-peasy";
-import { explainAction, type RequestRow } from "./lib/explain";
 
 export type ApproveOrReject = "approve" | "reject";
 
@@ -23,7 +23,9 @@ const Pending: NextPageWithLayout = () => {
   const isAccountConnected = useStoreActions(
     (store: any) => store.accounts.isAccountConnected,
   );
-  const selectAccount = useStoreActions((store: any) => store.accounts.selectAccount);
+  const selectAccount = useStoreActions(
+    (store: any) => store.accounts.selectAccount,
+  );
   const onApproveOrRejectRequest = useStoreActions(
     (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
   );
@@ -99,7 +101,7 @@ const Pending: NextPageWithLayout = () => {
         for (let index = 0; index < request.actions.length; index++) {
           const action = request.actions[index];
           const explanation = await explainAction(
-            action!,
+            action,
             request.receiver_id,
             wallet.walletAddress,
             newNearConnection,
@@ -111,7 +113,7 @@ const Pending: NextPageWithLayout = () => {
             request: request,
             actual_receiver:
               explanation?.actual_receiver || request.receiver_id,
-            explanation: explanation!,
+            explanation: explanation,
           });
         }
       }

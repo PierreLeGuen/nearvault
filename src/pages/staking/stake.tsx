@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import AllAvailablePools from "~/components/Staking/AllAvailablePools";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
+import { handleWalletRequestWithToast } from "~/components/toast-request-result";
 import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { initLockupContract } from "~/lib/lockup/contract";
@@ -17,7 +18,6 @@ import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
 
 export interface WalletPretty {
   prettyName: string;

@@ -2,6 +2,7 @@ import { type Wallet } from "@near-finance-near-wallet-selector/core";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { AddKeyDialog } from "~/components/dialogs/add-key";
+import { handleWalletRequestWithToast } from "~/components/toast-request-result";
 import { Button } from "~/components/ui/button";
 import HeaderTitle from "~/components/ui/header";
 import {
@@ -17,7 +18,6 @@ import { api } from "~/lib/api";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
 
 const FOUNDATION_MULTISIG_HASH = "55E7imniT2uuYrECn17qJAk9fLcwQW4ftNSwmCJL5Di";
 

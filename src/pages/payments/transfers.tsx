@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Transaction } from "@near-finance-near-wallet-selector/core";
+import { type Transaction } from "@near-finance-near-wallet-selector/core";
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
@@ -8,6 +8,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import * as z from "zod";
 import { getSidebarLayout } from "~/components/Layout";
+import { ReceiverFormField } from "~/components/inputs/receiver";
+import { SenderFormField } from "~/components/inputs/sender";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -42,17 +44,15 @@ import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { initFungibleTokenContract } from "~/lib/ft/contract";
 import { initLockupContract } from "~/lib/lockup/contract";
-import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
-import usePersistingStore from "~/store/useStore";
-import { type NextPageWithLayout } from "../_app";
-import { ReceiverFormField } from "./lib/receiver";
-import { SenderFormField } from "./lib/sender";
 import {
   dbDataToTransfersData,
   getFormattedAmount,
   type LikelyTokens,
   type Token,
-} from "./lib/transformations";
+} from "~/lib/transformations";
+import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
+import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
   fromWallet: z.string({
@@ -175,7 +175,7 @@ const TransfersPage: NextPageWithLayout = () => {
 
       const tokenDetails = (
         await Promise.all(promises.concat(nearPromise()))
-      ).filter((t) => !!t) as Token[];
+      ).filter((t) => !!t);
 
       return tokenDetails;
     },
