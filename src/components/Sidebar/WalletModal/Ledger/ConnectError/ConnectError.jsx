@@ -7,7 +7,7 @@ import cn from './ConnectError.module.css';
 import { LedgerDeviceIcon } from '../../general/icons/LedgerDeviceIcon.tsx';
 
 export const ConnectError = ({ routeParams }) => {
-  const { name, message } = routeParams?.error;
+  const { message } = routeParams?.error;
   const connect = useStoreActions((state) => state.wallets.ledger.connect);
 
   return (

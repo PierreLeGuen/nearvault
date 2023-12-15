@@ -140,40 +140,7 @@ const Pending: NextPageWithLayout = () => {
     selectAccount(multisigAccountId);
 
     try {
-      await toast.promise(
-        onApproveOrRejectRequest({ multisigAccountId, requestId, kind }),
-        {
-          pending: "Check your wallet to approve the request",
-          success: {
-            render: (data: any) => {
-              if (!data.data) {
-                return `Request #${requestId} was ${
-                  kind === "approve" ? "approved" : "rejected"
-                }`;
-              }
-              return (
-                <span>
-                  Successfully sent request to the multisig wallet, transaction
-                  id:{" "}
-                  <a
-                    href={`https://nearblocks.io/txns/${data.data.transaction_outcome.id}`}
-                    target="_blank"
-                    className="font-bold underline"
-                  >
-                    {data.data.transaction_outcome.id}
-                  </a>
-                  `
-                </span>
-              );
-            },
-          },
-          error: {
-            render: (err: any) =>
-              `Failed to send transaction: ${(err.data as Error).message}`,
-          },
-        },
-      );
-
+      await onApproveOrRejectRequest({ multisigAccountId, requestId, kind });
       // If we store data in global store - we won't need to re-fetch this data cuz we have
       // all info for update - it helps keep the app fast
       const updatedRequests = new Map(requests);
