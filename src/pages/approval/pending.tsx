@@ -12,9 +12,9 @@ import {
 } from "~/lib/multisig/contract";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { RequestRow, explainAction } from "./lib/explain";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import { useStoreActions } from "easy-peasy";
+import { explainAction, type RequestRow } from "./lib/explain";
 
 export type ApproveOrReject = "approve" | "reject";
 

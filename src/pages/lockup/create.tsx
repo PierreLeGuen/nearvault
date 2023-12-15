@@ -153,21 +153,23 @@ const CreateLockup: NextPageWithLayout = () => {
       teamId: currentTeam?.id || "",
     });
 
-  const createLockup = async () => {
+  const createLockup = async (
+    startDate: Date,
+    endDate: Date,
+    cliffDate: Date | undefined,
+    fromWallet: WalletPretty,
+    amount: number,
+  ) => {
     if (endDate < startDate) {
-      setError("End date cannot be before start date");
-      return;
+      throw new Error("End date cannot be before start date");
     }
     if (fromWallet.isLockup) {
-      setError("Cannot create a lockup from a lockup wallet");
-      return;
+      throw new Error("Cannot create a lockup from a lockup wallet");
     }
     if (amount < 3.5) {
-      setError("Minimum amount is 3.5 NEAR");
-      return;
+      throw new Error("Minimum amount is 3.5 NEAR");
     }
 
-    setError("");
     // const n = await newNearConnection();
     await assertCorrectMultisigWallet(
       walletSector,
@@ -176,8 +178,9 @@ const CreateLockup: NextPageWithLayout = () => {
 
     const w = await walletSector.selector.wallet();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let createArgs: any = {};
-    if (withCliff) {
+    if (cliffDate) {
       // lockup schedule
       createArgs = {
         vesting_schedule: {
@@ -237,8 +240,22 @@ const CreateLockup: NextPageWithLayout = () => {
     );
   };
 
-  function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
+  async function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
     console.log(values);
+
+    const fromWallet = teamsWallet.find(
+      (w) => w.walletDetails.walletAddress == values.fromWallet,
+    );
+    if (!fromWallet) {
+      throw new Error("Sender wallet is missing");
+    }
+    await createLockup(
+      values.startDate,
+      values.endDate,
+      values.cliffDate,
+      fromWallet,
+      values.amount,
+    );
   }
 
   const amount = form.watch("amount");
@@ -281,7 +298,15 @@ const CreateLockup: NextPageWithLayout = () => {
     }
 
     setExplenation(explenation);
-  }, [amount, account, startDate, endDate, cliffDate, allowStaking]);
+  }, [
+    amount,
+    account,
+    startDate,
+    endDate,
+    cliffDate,
+    allowStaking,
+    form.formState.isValid,
+  ]);
 
   return (
     <div className="flex flex-grow flex-col p-12">

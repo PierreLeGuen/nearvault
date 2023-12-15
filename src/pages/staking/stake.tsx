@@ -17,7 +17,7 @@ import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { handleWalletRequestWithToast } from "../payments/transfers";
+import { handleWalletRequestWithToast } from "../payments/lib/toastReq";
 
 export interface WalletPretty {
   prettyName: string;
@@ -88,7 +88,7 @@ const Stake: NextPageWithLayout = () => {
           ];
         } else {
           toast.info(
-            "You need to first select the staking pool with the following transaction then come back again here to deposit and stake."
+            "You need to first select the staking pool with the following transaction then come back again here to deposit and stake.",
           );
           action = [
             {
@@ -120,7 +120,7 @@ const Stake: NextPageWithLayout = () => {
                 },
               },
             ],
-          })
+          }),
         );
 
         await refetchSelectedPool();
@@ -152,7 +152,7 @@ const Stake: NextPageWithLayout = () => {
                 },
               },
             ],
-          })
+          }),
         );
       }
     } catch (e) {
@@ -192,7 +192,7 @@ const Stake: NextPageWithLayout = () => {
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
-              "lockup.near"
+              "lockup.near",
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
@@ -210,7 +210,7 @@ const Stake: NextPageWithLayout = () => {
         }
         setAllWallets(allWallets);
       },
-    }
+    },
   );
 
   const {
@@ -225,7 +225,7 @@ const Stake: NextPageWithLayout = () => {
 
     const c = initLockupContract(
       await n.account(""),
-      selectedWallet.walletDetails.walletAddress
+      selectedWallet.walletDetails.walletAddress,
     );
 
     const accId = await c.get_staking_pool_account_id();
@@ -244,7 +244,7 @@ const Stake: NextPageWithLayout = () => {
       const n = await newNearConnection();
       const acc = await n.account(selectedWallet.walletDetails.walletAddress);
       return (await acc.state()).amount;
-    }
+    },
   );
 
   const { isLoading: poolsLoading, isError: poolsError } = useQuery(
@@ -265,8 +265,8 @@ const Stake: NextPageWithLayout = () => {
         // Create a Set for constant time lookups
         const validatorSet = new Set(
           validatorsRes.current_validators.map(
-            (validator) => validator.account_id
-          )
+            (validator) => validator.account_id,
+          ),
         );
 
         // Parallelize calls to get_reward_fee_fraction
@@ -279,7 +279,7 @@ const Stake: NextPageWithLayout = () => {
               id: pool,
               status: "active",
               fees: Number(
-                ((fees.numerator / fees.denominator) * 100).toFixed(2)
+                ((fees.numerator / fees.denominator) * 100).toFixed(2),
               ),
             });
           } else {
@@ -287,7 +287,7 @@ const Stake: NextPageWithLayout = () => {
               id: pool,
               status: "inactive",
               fees: Number(
-                ((fees.numerator / fees.denominator) * 100).toFixed(2)
+                ((fees.numerator / fees.denominator) * 100).toFixed(2),
               ),
             });
           }
@@ -303,7 +303,7 @@ const Stake: NextPageWithLayout = () => {
 
         setPools(sortedPools);
       },
-    }
+    },
   );
 
   if (isLoading || !selectedWallet || !data || allWallets.length == 0) {

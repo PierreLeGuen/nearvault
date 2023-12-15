@@ -18,9 +18,4 @@ const AddMultisigWallet = () => {
   );
 };
 
-function _addMultisigWallet(walletName: string) {
-  
-  return;
-}
-
 export default AddMultisigWallet;
