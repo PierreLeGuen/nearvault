@@ -1,79 +1,21 @@
 import { thunk } from "easy-peasy";
-import { JsonRpcProvider } from "near-api-js/lib/providers";
-
-/* The account may already exist associated with another jack
- * If the account is not in the list - just add it
- * If the account is in the list, but has a different key - replace it with a new key
- * If the account is in the list, but associated with another wallet - remove the account from the list and add a new one
- * If the account is not a multisig - we show the modal and do not add it
- * */
-
-const isMultisig = async (accountId: any, provider: any) =>
-  await provider.query({
-    request_type: "call_function",
-    finality: "final",
-    account_id: accountId,
-    method_name: "list_request_ids",
-    args_base64: "e30=",
-  });
-
-const getAllAccountsWithSameKey1 = async (publicKey: any) =>
-  await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
-    headers: { "X-requestor": "near" },
-  }).then((r) => r.json());
-
-const getAllAccountsWithSameKey2 = async (publicKey: any) => {
-  try {
-    const res = await fetch(
-      `https://api.nearblocks.io/v1/keys/${publicKey}`,
-    ).then((r) => r.json());
-    const a = res.keys.map(({ account_id }: any) => account_id);
-    console.log(a);
-    return a;
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-const getMultisigAccounts = async (newAccount: any, rpcUrl: any) => {
-  const provider = new JsonRpcProvider({ url: rpcUrl });
-  const allAccounts = await getAllAccountsWithSameKey2(newAccount.publicKey);
-
-  const results = await Promise.allSettled(
-    allAccounts.map((accountId: any) => isMultisig(accountId, provider)),
-  );
-
-  return results
-    .map((promise, index) => ({
-      status: promise.status,
-      accountId: allAccounts[index],
-      publicKey: newAccount.publicKey,
-      wallet: newAccount.wallet,
-      addedBy: allAccounts[index] === newAccount.accountId ? "user" : "auto",
-    }))
-    .filter((promise) => promise.status === "fulfilled")
-    .map((result) => ({
-      accountId: result.accountId,
-      publicKey: result.publicKey,
-      wallet: result.wallet,
-      addedBy: result.addedBy,
-    }));
-};
+import { connectMultisigAccounts } from "~/store-easy-peasy/slices/wallets/helpers/connectMultisigAccounts";
 
 export const completeConnection = thunk(
   async (_, payload: any, { getStoreActions, getState }) => {
-    const { accountId, publicKey  } = payload;
+    const { publicKey } = payload;
     const slice: any = getState();
     const actions: any = getStoreActions();
+    const navigate = actions.wallets.modal.navigate;
 
-    const account = {
-      accountId,
+    actions.wallets.modal.open();
+
+    await connectMultisigAccounts({
       publicKey,
+      navigate,
+      rpcUrl: slice.rpcUrl,
+      addAccounts: actions.accounts.addAccounts,
       wallet: "myNearWallet",
-      addedBy: "user",
-    };
-
-    const multisigAccounts = await getMultisigAccounts(account, slice.rpcUrl);
-    if (multisigAccounts.length > 0) actions.accounts.addAccounts(multisigAccounts);
+    });
   },
 );
