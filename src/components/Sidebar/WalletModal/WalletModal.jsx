@@ -5,9 +5,9 @@ import { Connect } from "./Ledger/Connect/Connect.jsx";
 import { SpecifyPath } from "./Ledger/SpecifyPath/SpecifyPath.jsx";
 import { ConnectionProgress } from "./Ledger/ConnectionProgress/ConnectionProgress.jsx";
 import { ConnectError } from "./Ledger/ConnectError/ConnectError.jsx";
-import { FindMultisigAccountsProgress } from "./Ledger/FindMultisigAccountsProgress/FindMultisigAccountsProgress.jsx";
-import { NoMultisigAccounts } from "./Ledger/NoMultisigAccounts/NoMultisigAccounts.jsx";
-import { ImportedAccounts } from "./Ledger/ImportedAccounts/ImportedAccounts.jsx";
+import { FindMultisigAccountsProgress } from "~/components/Sidebar/WalletModal/MultisigAccounts/FindMultisigAccountsProgress/FindMultisigAccountsProgress.jsx";
+import { NoMultisigAccounts } from "~/components/Sidebar/WalletModal/MultisigAccounts/NoMultisigAccounts/NoMultisigAccounts.jsx";
+import { ImportedAccounts } from "~/components/Sidebar/WalletModal/MultisigAccounts/ImportedAccounts/ImportedAccounts.jsx";
 import { SignTxProgress } from "./Ledger/SignTxProgress/SignTxProgress.jsx";
 import { SignTxError } from "./Ledger/SignTxError/SignTxError.jsx";
 import { SendTxProgress } from "~/components/Sidebar/WalletModal/Transaction/SendTxProgress/SendTxProgress";
@@ -40,14 +40,17 @@ export const WalletModal = () => {
         {route === "/ledger/connect/error" && (
           <ConnectError routeParams={routeParams} />
         )}
-        {route === "/ledger/multisig-accounts/progress" && (
+        {route === "/multisig-accounts/progress" && (
           <FindMultisigAccountsProgress />
         )}
-        {route === "/ledger/multisig-accounts/success" && (
+        {route === "/multisig-accounts/success" && (
           <ImportedAccounts routeParams={routeParams} closeModal={close} />
         )}
-        {route === "/ledger/multisig-accounts/error" && (
-          <NoMultisigAccounts routeParams={routeParams} />
+        {route === "/multisig-accounts/no-accounts" && (
+          <NoMultisigAccounts />
+        )}
+        {route === "/multisig-accounts/error" && (
+          <NoMultisigAccounts routeParams={routeParams} /> // TODO Create New component
         )}
         {route === "/ledger/sign/progress" && <SignTxProgress />}
         {route === "/ledger/sign/error" && (
