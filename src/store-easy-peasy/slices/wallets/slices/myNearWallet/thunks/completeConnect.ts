@@ -61,27 +61,10 @@ const getMultisigAccounts = async (newAccount: any, rpcUrl: any) => {
 };
 
 export const completeConnection = thunk(
-  async (_, payload: any, { getStoreActions, getStoreState, getState }) => {
-    const { router } = payload;
-    const state: any = getStoreState();
+  async (_, payload: any, { getStoreActions, getState }) => {
+    const { accountId, publicKey  } = payload;
     const slice: any = getState();
     const actions: any = getStoreActions();
-
-    const connectionInProgress = state.wallets.connectInProgress;
-
-    const currentUrl = new URL(window.location.href);
-    const accountId = currentUrl.searchParams.get("account_id") || "";
-    const allKeys = (currentUrl.searchParams.get("all_keys") || "").split(",");
-    const prevPage = currentUrl.searchParams.get("prevPage") || "";
-    const publicKey = allKeys[0];
-
-    currentUrl.searchParams.delete("all_keys");
-    currentUrl.searchParams.delete("account_id");
-    currentUrl.searchParams.delete("prevPage");
-
-    if (connectionInProgress !== "my-near-wallet") return;
-
-    actions.wallets.setConnectInProgress(null);
 
     const account = {
       accountId,
@@ -92,7 +75,5 @@ export const completeConnection = thunk(
 
     const multisigAccounts = await getMultisigAccounts(account, slice.rpcUrl);
     if (multisigAccounts.length > 0) actions.accounts.addAccounts(multisigAccounts);
-
-    router.replace(prevPage);
   },
 );
