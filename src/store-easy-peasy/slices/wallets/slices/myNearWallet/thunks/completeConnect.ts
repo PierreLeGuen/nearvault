@@ -69,7 +69,6 @@ export const completeConnection = thunk(
 
     const connectionInProgress = state.wallets.connectInProgress;
 
-    // TODO Check about the right way to do it in NextJS
     const currentUrl = new URL(window.location.href);
     const accountId = currentUrl.searchParams.get("account_id") || "";
     const allKeys = (currentUrl.searchParams.get("all_keys") || "").split(",");
