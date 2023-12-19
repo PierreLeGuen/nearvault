@@ -1,37 +1,94 @@
-import { useState } from "react";
+import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
-import AllWithdrawAvailable from "~/components/Staking/AllWithdrawAvailable";
-import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
+import { WalletData } from "~/components/Staking/AllStaked";
+import { WithdrawDialog } from "~/components/dialogs/withdraw";
+import HeaderTitle from "~/components/ui/header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { useGetStakingDetailsForWallets as useGetStakingDetailsForTeamsWallets } from "~/hooks/staking";
 import { type NextPageWithLayout } from "../_app";
-import { type WalletPretty } from "./stake";
-import { onSuccessGetWallets } from "./unstake";
 
 const WithdrawFromStakingPool: NextPageWithLayout = () => {
-  const { newNearConnection, currentTeam } = usePersistingStore();
-  const [allWallets, setAllWallets] = useState<WalletPretty[]>([]);
+  const getStakingDetailsForWallets = useGetStakingDetailsForTeamsWallets();
+  const [filteredPools, setFilteredPools] = useState<WalletData[]>([]);
 
-  const { isLoading } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
-    {
-      enabled: true,
-      async onSuccess(data) {
-        await onSuccessGetWallets(data, newNearConnection(), setAllWallets);
-      },
+  useEffect(() => {
+    const data = getStakingDetailsForWallets.data;
+    console.log(data);
+
+    if (!data) {
+      return;
     }
-  );
+    const tmp = data
+      .map((walletData) => {
+        const poolsForWallet = walletData.stakedPools
+          .map((pool) => {
+            if (!pool.withdraw_available || pool.withdraw_available === "0") {
+              return;
+            }
 
-  if (isLoading) {
+            return pool;
+          })
+          .filter(Boolean);
+        console.log("poolsForWallet", poolsForWallet);
+
+        return {
+          wallet: walletData.wallet,
+          stakedPools: poolsForWallet,
+        };
+      })
+      .filter((walletData) => walletData.stakedPools.length > 0);
+    setFilteredPools(tmp);
+  }, [getStakingDetailsForWallets.data]);
+
+  if (getStakingDetailsForWallets.isLoading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="p-3">
-      <h1 className="mb-3 text-2xl font-bold">Withdraw from staking pool</h1>
-      <AllWithdrawAvailable wallets={allWallets} />
-    </div>
+    <>
+      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+        <HeaderTitle level="h1" text="Withdraw" />
+        {filteredPools.map((walletData) => (
+          <div key={walletData.wallet.walletDetails.walletAddress}>
+            <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px] truncate">Pool ID</TableHead>
+                  <TableHead>Ready to withdraw</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from(walletData.stakedPools).map((pool, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <p className="break-all">{pool.validator_id}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="break-all">{`${formatNearAmount(
+                        pool.withdraw_available,
+                      )} Ⓝ`}</p>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <WithdrawDialog pool={pool} wallet={walletData.wallet} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 

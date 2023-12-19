@@ -1,7 +1,5 @@
 import { type Wallet } from "@prisma/client";
-import { type Near } from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
-import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
 import { UnstakeDialog } from "~/components/dialogs/unstake";
 import HeaderTitle from "~/components/ui/header";
@@ -13,9 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useZodForm } from "~/hooks/form";
 import { useGetStakingDetailsForWallets as useGetStakingDetailsForTeamsWallets } from "~/hooks/staking";
-import { calculateLockup } from "~/lib/lockup/lockup";
 import { type NextPageWithLayout } from "../_app";
 
 export interface WalletPretty {
@@ -25,67 +21,8 @@ export interface WalletPretty {
   ownerAccountId: string | undefined;
 }
 
-const formSchema = z.object({
-  fromWallet: z.string(),
-  amountNear: z.number().min(0),
-  poolId: z.string(),
-});
-
-export const onSuccessGetWallets = async (
-  data: Wallet[],
-  near: Promise<Near>,
-  setWalletsFn: (wallets: WalletPretty[]) => void,
-) => {
-  if (!data || data.length == 0 || data[0] === undefined) {
-    return;
-  }
-
-  const walletPromises = data.map(async (wallet) => {
-    try {
-      const lockupValue = calculateLockup(wallet.walletAddress, "lockup.near");
-      await (await (await near).account(lockupValue)).state();
-
-      return [
-        {
-          prettyName: wallet.walletAddress,
-          walletDetails: wallet,
-          isLockup: false,
-          ownerAccountId: undefined,
-        },
-        {
-          prettyName: "Lockup of " + wallet.walletAddress,
-          walletDetails: {
-            walletAddress: lockupValue,
-            id: lockupValue,
-            teamId: "na",
-          },
-          isLockup: true,
-          ownerAccountId: wallet.walletAddress,
-        },
-      ];
-    } catch (_) {
-      return [
-        {
-          prettyName: wallet.walletAddress,
-          walletDetails: wallet,
-          isLockup: false,
-          ownerAccountId: undefined,
-        },
-      ];
-    }
-  });
-
-  const walletPairs = await Promise.all(walletPromises);
-  setWalletsFn(walletPairs.flat());
-};
-
 const Unstake: NextPageWithLayout = () => {
-  const form = useZodForm(formSchema);
   const getStakingDetailsForWallets = useGetStakingDetailsForTeamsWallets();
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
 
   if (getStakingDetailsForWallets.isLoading) {
     return <div>Loading...</div>;

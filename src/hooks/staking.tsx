@@ -260,16 +260,27 @@ export function useGetStakingDetailsForWallets() {
               await n.account(""),
               pool.validator_id,
             );
+
             const total_balance = await c.get_account_staked_balance({
               account_id: wallet.walletDetails.walletAddress,
             });
-            if (total_balance === "0") {
+
+            const unstaked_balance = await c.get_account_unstaked_balance({
+              account_id: wallet.walletDetails.walletAddress,
+            });
+
+            if (total_balance === "0" && unstaked_balance === "0") {
               continue;
             }
+
+            const canWithdraw = await c.is_account_unstaked_balance_available({
+              account_id: wallet.walletDetails.walletAddress,
+            });
 
             stakedPools.push({
               deposit: total_balance,
               validator_id: pool.validator_id,
+              withdraw_available: canWithdraw ? unstaked_balance : "0",
             });
           }
 
@@ -322,7 +333,7 @@ export function useUnstakeTransaction() {
         requestReceiver = wallet.walletDetails.walletAddress;
       }
 
-      await w.signAndSendTransaction({
+      const res = w.signAndSendTransaction({
         receiverId: multisigWallet,
         actions: [
           {
@@ -353,6 +364,86 @@ export function useUnstakeTransaction() {
           },
         ],
       });
+      await handleWalletRequestWithToast(res);
+    },
+  });
+}
+
+export function useWithdrawTransaction() {
+  const walletSelector = useWalletSelector();
+
+  return useMutation({
+    mutationFn: async ({
+      wallet,
+      poolId,
+      amountNear,
+      maxAmountYocto,
+    }: {
+      wallet: WalletPretty;
+      poolId: string;
+      amountNear: string;
+      maxAmountYocto: string;
+    }) => {
+      const multisigWallet =
+        wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
+      try {
+        await assertCorrectMultisigWallet(walletSelector, multisigWallet);
+      } catch (e) {
+        toast.error((e as Error).message);
+        throw e;
+      }
+
+      const w = await walletSelector.selector.wallet();
+      const yoctoAmount = parseNearAmount(amountNear);
+      let requestReceiver = poolId;
+      let methodName = "withdraw";
+      let deselectAction = undefined;
+      // If the staking was done through the lockup contract, then the request
+      // should be sent to the lockup contract
+      if (wallet.isLockup) {
+        requestReceiver = wallet.walletDetails.walletAddress;
+        methodName = "withdraw_from_staking_pool";
+
+        if (yoctoAmount === maxAmountYocto) {
+          deselectAction = {
+            type: "FunctionCall",
+            method_name: "unselect_staking_pool",
+            args: btoa(JSON.stringify({})),
+            deposit: parseNearAmount("0"),
+            gas: "150000000000000",
+          };
+        }
+      }
+
+      const res = w.signAndSendTransaction({
+        receiverId: multisigWallet,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: requestReceiver,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: methodName,
+                      args: btoa(JSON.stringify({ amount: yoctoAmount })),
+                      deposit: parseNearAmount("0"),
+                      gas: "150000000000000",
+                    },
+                  ].concat(deselectAction ? [deselectAction] : []),
+                },
+              },
+            },
+          },
+        ],
+      });
+
+      await handleWalletRequestWithToast(res);
     },
   });
 }
