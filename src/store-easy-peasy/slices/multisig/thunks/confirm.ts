@@ -1,12 +1,12 @@
 import { thunk } from "easy-peasy";
 
 export const confirm = thunk(async (_, payload: any, { getStoreActions }) => {
-  const { multisigAccountId, requestId } = payload;
+  const { contractId, requestId } = payload;
   const actions: any = getStoreActions();
 
   await actions.wallets.signAndSendTransaction({
-    senderId: multisigAccountId,
-    receiverId: multisigAccountId,
+    senderId: contractId,
+    receiverId: contractId,
     action: {
       type: "FunctionCall",
       method: "confirm",
