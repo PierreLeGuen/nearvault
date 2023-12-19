@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
+import { StakedPool, WalletData } from "~/components/Staking/AllStaked";
 import { handleWalletRequestWithToast } from "~/components/toast-request-result";
 import { useWalletSelector } from "~/context/wallet";
 import { getSelectedPool } from "~/lib/client";
@@ -8,6 +9,7 @@ import { initStakingContract } from "~/lib/staking/contract";
 import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
+import { useTeamsWalletsWithLockups } from "./teams";
 
 export type PoolId = string;
 export type Percentage = number;
@@ -232,6 +234,124 @@ export function useAddRequestStakeToPool() {
     onSuccess: async (_, params) => {
       await queryClient.invalidateQueries({
         queryKey: ["isPoolSelected", params.selectedWallet],
+      });
+    },
+  });
+}
+
+export function useGetStakingDetailsForWallets() {
+  const { newNearConnection } = usePersistingStore();
+  const listWallets = useTeamsWalletsWithLockups();
+
+  return useQuery<WalletData[], Error>(
+    ["allStakedPools", listWallets.data],
+    async (): Promise<WalletData[]> => {
+      const promises = listWallets.data.map(async (wallet) => {
+        try {
+          const res = await fetch(
+            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
+          );
+          const data = (await res.json()) as StakedPool[];
+          const n = await newNearConnection();
+          const stakedPools = [];
+
+          for (const pool of data) {
+            const c = initStakingContract(
+              await n.account(""),
+              pool.validator_id,
+            );
+            const total_balance = await c.get_account_staked_balance({
+              account_id: wallet.walletDetails.walletAddress,
+            });
+            if (total_balance === "0") {
+              continue;
+            }
+
+            stakedPools.push({
+              deposit: total_balance,
+              validator_id: pool.validator_id,
+            });
+          }
+
+          if (stakedPools.length > 0) {
+            return {
+              wallet,
+              stakedPools,
+            };
+          } else {
+            console.log("No staked pools found for wallet", wallet);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      });
+      const p = await Promise.all(promises);
+      return p.filter((walletData) => walletData !== undefined) as WalletData[];
+    },
+    { enabled: !!listWallets.data },
+  );
+}
+
+export function useUnstakeTransaction() {
+  const walletSelector = useWalletSelector();
+
+  return useMutation({
+    mutationFn: async ({
+      wallet,
+      poolId,
+      amountNear,
+    }: {
+      wallet: WalletPretty;
+      poolId: string;
+      amountNear: string;
+    }) => {
+      const multisigWallet =
+        wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
+      try {
+        await assertCorrectMultisigWallet(walletSelector, multisigWallet);
+      } catch (e) {
+        toast.error((e as Error).message);
+        throw e;
+      }
+      const w = await walletSelector.selector.wallet();
+
+      let requestReceiver = poolId;
+      // If the staking was done through the lockup contract, then the request
+      // should be sent to the lockup contract
+      if (wallet.isLockup) {
+        requestReceiver = wallet.walletDetails.walletAddress;
+      }
+
+      await w.signAndSendTransaction({
+        receiverId: multisigWallet,
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              gas: "300000000000000",
+              deposit: "0",
+              methodName: "add_request",
+              args: {
+                request: {
+                  receiver_id: requestReceiver,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "unstake",
+                      args: btoa(
+                        JSON.stringify({
+                          amount: parseNearAmount(amountNear),
+                        }),
+                      ),
+                      deposit: parseNearAmount("0"),
+                      gas: "200000000000000",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
       });
     },
   });
