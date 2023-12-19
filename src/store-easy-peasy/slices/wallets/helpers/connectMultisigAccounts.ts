@@ -9,10 +9,10 @@ const isMultisig = async (accountId: any, provider: any) =>
     args_base64: "e30=",
   });
 
-const getAllAccountsWithSameKey1 = async (publicKey: any) =>
-  await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
-    headers: { "X-requestor": "near" },
-  }).then((r) => r.json());
+// const getAllAccountsWithSameKey1 = async (publicKey: any) =>
+//   await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
+//     headers: { "X-requestor": "near" },
+//   }).then((r) => r.json());
 
 const getAllAccountsWithSameKey2 = async (publicKey: any) => {
   try {
@@ -83,7 +83,7 @@ export const connectMultisigAccounts = async ({
     });
     addAccounts(multisigAccounts);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     navigate({
       route: "/multisig-accounts/error",
       routeParams: { error },
