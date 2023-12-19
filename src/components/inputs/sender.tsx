@@ -74,7 +74,7 @@ export function SenderFormField<
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0">
+            <PopoverContent className="w-[500px] p-0">
               <ScrollArea className="h-[550px]">
                 <Command>
                   <CommandInput placeholder="Search wallet..." />

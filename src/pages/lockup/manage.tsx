@@ -158,9 +158,10 @@ const ManageLockup: NextPageWithLayout = () => {
 
   async function updateTerminationStatus(account: string) {
     const n = await newNearConnection();
-    const l = initLockupContract(
-      await n.account(account),
+    const l = await initLockupContract(
+      account,
       calculateLockup(account, "lockup.near"),
+      n,
     );
     const terminationStatus = await l.get_termination_status();
     setTerminationStatus(terminationStatus);
@@ -271,7 +272,7 @@ const ManageLockup: NextPageWithLayout = () => {
       );
     }
 
-    await tryWithdrawFn(account); 
+    await tryWithdrawFn(account);
 
     cancelSetIsOpen(false);
   };

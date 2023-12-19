@@ -1,5 +1,6 @@
 import * as nearAPI from "near-api-js";
 import { type Base58PublicKey } from "../multisig/contract";
+import usePersistingStore from "~/store/useStore";
 
 export type AccountId = string;
 export type WrappedBalance = string;
@@ -17,10 +18,10 @@ export interface LockupContract extends nearAPI.Contract {
   get_terminated_unvested_balance_deficit(): Promise<WrappedBalance>;
   get_locked_amount(): Promise<WrappedBalance>;
   get_locked_vested_amount(
-    vesting_schedule: VestingSchedule
+    vesting_schedule: VestingSchedule,
   ): Promise<WrappedBalance>;
   get_unvested_amount(
-    vesting_schedule: VestingSchedule
+    vesting_schedule: VestingSchedule,
   ): Promise<WrappedBalance>;
   get_vesting_information(): Promise<VestingInformation>;
   get_owners_balance(): Promise<WrappedBalance>;
@@ -67,10 +68,13 @@ export const changeMethods = [
 
 export const lockupChangeMethods = new Set(changeMethods);
 
-export function initLockupContract(
-  account: nearAPI.Account,
-  contractName: string
-): LockupContract {
+export async function initLockupContract(
+  accountId: string,
+  contractName: string,
+  near: nearAPI.Near,
+): Promise<LockupContract> {
+  const account = await near.account(accountId);
+
   return new nearAPI.Contract(account, contractName, {
     viewMethods: [
       "get_owner_account_id",

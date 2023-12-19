@@ -25,7 +25,7 @@ export const NearContextProvider: React.FC<{
   const archivalNodeUrl = useMemo(() => {
     switch (network) {
       case "mainnet":
-        return "https://archival-rpc.mainnet.near.org";
+        return "http://beta.rpc.mainnet.near.org";
       case "testnet":
         return "https://archival-rpc.testnet.near.org";
     }

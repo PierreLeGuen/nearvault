@@ -30,6 +30,16 @@ import {
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 
+function currentReceiverFmt(receivers: Beneficiary[], currentValue: string) {
+  const receiver = receivers.find(
+    (wallet) => wallet.walletAddress === currentValue,
+  );
+  const fmt = receiver
+    ? `${receiver.firstName} (${receiver.walletAddress})`
+    : "Wallet not found...";
+  return <p className="max-w-[300px] truncate">{fmt}</p>;
+}
+
 export function ReceiverFormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -65,15 +75,13 @@ export function ReceiverFormField<
                   {isLoading && "Loading..."}
                   {!isLoading &&
                     (field.value
-                      ? receivers?.find(
-                          (wallet) => wallet.walletAddress === field.value,
-                        )?.firstName
+                      ? currentReceiverFmt(receivers, field.value)
                       : `${props.placeholder}`)}
                   <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0">
+            <PopoverContent className="w-[500px] p-0">
               <ScrollArea className="h-[550px]">
                 <Command>
                   <CommandInput placeholder="Search wallet..." />
@@ -99,7 +107,9 @@ export function ReceiverFormField<
                               : "opacity-0",
                           )}
                         />
-                        {beneficiary.firstName}
+                        <span className="truncate">
+                          {`${beneficiary.firstName} (${beneficiary.walletAddress})`}
+                        </span>
                       </CommandItem>
                     ))}
                   </CommandGroup>
