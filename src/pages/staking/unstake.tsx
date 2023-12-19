@@ -1,11 +1,21 @@
 import { type Wallet } from "@prisma/client";
 import { type Near } from "near-api-js";
-import { useState } from "react";
+import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
-import AllStaked from "~/components/Staking/AllStaked";
-import { api } from "~/lib/api";
+import { UnstakeDialog } from "~/components/dialogs/unstake";
+import HeaderTitle from "~/components/ui/header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { useZodForm } from "~/hooks/form";
+import { useGetStakingDetailsForWallets as useGetStakingDetailsForTeamsWallets } from "~/hooks/staking";
 import { calculateLockup } from "~/lib/lockup/lockup";
-import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 export interface WalletPretty {
@@ -15,10 +25,16 @@ export interface WalletPretty {
   ownerAccountId: string | undefined;
 }
 
+const formSchema = z.object({
+  fromWallet: z.string(),
+  amountNear: z.number().min(0),
+  poolId: z.string(),
+});
+
 export const onSuccessGetWallets = async (
   data: Wallet[],
   near: Promise<Near>,
-  setWalletsFn: (wallets: WalletPretty[]) => void
+  setWalletsFn: (wallets: WalletPretty[]) => void,
 ) => {
   if (!data || data.length == 0 || data[0] === undefined) {
     return;
@@ -64,33 +80,54 @@ export const onSuccessGetWallets = async (
 };
 
 const Unstake: NextPageWithLayout = () => {
-  const { newNearConnection } = usePersistingStore();
-  const { currentTeam } = usePersistingStore();
-  const [allWallets, setAllWallets] = useState<WalletPretty[]>([]);
+  const form = useZodForm(formSchema);
+  const getStakingDetailsForWallets = useGetStakingDetailsForTeamsWallets();
 
-  const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
-    {
-      enabled: true,
-      async onSuccess(data) {
-        await onSuccessGetWallets(data, newNearConnection(), setAllWallets);
-      },
-    }
-  );
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+  }
 
-  if (isLoading || !data || allWallets.length == 0) {
+  if (getStakingDetailsForWallets.isLoading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex w-36 flex-grow flex-col p-4">
-      <div className="max-w-lg">
-        <h1 className="text-xl font-semibold">Unstake</h1>
-        <AllStaked wallets={allWallets} />
+    <>
+      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+        <HeaderTitle level="h1" text="Unstake" />
+        {getStakingDetailsForWallets.data?.map((walletData) => (
+          <div key={walletData.wallet.walletDetails.walletAddress}>
+            <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px] truncate">Pool ID</TableHead>
+                  <TableHead>Deposit</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from(walletData.stakedPools).map((pool, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <p className="break-all">{pool.validator_id}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="break-all">{`${formatNearAmount(
+                        pool.deposit,
+                      )} Ⓝ`}</p>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <UnstakeDialog pool={pool} wallet={walletData.wallet} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ))}
       </div>
-    </div>
+    </>
   );
 };
 

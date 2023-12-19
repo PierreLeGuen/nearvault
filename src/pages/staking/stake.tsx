@@ -1,22 +1,27 @@
 import { type Wallet } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
-import {
-  formatNearAmount,
-  parseNearAmount,
-} from "near-api-js/lib/utils/format";
-import { useState } from "react";
-import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
-import AllAvailablePools from "~/components/Staking/AllAvailablePools";
-import WalletsDropDown from "~/components/Staking/WalletsDropDown";
-import { handleWalletRequestWithToast } from "~/components/toast-request-result";
-import { useWalletSelector } from "~/context/wallet";
-import { api } from "~/lib/api";
-import { initLockupContract } from "~/lib/lockup/contract";
-import { calculateLockup } from "~/lib/lockup/lockup";
-import { initStakingContract } from "~/lib/staking/contract";
-import { assertCorrectMultisigWallet } from "~/lib/utils";
-import usePersistingStore from "~/store/useStore";
+import { NumberInput } from "~/components/inputs/number";
+import { SenderFormField } from "~/components/inputs/sender";
+import { Button } from "~/components/ui/button";
+import { Form } from "~/components/ui/form";
+import HeaderTitle from "~/components/ui/header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { useZodForm } from "~/hooks/form";
+import {
+  useAddRequestStakeToPool,
+  useIsPoolSelected,
+  useListAllStakingPoolsWithDetails,
+} from "~/hooks/staking";
+import { useTeamsWalletsWithLockups } from "~/hooks/teams";
 import { type NextPageWithLayout } from "../_app";
 
 export interface WalletPretty {
@@ -26,333 +31,123 @@ export interface WalletPretty {
   ownerAccountId: string | undefined;
 }
 
-type PoolId = string;
-type Percentage = number;
-
-type Pool = {
-  id: PoolId;
-  status: "active" | "inactive";
-  fees: Percentage;
-};
+const formSchema = z.object({
+  fromWallet: z.string(),
+  amountNear: z.number().min(0),
+  poolId: z.string(),
+});
 
 const Stake: NextPageWithLayout = () => {
-  const { newNearConnection, currentTeam } = usePersistingStore();
-  const walletSelector = useWalletSelector();
+  const { data: pools, isLoading } = useListAllStakingPoolsWithDetails();
 
-  const [selectedWallet, setSelectedWallet] = useState<WalletPretty>();
-  const [allWallets, setAllWallets] = useState<WalletPretty[]>([]);
-  const [amount, setAmount] = useState<string>("");
-  const [stakingInProgress, setStakingInProgress] = useState<{
-    [poolId: string]: boolean;
-  }>({});
-  const [pools, setPools] = useState<Map<PoolId, Pool>>(new Map());
+  const [filteredPools, setFilteredPools] = useState(new Map());
+  const listWallets = useTeamsWalletsWithLockups();
 
-  const addRequestStakeToPool = async (poolId: string) => {
-    try {
-      if (!selectedWallet) {
-        throw new Error("No wallet selected");
-      }
-      setStakingInProgress((prev) => ({ ...prev, [poolId]: true }));
-
-      let fromAddress = selectedWallet.walletDetails.walletAddress;
-
-      if (selectedWallet.isLockup) {
-        if (!selectedWallet.ownerAccountId) {
-          throw new Error("No owner account id");
-        }
-        fromAddress = selectedWallet.ownerAccountId;
-      }
-      await assertCorrectMultisigWallet(walletSelector, fromAddress);
-      const w = await walletSelector.selector.wallet();
-
-      const ftArgs = {
-        amount: parseNearAmount(amount),
-      };
-
-      if (selectedWallet.isLockup) {
-        if (!selectedWallet.ownerAccountId) {
-          throw new Error("No owner account id");
-        }
-
-        // selectStakingPoolAction will be empty if the user already has a staking pool selected
-        let action = [];
-        if (currentlySelectedPool !== "") {
-          action = [
-            {
-              type: "FunctionCall",
-              method_name: "deposit_and_stake",
-              args: btoa(JSON.stringify(ftArgs)),
-              deposit: "0",
-              gas: "150000000000000",
-            },
-          ];
-        } else {
-          toast.info(
-            "You need to first select the staking pool with the following transaction then come back again here to deposit and stake.",
-          );
-          action = [
-            {
-              type: "FunctionCall",
-              method_name: "select_staking_pool",
-              args: btoa(JSON.stringify({ staking_pool_account_id: poolId })),
-              deposit: "0",
-              gas: "150000000000000",
-            },
-          ];
-        }
-
-        await handleWalletRequestWithToast(
-          w.signAndSendTransaction({
-            receiverId: selectedWallet.ownerAccountId,
-            actions: [
-              {
-                type: "FunctionCall",
-                params: {
-                  gas: "300000000000000",
-                  deposit: "0",
-                  methodName: "add_request",
-                  args: {
-                    request: {
-                      receiver_id: selectedWallet.walletDetails.walletAddress,
-                      actions: action,
-                    },
-                  },
-                },
-              },
-            ],
-          }),
-        );
-
-        await refetchSelectedPool();
-      } else {
-        await handleWalletRequestWithToast(
-          w.signAndSendTransaction({
-            receiverId: selectedWallet.walletDetails.walletAddress,
-            actions: [
-              {
-                type: "FunctionCall",
-                params: {
-                  gas: "300000000000000",
-                  deposit: "0",
-                  methodName: "add_request",
-                  args: {
-                    request: {
-                      receiver_id: poolId,
-                      actions: [
-                        {
-                          type: "FunctionCall",
-                          method_name: "deposit_and_stake",
-                          args: btoa(JSON.stringify({})),
-                          deposit: parseNearAmount(amount),
-                          gas: "200000000000000",
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            ],
-          }),
-        );
-      }
-    } catch (e) {
-      toast.error((e as Error).message);
-      console.error(e);
-    } finally {
-      setStakingInProgress((prev) => ({ ...prev, [poolId]: false }));
-    }
-  };
-
-  const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
-    {
-      enabled: true,
-      async onSuccess(data) {
-        if (!data || data.length == 0 || data[0] === undefined) {
-          return;
-        }
-        setSelectedWallet({
-          prettyName: data[0].walletAddress,
-          walletDetails: data[0],
-
-          isLockup: false,
-          ownerAccountId: data[0].walletAddress,
-        });
-        setAllWallets([]);
-        const allWallets: WalletPretty[] = [];
-        for (const wallet of data) {
-          allWallets.push({
-            prettyName: wallet.walletAddress,
-            walletDetails: wallet,
-            isLockup: false,
-            ownerAccountId: undefined,
-          });
-          try {
-            const lockupValue = calculateLockup(
-              wallet.walletAddress,
-              "lockup.near",
-            );
-            const nearConn = await newNearConnection();
-            await (await nearConn.account(lockupValue)).state();
-            allWallets.push({
-              prettyName: `${wallet.walletAddress} (lockup)`,
-              walletDetails: {
-                walletAddress: lockupValue,
-                teamId: wallet.teamId,
-                id: lockupValue,
-              },
-              isLockup: true,
-              ownerAccountId: wallet.walletAddress,
-            });
-          } catch (_) {}
-        }
-        setAllWallets(allWallets);
-      },
-    },
+  const form = useZodForm(formSchema);
+  const watchedWallet = form.watch("fromWallet");
+  const wallet = listWallets.data?.find(
+    (w) => w.walletDetails.walletAddress === watchedWallet,
   );
 
-  const { data: currentlySelectedPool, refetch: refetchSelectedPool } =
-    useQuery(["isPoolSelected", selectedWallet], async () => {
-      if (!selectedWallet || !selectedWallet.isLockup) {
-        return "";
-      }
-      const n = await newNearConnection();
+  const addRequestStakeToPool = useAddRequestStakeToPool();
+  const isPoolSelected = useIsPoolSelected(wallet);
 
-      const c = initLockupContract(
-        await n.account(""),
-        selectedWallet.walletDetails.walletAddress,
-      );
-
-      const accId = await c.get_staking_pool_account_id();
-      console.log(accId);
-
-      return accId;
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    addRequestStakeToPool.mutate({
+      selectedWallet: wallet,
+      poolId: values.poolId,
+      amountNear: values.amountNear,
     });
+  }
 
-  const { data: currentBalance, isLoading: balanceLoading } = useQuery(
-    ["currentBalance", selectedWallet],
-    async () => {
-      if (!selectedWallet) {
-        return "";
-      }
+  useEffect(() => {
+    if (!pools) {
+      return;
+    }
 
-      const n = await newNearConnection();
-      const acc = await n.account(selectedWallet.walletDetails.walletAddress);
-      return (await acc.state()).amount;
-    },
-  );
+    if (!wallet || !wallet.isLockup) {
+      setFilteredPools(pools);
+    }
+    if (!isPoolSelected.data || isPoolSelected.data === "") {
+      setFilteredPools(pools);
+    }
+    if (isPoolSelected.data && isPoolSelected.data !== "") {
+      setFilteredPools(
+        new Map([[isPoolSelected.data, pools.get(isPoolSelected.data)]]),
+      );
+    }
+  }, [pools, watchedWallet]);
 
-  useQuery(
-    ["allAvailablePools"],
-    async () => {
-      const res = await fetch("https://api.kitwallet.app/stakingPools");
-      const data = await (res.json() as Promise<PoolId[]>);
-      return data;
-    },
-    {
-      async onSuccess(poolsFromApi) {
-        const activePools: Map<PoolId, Pool> = new Map();
-        const inactivePools: Map<PoolId, Pool> = new Map();
-
-        const n = await newNearConnection();
-        const validatorsRes = await n.connection.provider.validators(null);
-
-        // Create a Set for constant time lookups
-        const validatorSet = new Set(
-          validatorsRes.current_validators.map(
-            (validator) => validator.account_id,
-          ),
-        );
-
-        // Parallelize calls to get_reward_fee_fraction
-        const poolPromises = poolsFromApi.map(async (pool) => {
-          const contract = initStakingContract(await n.account(""), pool);
-          const fees = await contract.get_reward_fee_fraction();
-
-          if (validatorSet.has(pool)) {
-            activePools.set(pool, {
-              id: pool,
-              status: "active",
-              fees: Number(
-                ((fees.numerator / fees.denominator) * 100).toFixed(2),
-              ),
-            });
-          } else {
-            inactivePools.set(pool, {
-              id: pool,
-              status: "inactive",
-              fees: Number(
-                ((fees.numerator / fees.denominator) * 100).toFixed(2),
-              ),
-            });
-          }
-        });
-
-        // Wait for all promises to resolve
-        await Promise.all(poolPromises);
-
-        const sortedPools: Map<PoolId, Pool> = new Map([
-          ...activePools,
-          ...inactivePools,
-        ]);
-
-        setPools(sortedPools);
-      },
-    },
-  );
-
-  if (isLoading || !selectedWallet || !data || allWallets.length == 0) {
+  if (isLoading || !filteredPools) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex w-36 flex-grow flex-col p-4">
-      <div className="max-w-lg">
-        <h1 className="text-xl font-semibold">Stake</h1>
-        <div className="mt-4 w-full">
-          <WalletsDropDown
-            wallets={allWallets}
-            selectedWallet={selectedWallet}
-            setSelectedWallet={setSelectedWallet}
+    <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+      <HeaderTitle level="h1" text="Stake" />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <SenderFormField
+            isLoading={listWallets.isLoading}
+            wallets={listWallets.data}
+            name="fromWallet"
+            control={form.control}
+            rules={{
+              required: "Please select a wallet.",
+            }}
+            description="Wallet to stake from."
+            placeholder="Select a wallet"
+            label="Sender"
           />
-        </div>
-        <div className="my-3">
-          <div>NEAR Balance</div>
-          <div>
-            {`${formatNearAmount(currentBalance || "0", 5)} Ⓝ`}
-            {balanceLoading}
+          <NumberInput
+            control={form.control}
+            name="amountNear"
+            label="Amount to stake in NEAR"
+            placeholder="10"
+            rules={{ required: true }}
+            disabled={false}
+          />
+          <div className="rounded-md border shadow-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pool ID</TableHead>
+                  <TableHead>Fees</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from(filteredPools).map((key, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <p className="break-all">{key[1].id}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="break-all">{`${key[1].fees}%`}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="break-all capitalize">{key[1].status}</p>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="submit"
+                        onClick={() => form.setValue("poolId", key[1].id)}
+                      >
+                        <div className="inline-flex items-center">
+                          {wallet && wallet.isLockup && !isPoolSelected.data
+                            ? "Select pool"
+                            : "Create stake request"}
+                        </div>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-        <>
-          <div className="mb-3 w-full">
-            <label className="block text-gray-700">Amount</label>
-            <input
-              className="mt-2 w-full rounded-lg border px-4 py-2 text-gray-700 focus:outline-none"
-              type="text"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-          <div>
-            <AllAvailablePools
-              onStakeClick={addRequestStakeToPool}
-              stakingInProgress={stakingInProgress}
-              poolsAllowList={
-                currentlySelectedPool ? [currentlySelectedPool] : []
-              }
-              btnText={
-                selectedWallet.isLockup && currentlySelectedPool === null
-                  ? "Select Pool"
-                  : "Stake"
-              }
-              pools={pools}
-            />
-          </div>
-        </>
-      </div>
+        </form>
+      </Form>
     </div>
   );
 };

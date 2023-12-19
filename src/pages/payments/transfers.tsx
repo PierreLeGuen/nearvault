@@ -1,7 +1,6 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Transaction } from "@near-finance-near-wallet-selector/core";
-import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -41,15 +40,14 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { useWalletSelector } from "~/context/wallet";
-import { api } from "~/lib/api";
-import { initFungibleTokenContract } from "~/lib/ft/contract";
-import { initLockupContract } from "~/lib/lockup/contract";
 import {
-  dbDataToTransfersData,
-  getFormattedAmount,
-  type LikelyTokens,
-  type Token,
-} from "~/lib/transformations";
+  useGetAllTokensWithBalanceForWallet,
+  useGetTokensForWallet,
+  useListAddressBook,
+  useTeamsWalletsWithLockups,
+} from "~/hooks/teams";
+import { initLockupContract } from "~/lib/lockup/contract";
+import { getFormattedAmount } from "~/lib/transformations";
 import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
@@ -86,101 +84,15 @@ const TransfersPage: NextPageWithLayout = () => {
   const watchedSender = form.watch("fromWallet");
   const watchedToken = form.watch("token");
 
-  const { data } = api.teams.getWalletsForTeam.useQuery(
-    { teamId: currentTeam?.id || "" },
-    { enabled: !!currentTeam?.id },
-  );
-
-  const { data: senderWallets, isLoading } = useQuery({
-    queryKey: ["wallets", currentTeam?.id],
-    queryFn: async () => {
-      const wallets = await dbDataToTransfersData({
-        data: data || [],
-        getNearConnection: newNearConnection,
-      });
-      return wallets;
-    },
-    enabled: !!data,
-  });
+  const { data: senderWallets, isLoading } = useTeamsWalletsWithLockups();
 
   const { data: addressBook, isLoading: addrBookLoading } =
-    api.teams.getBeneficiariesForTeam.useQuery({
-      teamId: currentTeam?.id || "",
-    });
+    useListAddressBook();
 
-  const { data: tokenAddresses } = useQuery({
-    queryKey: ["tokens", watchedSender],
-    queryFn: async () => {
-      const sender = form.getValues("fromWallet");
-      const res = fetch(
-        `https://api.kitwallet.app/account/${sender}/likelyTokensFromBlock?fromBlockTimestamp=0`,
-      );
-      const data = (await (await res).json()) as LikelyTokens;
-      console.log(data);
+  const { data: tokenAddresses } = useGetTokensForWallet(watchedSender);
 
-      return data;
-    },
-    enabled: !!form.getValues("fromWallet"),
-  });
-
-  const { data: tokens, isLoading: tokensIsLoading } = useQuery({
-    queryKey: ["tokens", watchedSender, [tokenAddresses?.list]],
-    queryFn: async () => {
-      const tokAddrs = tokenAddresses?.list || [];
-      console.log(tokAddrs);
-      const sender = form.getValues("fromWallet");
-      console.log(sender);
-
-      const promises = tokAddrs.map(async (token) => {
-        const near = await newNearConnection();
-        const contract = initFungibleTokenContract(
-          await near.account(""),
-          token,
-        );
-        try {
-          const ft_metadata = await contract.ft_metadata();
-          const ft_balance = await contract.ft_balance_of({
-            account_id: sender,
-          });
-
-          const t: Token = {
-            ...ft_metadata,
-            balance: ft_balance,
-            account_id: token,
-          };
-
-          return t;
-        } catch (e) {
-          console.log(e);
-        }
-      });
-
-      const nearPromise = async () => {
-        const sender = form.getValues("fromWallet");
-        try {
-          const account = (await newNearConnection()).account(sender);
-          const balance = await (await account).getAccountBalance();
-          const t = {
-            balance: balance.available,
-            decimals: 24,
-            name: "NEAR",
-            symbol: "NEAR",
-            account_id: "near",
-          } as Token;
-          return t;
-        } catch (e) {
-          console.log(e);
-        }
-      };
-
-      const tokenDetails = (
-        await Promise.all(promises.concat(nearPromise()))
-      ).filter((t) => !!t);
-
-      return tokenDetails;
-    },
-    enabled: !!tokenAddresses,
-  });
+  const { data: tokens, isLoading: tokensIsLoading } =
+    useGetAllTokensWithBalanceForWallet(watchedSender);
 
   // Updates the formatted balance when the token or the wallet changes
   useEffect(() => {
@@ -241,13 +153,13 @@ const TransfersPage: NextPageWithLayout = () => {
       if (token.account_id === "near") {
         const yoctoAmount = parseNearAmount(amount.toString());
         const near = await newNearConnection();
-        const account = await near.account(senderAddress);
 
         if (sender.isLockup && lockupAddress) {
           // from lockup
-          const lockupContract = initLockupContract(
-            account,
+          const lockupContract = await initLockupContract(
+            senderAddress,
             sender.walletDetails.walletAddress,
+            near,
           );
           const areTransfersEnabled =
             await lockupContract.are_transfers_enabled();

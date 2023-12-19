@@ -3,7 +3,7 @@ import {
   parseNearAmount,
 } from "near-api-js/lib/utils/format";
 import { useState } from "react";
-import { type WalletData, type StakedPool } from "./AllStaked";
+import { type StakedPool, type WalletData } from "./AllStaked";
 
 const StakedPoolComponent = ({
   pool,
@@ -17,7 +17,7 @@ const StakedPoolComponent = ({
     multisigAcc: string,
     isLockup: boolean,
     poolId: string,
-    amount: string
+    amount: string,
   ) => Promise<void>;
   isLockup: boolean;
 }) => {
@@ -25,7 +25,9 @@ const StakedPoolComponent = ({
   const maxAmount = pool.deposit;
 
   // check if input amount is greater than the maximum amount
-  const isAmountTooHigh = amountToUnstake !== "" && amountToUnstake > maxAmount;
+  const isAmountTooHigh =
+    amountToUnstake !== "" &&
+    parseFloat(amountToUnstake) > parseFloat(maxAmount);
 
   const inputDivClasses =
     "flex flex-row items-stretch overflow-hidden rounded-md shadow " +
@@ -75,7 +77,7 @@ const StakedPoolComponent = ({
                   : wallet.wallet.walletDetails.walletAddress,
                 isLockup,
                 pool.validator_id,
-                amountToUnstake
+                amountToUnstake,
               );
             }}
           >
