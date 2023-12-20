@@ -11,6 +11,7 @@ import {
   QueueListIcon,
 } from "@heroicons/react/20/solid";
 import { PieChartIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { Button } from "../ui/button";
 
@@ -25,23 +26,23 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarSection>
           <SidebarSectionHeader>Treasury</SidebarSectionHeader>
           <SidebarSectionBody>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/lockup/create">
               <BanknotesIcon className={iconsClasses} />
               Create lockup
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/lockup/manage">
               <EyeIcon className={iconsClasses} />
               Manage lockup
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/staking/stake">
               <ArrowUpTrayIcon className={iconsClasses} />
               Stake
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/staking/unstake">
               <ArrowUturnDownIcon className={iconsClasses} />
               Unstake
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/staking/withdraw">
               <ArrowDownTrayIcon className={iconsClasses} />
               Withdraw
             </SidebarSectionItem>
@@ -51,15 +52,15 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarSection>
           <SidebarSectionHeader>Payments</SidebarSectionHeader>
           <SidebarSectionBody>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/payments/transfers">
               <ArrowUpTrayIcon className={iconsClasses} />
               Transfers
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/payments/history">
               <ArchiveBoxIcon className={iconsClasses} />
               History
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/beneficiary/manage">
               <BookOpenIcon className={iconsClasses} />
               Address Book
             </SidebarSectionItem>
@@ -69,14 +70,14 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarSection>
           <SidebarSectionHeader>Approvals</SidebarSectionHeader>
           <SidebarSectionBody>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/approval/pending">
               <QueueListIcon className={iconsClasses} /> Pending requests
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/approval/manage">
               <AdjustmentsVerticalIcon className={iconsClasses} /> Manage
               wallets
             </SidebarSectionItem>
-            <SidebarSectionItem>
+            <SidebarSectionItem href="/approval/create">
               <PlusCircleIcon className={iconsClasses} /> Create multisig
               wallets
             </SidebarSectionItem>
@@ -86,7 +87,7 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarSection>
           <SidebarSectionHeader>Accounting</SidebarSectionHeader>
           <SidebarSectionBody>
-            <SidebarSectionItem>
+            <SidebarSectionItem href={"/accounting/tta"}>
               <PieChartIcon className={iconsClasses} /> Reports
             </SidebarSectionItem>
           </SidebarSectionBody>
@@ -115,13 +116,17 @@ function SidebarSectionBody({ children }: { children: React.ReactNode }) {
 function SidebarSectionItem({
   children,
   className,
+  href,
 }: {
   children: React.ReactNode;
   className?: string;
+  href: string;
 }) {
   return (
-    <Button variant="ghost" className={cn("w-full justify-start", className)}>
-      {children}
-    </Button>
+    <Link href={href ?? "/"}>
+      <Button variant="ghost" className={cn("w-full justify-start", className)}>
+        {children}
+      </Button>
+    </Link>
   );
 }
