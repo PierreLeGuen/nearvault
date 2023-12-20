@@ -6,14 +6,26 @@ import {
   ArrowUturnDownIcon,
   BanknotesIcon,
   BookOpenIcon,
+  ChevronDownIcon,
   EyeIcon,
   PlusCircleIcon,
   QueueListIcon,
 } from "@heroicons/react/20/solid";
 import { PieChartIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { api } from "~/lib/api";
 import { cn } from "~/lib/utils";
-import { Button } from "../ui/button";
+import usePersistingStore from "~/store/useStore";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -21,7 +33,8 @@ export function Sidebar({ className }: SidebarProps) {
   const iconsClasses = "mr-2 h-4 w-4";
 
   return (
-    <div className={cn("pb-12", className)}>
+    <div className={cn("border-r-2 pb-12", className)}>
+      <DropdownMenuDemo />
       <div className="space-y-4 py-4">
         <SidebarSection>
           <SidebarSectionHeader>Treasury</SidebarSectionHeader>
@@ -123,10 +136,55 @@ function SidebarSectionItem({
   href: string;
 }) {
   return (
-    <Link href={href ?? "/"}>
+    <Link href={href}>
       <Button variant="ghost" className={cn("w-full justify-start", className)}>
         {children}
       </Button>
     </Link>
+  );
+}
+
+function DropdownMenuDemo() {
+  const { setCurrentTeam, currentTeam, resetTeams, resetWallet } =
+    usePersistingStore();
+
+  const { data: teams, isLoading } = api.teams.getTeamsForUser.useQuery();
+
+  if (isLoading) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="justify-between rounded-none px-7">
+          {currentTeam.name}
+          <ChevronDownIcon className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel>My Teams</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {teams.map((team) => (
+            <DropdownMenuItem
+              key={team.teamId}
+              onClick={() => setCurrentTeam(team)}
+            >
+              {team.team.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <Link href={"/team/manage"}>
+            <DropdownMenuItem>Manage team</DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem>New Team</DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>GitHub</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>Log out</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
