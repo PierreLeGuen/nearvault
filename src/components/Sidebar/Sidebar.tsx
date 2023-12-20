@@ -1,13 +1,14 @@
-import { useStoreState, useStoreActions } from "easy-peasy";
-import AccountingSection from "./AccountingSection";
-import ApprovalSection from "./ApprovalSection";
-import PaymentsSection from "./PaymentsSection";
-import TeamsMenu from "./TeamsMenu";
-import TreasurySection from "./TreasurySection";
+import { useStoreActions, useStoreState } from "easy-peasy";
 import { CurrentNetwork } from "~/components/Sidebar/CurrentNetwork";
 import { SelectAccount } from "~/components/Sidebar/SelectAccount/SelectAccount";
 import { WalletModal } from "~/components/Sidebar/WalletModal/WalletModal";
 import { Button } from "~/components/ui/button";
+import AccountingSection from "./AccountingSection";
+import ApprovalSection from "./ApprovalSection";
+import PaymentsSection from "./PaymentsSection";
+import { ReportsButton } from "./Reports";
+import TeamsMenu from "./TeamsMenu";
+import TreasurySection from "./TreasurySection";
 
 const Sidebar = () => {
   const selectedAccount = useStoreState(
@@ -35,6 +36,7 @@ const Sidebar = () => {
           <PaymentsSection />
           <ApprovalSection />
           <AccountingSection />
+          <ReportsButton />
           <div className="flex-grow"></div>
           <div className="flex flex-col gap-1">
             <CurrentNetwork />
