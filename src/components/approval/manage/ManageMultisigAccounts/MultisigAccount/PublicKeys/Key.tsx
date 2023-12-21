@@ -1,8 +1,8 @@
 import { TableCell, TableRow } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
 
-export const Key = ({ accountId, publicKey, addRequestRemoveKey }: any) => {
-  const deleteKey = () => addRequestRemoveKey(accountId, publicKey);
+export const Key = ({ contractId, publicKey, deleteKeyFn }: any) => {
+  const deleteKey = () => deleteKeyFn({ contractId, publicKey });
 
   return (
     <TableRow>

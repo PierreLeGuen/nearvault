@@ -5,7 +5,7 @@ type Payload = {
   publicKey: string;
 }
 
-export const deleteKey = thunk(async (_, payload: Payload, { getStoreActions }) => {
+export const deleteMember = thunk(async (_, payload: Payload, { getStoreActions }) => {
   const { contractId, publicKey } = payload;
   const actions: any = getStoreActions();
 
@@ -20,13 +20,15 @@ export const deleteKey = thunk(async (_, payload: Payload, { getStoreActions }) 
           receiver_id: contractId,
           actions: [
             {
-              type: "DeleteKey",
-              public_key: publicKey,
+              type: "DeleteMember",
+              member: {
+                public_key: publicKey,
+              },
             },
           ],
         },
       },
-      tGas: 5,
+      tGas: 6,
     },
   });
 });

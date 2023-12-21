@@ -9,8 +9,6 @@ export const addKey = thunk(async (_, payload: Payload, { getStoreActions }) => 
   const { contractId, publicKey } = payload;
   const actions: any = getStoreActions();
 
-  if (!actions.accounts.canSignTx(contractId)) return;
-
   await actions.wallets.signAndSendTransaction({
     senderId: contractId,
     receiverId: contractId,

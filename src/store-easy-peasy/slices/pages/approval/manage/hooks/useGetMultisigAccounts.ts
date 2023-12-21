@@ -5,7 +5,7 @@ import { api } from '~/lib/api';
 
 export const useGetMultisigAccounts = () => {
   const getMultisigAccounts = useStoreActions(
-    (store: any) => store.pages.approval.manage.getMultisigAccounts,
+    (actions: any) => actions.pages.approval.manage.getMultisigAccounts,
   );
   const [isLoading, setIsLoading] = useState(true);
   const { currentTeam } = usePersistingStore();

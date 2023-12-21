@@ -3,7 +3,7 @@ import { AddKey } from '~/components/approval/manage/ManageMultisigAccounts/Mult
 import { Table, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { PublicKeys } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/PublicKeys/PublicKeys";
 
-export const MultisigAccount = ({ account }: any) => (
+export const MultisigAccount = ({ account, deleteKeyFn }: any) => (
   <>
     <div className="flex flex-row justify-between">
       <HeaderTitle level="h3" text={account.accountId} />
@@ -17,7 +17,7 @@ export const MultisigAccount = ({ account }: any) => (
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
-        <PublicKeys account={account} />
+        <PublicKeys account={account} deleteKeyFn={deleteKeyFn} />
       </Table>
     </div>
   </>

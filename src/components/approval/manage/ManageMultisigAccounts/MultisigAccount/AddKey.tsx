@@ -21,7 +21,7 @@ const formSchema = z.object({
 export const AddKey = ({ accountId }: any) => {
   const form = useZodForm(formSchema);
   const addKey = useStoreActions(
-    (store: any) => store.multisig.addRequest.addKey,
+    (actions: any) => actions.pages.approval.manage.addKey,
   );
 
   const onSubmit = (values: z.infer<typeof formSchema>) =>
