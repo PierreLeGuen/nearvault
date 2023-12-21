@@ -1,10 +1,11 @@
-import { confirm } from "~/store-easy-peasy/slices/multisig/thunks/confirm";
-import { deleteRequest } from "~/store-easy-peasy/slices/multisig/thunks/deleteRequest";
-import { listRequestIds } from '~/store-easy-peasy/slices/multisig/thunks/listRequestIds';
-import { getRequest } from '~/store-easy-peasy/slices/multisig/thunks/getRequest';
-import { getNumConfirmations } from '~/store-easy-peasy/slices/multisig/thunks/getNumConfirmations';
-import { getConfirmations } from '~/store-easy-peasy/slices/multisig/thunks/getConfirmations';
+import { confirm } from "~/store-easy-peasy/slices/multisig/thunks/change/confirm";
+import { deleteRequest } from "~/store-easy-peasy/slices/multisig/thunks/change/deleteRequest";
+import { listRequestIds } from '~/store-easy-peasy/slices/multisig/thunks/view/listRequestIds';
+import { getRequest } from '~/store-easy-peasy/slices/multisig/thunks/view/getRequest';
+import { getNumConfirmations } from '~/store-easy-peasy/slices/multisig/thunks/view/getNumConfirmations';
+import { getConfirmations } from '~/store-easy-peasy/slices/multisig/thunks/view/getConfirmations';
 import { getMultisigContract } from '~/store-easy-peasy/slices/multisig/thunks/getMultisigContract';
+import { addRequest } from '~/store-easy-peasy/slices/multisig/thunks/change/addRequest';
 
 export const multisig = {
   // thunks
@@ -15,4 +16,5 @@ export const multisig = {
   getNumConfirmations,
   getConfirmations,
   getMultisigContract,
+  addRequest,
 };

@@ -1,7 +1,7 @@
 import { persist } from "easy-peasy";
 import { selectAccount } from "~/store-easy-peasy/slices/accounts/actions/selectAccount";
 import { addAccounts } from "~/store-easy-peasy/slices/accounts/actions/addAccounts";
-import { isAccountConnected } from "~/store-easy-peasy/slices/accounts/thunks/isAccountConnected";
+import { canSignTx } from '~/store-easy-peasy/slices/accounts/thunks/canSignTx';
 
 const model = {
   selected: null,
@@ -11,7 +11,7 @@ const model = {
   selectAccount,
   addAccounts,
   // thunks
-  isAccountConnected,
+  canSignTx,
 };
 
 export const accounts = persist(model, {

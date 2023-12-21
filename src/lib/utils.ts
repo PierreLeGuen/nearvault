@@ -2,7 +2,7 @@ import { type WalletSelectorContextValue } from "~/context/wallet";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// TODO Rework it
+// TODO Rework it - show error via toast and call it in thunk
 export const assertCorrectMultisigWallet = async (
   walletSelector: WalletSelectorContextValue,
   walletAddress: string,
