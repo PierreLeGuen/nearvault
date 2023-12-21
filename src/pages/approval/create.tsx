@@ -66,7 +66,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
             walletDetails: {
               walletAddress: lockupValue,
               id: lockupValue,
-              teamId: "na",
+              teamId: "na", // TODO Why teamId is 'na' ????
             },
             isLockup: true,
             ownerAccountId: wallet.walletAddress,
