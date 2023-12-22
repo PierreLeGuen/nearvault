@@ -1,8 +1,6 @@
 import { transactions, utils } from "near-api-js";
 import BN from "bn.js";
-
-const toGas = (terraGas: string | number) =>
-  new BN(Number(terraGas) * 1000000000000);
+import { toGas } from "src/store-easy-peasy/helpers/toGas";
 
 type FunctionCallAction = {
   type: string;
