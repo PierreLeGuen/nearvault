@@ -90,12 +90,11 @@ const CreateLockup: NextPageWithLayout = () => {
     queryFn: async () => {
       const account = (await newNearConnection()).account(watchedSender);
       const balance = await (await account).getAccountBalance();
-      const formattedAmount = getFormattedAmount({
+      return getFormattedAmount({
         balance: balance.available,
         decimals: 24,
         symbol: "NEAR",
       });
-      return formattedAmount;
     },
   });
 

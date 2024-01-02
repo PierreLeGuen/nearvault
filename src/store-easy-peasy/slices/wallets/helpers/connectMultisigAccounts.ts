@@ -14,7 +14,7 @@ const getAllAccountsWithSameKey1 = async (publicKey: any) =>
     headers: { "X-requestor": "near" },
   }).then((r) => r.json());
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line
 const getAllAccountsWithSameKey2 = async (publicKey: any) => {
   try {
     const res = await fetch(
