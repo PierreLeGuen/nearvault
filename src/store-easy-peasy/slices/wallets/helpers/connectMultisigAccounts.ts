@@ -9,11 +9,12 @@ const isMultisig = async (accountId: any, provider: any) =>
     args_base64: "e30=",
   });
 
-// const getAllAccountsWithSameKey1 = async (publicKey: any) =>
-//   await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
-//     headers: { "X-requestor": "near" },
-//   }).then((r) => r.json());
+const getAllAccountsWithSameKey1 = async (publicKey: any) =>
+  await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
+    headers: { "X-requestor": "near" },
+  }).then((r) => r.json());
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getAllAccountsWithSameKey2 = async (publicKey: any) => {
   try {
     const res = await fetch(
@@ -34,7 +35,7 @@ const getMultisigAccounts = async (
 ) => {
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
-  const allAccountsWithSameKey = await getAllAccountsWithSameKey2(publicKey);
+  const allAccountsWithSameKey = await getAllAccountsWithSameKey1(publicKey);
   console.log(allAccountsWithSameKey);
 
   const results = await Promise.allSettled(

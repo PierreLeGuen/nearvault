@@ -1,6 +1,5 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type Transaction } from "@near-finance-near-wallet-selector/core";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -39,18 +38,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { useWalletSelector } from "~/context/wallet";
 import {
   useGetAllTokensWithBalanceForWallet,
-  useGetTokensForWallet,
   useListAddressBook,
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
-import { assertCorrectMultisigWallet, cn } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
+import { useStoreActions } from "easy-peasy";
 
 const formSchema = z.object({
   fromWallet: z.string({
@@ -65,10 +63,12 @@ const formSchema = z.object({
 });
 
 const TransfersPage: NextPageWithLayout = () => {
-  const walletSelector = useWalletSelector();
-  const { currentTeam, newNearConnection } = usePersistingStore();
+  const { newNearConnection } = usePersistingStore();
   const [formattedBalance, setFormattedBalance] = useState<string>("");
-  const [checkLedger, setCheckLedger] = useState<boolean>(false);
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
+  const signAndSendTransaction = useStoreActions(
+    (actions: any) => actions.wallets.signAndSendTransaction,
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -88,8 +88,6 @@ const TransfersPage: NextPageWithLayout = () => {
 
   const { data: addressBook, isLoading: addrBookLoading } =
     useListAddressBook();
-
-  const { data: tokenAddresses } = useGetTokensForWallet(watchedSender);
 
   const { data: tokens, isLoading: tokensIsLoading } =
     useGetAllTokensWithBalanceForWallet(watchedSender);
@@ -137,18 +135,10 @@ const TransfersPage: NextPageWithLayout = () => {
       throw new Error("Sender address not found");
     }
 
-    try {
-      await assertCorrectMultisigWallet(walletSelector, senderAddress);
-    } catch (e) {
-      toast.error((e as Error).message);
-      return;
-    }
-
-    setCheckLedger(true);
+    if (!canSignTx(senderAddress)) return;
 
     try {
-      const wallet = await walletSelector.selector.wallet();
-      const transactions: Transaction[] = [];
+      const transactions: any = [];
 
       if (token.account_id === "near") {
         const yoctoAmount = parseNearAmount(amount.toString());
@@ -166,95 +156,83 @@ const TransfersPage: NextPageWithLayout = () => {
 
           if (!areTransfersEnabled) {
             transactions.push({
+              senderId: senderAddress,
               receiverId: senderAddress,
-              signerId: senderAddress,
               actions: [
                 {
                   type: "FunctionCall",
-                  params: {
-                    gas: "300000000000000",
-                    deposit: "0",
-                    methodName: "add_request",
-                    args: {
-                      request: {
-                        receiver_id: lockupAddress,
-                        actions: [
-                          {
-                            type: "FunctionCall",
-                            method_name: "check_transfers_vote",
-                            args: btoa(JSON.stringify({})),
-                            gas: "125000000000000",
-                            deposit: "0",
-                          },
-                        ],
-                      },
-                    },
-                  },
-                },
-              ],
-            });
-            toast.error("Transfers are disabled for this lockup");
-            return;
-          }
-          transactions.push({
-            receiverId: senderAddress,
-            signerId: senderAddress,
-            actions: [
-              {
-                type: "FunctionCall",
-                params: {
-                  gas: "300000000000000",
-                  deposit: "0",
-                  methodName: "add_request",
+                  method: "add_request",
                   args: {
                     request: {
-                      receiver_id: receiver.walletAddress,
+                      receiver_id: lockupAddress,
                       actions: [
                         {
                           type: "FunctionCall",
-                          method_name: "transfer",
-                          args: btoa(
-                            JSON.stringify({
-                              receiver_id: receiver.walletAddress,
-                              amount: yoctoAmount,
-                            }),
-                          ),
+                          method_name: "check_transfers_vote",
+                          args: btoa(JSON.stringify({})),
                           gas: "125000000000000",
                           deposit: "0",
                         },
                       ],
                     },
                   },
+                  tGas: 300,
+                },
+              ],
+            });
+            toast.error("Transfers are disabled for this lockup");
+            return;
+          }
+
+          transactions.push({
+            senderId: senderAddress,
+            receiverId: senderAddress,
+            action: {
+              type: "FunctionCall",
+              method: "add_request",
+              args: {
+                request: {
+                  receiver_id: receiver.walletAddress,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "transfer",
+                      args: btoa(
+                        JSON.stringify({
+                          receiver_id: receiver.walletAddress,
+                          amount: yoctoAmount,
+                        }),
+                      ),
+                      gas: "125000000000000",
+                      deposit: "0",
+                    },
+                  ],
                 },
               },
-            ],
+              tGas: 300,
+            },
           });
         } else {
           // from multisig wallet
           transactions.push({
+            senderId: senderAddress,
             receiverId: senderAddress,
-            signerId: senderAddress,
-            actions: [
-              {
-                type: "FunctionCall",
-                params: {
-                  gas: "300000000000000",
-                  deposit: "0",
-                  methodName: "add_request",
-                  args: {
-                    request: {
-                      receiver_id: receiver.walletAddress,
-                      actions: [
-                        {
-                          type: "Transfer",
-                          amount: yoctoAmount,
-                        },
-                      ],
+            action: {
+              type: "FunctionCall",
+              method: "add_request",
+              args: {
+                request: {
+                  receiver_id: receiver.walletAddress,
+                  actions: [
+                    {
+                      type: "Transfer",
+                      amount: yoctoAmount,
                     },
-                  },
+                  ],
                 },
               },
-            ],
+              tGas: 300,
+            },
           });
         }
       } else {
@@ -264,46 +242,39 @@ const TransfersPage: NextPageWithLayout = () => {
           receiver_id: receiver.walletAddress,
           amount: _amount.toString(),
         };
+
         if (lockupAddress) {
           toast.error("Lockup NEP-141 transfers not supported yet");
         } else {
           transactions.push({
+            senderId: senderAddress,
             receiverId: senderAddress,
-            signerId: senderAddress,
-            actions: [
-              {
-                type: "FunctionCall",
-                params: {
-                  gas: "300000000000000",
-                  deposit: "0",
-                  methodName: "add_request",
-                  args: {
-                    request: {
-                      receiver_id: token.account_id,
-                      actions: [
-                        {
-                          type: "FunctionCall",
-                          method_name: "ft_transfer",
-                          args: btoa(JSON.stringify(ftTransferArgs)),
-                          deposit: "1",
-                          gas: "200000000000000",
-                        },
-                      ],
+            action: {
+              type: "FunctionCall",
+              method: "add_request",
+              args: {
+                request: {
+                  receiver_id: token.account_id,
+                  actions: [
+                    {
+                      type: "FunctionCall",
+                      method_name: "ft_transfer",
+                      args: btoa(JSON.stringify(ftTransferArgs)),
+                      deposit: "1",
+                      gas: "200000000000000",
                     },
-                  },
+                  ],
                 },
               },
-            ],
+              tGas: 300,
+            },
           });
         }
       }
-
-      const res = await wallet.signAndSendTransactions({
-        transactions: transactions,
-      });
-      toast.success(`Transfer request added ${JSON.stringify(res)}`);
-    } finally {
-      setCheckLedger(false);
+      console.log("transfer transactions", transactions);
+      await signAndSendTransaction(transactions[0]);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -453,9 +424,7 @@ const TransfersPage: NextPageWithLayout = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={checkLedger}>
-                {checkLedger ? "Check Ledger..." : "Submit"}
-              </Button>
+              <Button type="submit">Submit</Button>
             </form>
           </Form>
         </CardContent>
