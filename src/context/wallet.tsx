@@ -5,7 +5,6 @@ import type {
 import { setupWalletSelector } from "@near-finance-near-wallet-selector/core";
 import type { WalletSelectorModal } from "@near-finance-near-wallet-selector/modal-ui";
 import { setupModal } from "@near-finance-near-wallet-selector/modal-ui";
-// import { setupWalletConnect } from "@near-finance-near-wallet-selector/wallet-connect";
 import type { ReactNode } from "react";
 import React, {
   useCallback,

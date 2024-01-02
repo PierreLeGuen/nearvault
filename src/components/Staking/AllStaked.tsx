@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
-import { toast } from "react-toastify";
-import { useWalletSelector } from "~/context/wallet";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { initStakingContract } from "~/lib/staking/contract";
-import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 import StakedPoolComponent from "./StakedPoolComponent";
+import { useStoreActions } from "easy-peasy";
 
 export interface StakedPool {
   deposit: string;
@@ -21,16 +19,20 @@ export interface WalletData {
 }
 
 const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
+  const signAndSendTransaction = useStoreActions(
+    (actions: any) => actions.wallets.signAndSendTransaction,
+  );
   const { currentTeam, newNearConnection } = usePersistingStore();
-  const walletSelector = useWalletSelector();
 
   const { isLoading, isError, data } = useQuery<WalletData[], Error>(
     ["allStakedPools", currentTeam?.id || "", wallets],
     async (): Promise<WalletData[]> => {
       const promises = wallets.map(async (wallet) => {
         try {
+          // TODO move to config
           const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`
+            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
           );
           const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
@@ -39,7 +41,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
           for (const pool of data) {
             const c = initStakingContract(
               await n.account(""),
-              pool.validator_id
+              pool.validator_id,
             );
             const total_balance = await c.get_account_staked_balance({
               account_id: wallet.walletDetails.walletAddress,
@@ -68,59 +70,47 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
       });
       const p = await Promise.all(promises);
       return p.filter((walletData) => walletData !== undefined) as WalletData[];
-    }
+    },
   );
 
   const sendUnstakeTransaction = async (
     multisigAcc: string,
     isLockup: boolean,
     poolId: string,
-    amount: string
+    amount: string,
   ) => {
-    try {
-      await assertCorrectMultisigWallet(walletSelector, multisigAcc);
-    } catch (e) {
-      toast.error((e as Error).message);
-      return;
-    }
-    const w = await walletSelector.selector.wallet();
+    if (!canSignTx(multisigAcc)) return;
 
     let requestReceiver = poolId;
     // If the staking was done through the lockup contract, then the request
     // should be sent to the lockup contract
     if (isLockup) {
-      requestReceiver = calculateLockup(multisigAcc, "lockup.near");
+      requestReceiver = calculateLockup(multisigAcc, "lockup.near"); // TODO move to config
     }
 
-    const res = await w.signAndSendTransaction({
+    await signAndSendTransaction({
+      senderId: multisigAcc,
       receiverId: multisigAcc,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: "add_request",
-            args: {
-              request: {
-                receiver_id: requestReceiver,
-                actions: [
-                  {
-                    type: "FunctionCall",
-                    method_name: "unstake",
-                    args: btoa(JSON.stringify({ amount: amount })),
-                    deposit: parseNearAmount("0"),
-                    gas: "200000000000000",
-                  },
-                ],
+      action: {
+        type: "FunctionCall",
+        method: "add_request",
+        args: {
+          request: {
+            receiver_id: requestReceiver,
+            actions: [
+              {
+                type: "FunctionCall",
+                method_name: "unstake",
+                args: btoa(JSON.stringify({ amount: amount })),
+                deposit: parseNearAmount("0"),
+                gas: "200000000000000",
               },
-            },
+            ],
           },
         },
-      ],
+        tGas: 300,
+      },
     });
-
-    console.log(res);
   };
 
   if (isLoading || !data) {
@@ -146,7 +136,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
                 wallet={walletData}
                 unstakeFn={sendUnstakeTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
-                  "lockup.near"
+                  "lockup.near", // TODO move to config
                 )}
               />
             ))}

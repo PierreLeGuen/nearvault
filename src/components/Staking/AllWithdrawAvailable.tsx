@@ -1,18 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
-import { useWalletSelector } from "~/context/wallet";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { initStakingContract } from "~/lib/staking/contract";
-import { assertCorrectMultisigWallet } from "~/lib/utils";
 import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 import { type StakedPool, type WalletData } from "./AllStaked";
 import WithdrawPoolComponent from "./WithdrawComponent";
+import { useStoreActions } from 'easy-peasy';
 
 const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
+  const signAndSendTransaction = useStoreActions(
+    (actions: any) => actions.wallets.signAndSendTransaction,
+  );
   const { currentTeam, newNearConnection } = usePersistingStore();
-  const walletSelector = useWalletSelector();
 
   const { isLoading, isError, data } = useQuery<WalletData[], Error>(
     ["allStakedPools", currentTeam?.id || "", wallets],
@@ -80,14 +82,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     amount: string,
     maxAmount: string,
   ) => {
-    try {
-      await assertCorrectMultisigWallet(walletSelector, multisigAcc);
-    } catch (e) {
-      toast.error((e as Error).message);
-      return;
-    }
-
-    const w = await walletSelector.selector.wallet();
+    if (!canSignTx(multisigAcc)) return;
 
     let requestReceiver = poolId;
     let methodName = "withdraw";
@@ -95,7 +90,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     // If the staking was done through the lockup contract, then the request
     // should be sent to the lockup contract
     if (isLockup) {
-      requestReceiver = calculateLockup(multisigAcc, "lockup.near");
+      requestReceiver = calculateLockup(multisigAcc, "lockup.near"); // TODO: move to config
       methodName = "withdraw_from_staking_pool";
 
       if (amount === maxAmount) {
@@ -109,35 +104,29 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
       }
     }
 
-    await w.signAndSendTransaction({
+    await signAndSendTransaction({
+      senderId: multisigAcc,
       receiverId: multisigAcc,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: "add_request",
-            args: {
-              request: {
-                receiver_id: requestReceiver,
-                actions: [
-                  {
-                    type: "FunctionCall",
-                    method_name: methodName,
-                    args: btoa(JSON.stringify({ amount: amount })),
-                    deposit: parseNearAmount("0"),
-                    gas: "150000000000000",
-                  },
-                ].concat(deselectAction ? [deselectAction] : []),
+      action: {
+        type: "FunctionCall",
+        method: "add_request",
+        args: {
+          request: {
+            receiver_id: requestReceiver,
+            actions: [
+              {
+                type: "FunctionCall",
+                method_name: methodName,
+                args: btoa(JSON.stringify({ amount: amount })),
+                deposit: parseNearAmount("0"),
+                gas: "150000000000000",
               },
-            },
+            ].concat(deselectAction ? [deselectAction] : []),
           },
         },
-      ],
+        tGas: 300,
+      },
     });
-
-    alert("Succesfully added transaction to multisig.");
   };
 
   if (isLoading || !data) {
@@ -163,7 +152,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
                 wallet={walletData}
                 withdrawFn={sendWithdrawTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
-                  "lockup.near",
+                  "lockup.near", // TODO: move to config
                 )}
               />
             ))}
