@@ -27,36 +27,6 @@ const Manage: NextPageWithLayout = () => {
     </div>
   );
 };
-// TODO Remove after refactor
-export const addRequestToMultisigWallet = async (
-  w: Wallet,
-  multisigWallet: string,
-  receiverWallet: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actions: any[],
-) => {
-  await handleWalletRequestWithToast(
-    w.signAndSendTransaction({
-      receiverId: multisigWallet,
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            gas: "300000000000000",
-            deposit: "0",
-            methodName: "add_request",
-            args: {
-              request: {
-                receiver_id: receiverWallet,
-                actions: actions,
-              },
-            },
-          },
-        },
-      ],
-    }),
-  );
-};
 
 Manage.getLayout = getSidebarLayout;
 
