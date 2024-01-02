@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
-import { toast } from "react-toastify";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { initStakingContract } from "~/lib/staking/contract";
 import { type WalletPretty } from "~/pages/staking/stake";
