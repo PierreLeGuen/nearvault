@@ -1,5 +1,6 @@
 import { connect, type Near } from "near-api-js";
 import { type StateCreator } from "zustand";
+import { config } from '~/config/config';
 
 export interface NearState {
   config: {
@@ -7,35 +8,16 @@ export interface NearState {
     nodeUrl: string;
   };
   nearConnection: Near | undefined;
-  switchNetwork: () => Promise<void>;
-  // Wont change current NEAR connection if already exists
+  // Won't change current NEAR connection if already exists
   newNearConnection: () => Promise<Near>;
 }
 
 export const createNearSlice: StateCreator<NearState> = (set, get) => ({
   config: {
-    networkId: "mainnet",
-    nodeUrl: "https://rpc.mainnet.near.org",
+    networkId: config.networkId,
+    nodeUrl: config.urls.rpc,
   },
   nearConnection: undefined,
-  switchNetwork: async () => {
-    if (get().config.networkId === "mainnet") {
-      set({
-        config: {
-          networkId: "testnet",
-          nodeUrl: "https://rpc.testnet.near.org",
-        },
-      });
-    } else {
-      set({
-        config: {
-          networkId: "mainnet",
-          nodeUrl: "https://rpc.mainnet.near.org",
-        },
-      });
-    }
-    await get().newNearConnection();
-  },
   newNearConnection: async () => {
     const nearConnection = await connect(get().config);
     set({ nearConnection });

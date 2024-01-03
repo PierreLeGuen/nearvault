@@ -2,9 +2,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StoreProvider } from "easy-peasy";
 import { SessionProvider } from "next-auth/react";
-import { useEffect } from "react";
 import { useStoreRehydrated } from "easy-peasy";
-import { NearContextProvider } from "~/context/near";
 import { api } from "~/lib/api";
 import { store } from "~/store-easy-peasy/store";
 
@@ -34,11 +32,6 @@ const queryClient = new QueryClient();
 
 const RehydrateWrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
-
-  useEffect(() => {
-    console.log("isRehydrated", isRehydrated);
-  }, [isRehydrated]);
-
   return !isRehydrated ? <div>Loading...</div> : children;
 };
 
@@ -53,10 +46,8 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
       <QueryClientProvider client={queryClient}>
         <StoreProvider store={store}>
           <RehydrateWrapper>
-            <NearContextProvider>
-              {layout}
-              <ToastContainer />
-            </NearContextProvider>
+            {layout}
+            <ToastContainer />
           </RehydrateWrapper>
         </StoreProvider>
       </QueryClientProvider>

@@ -14,7 +14,7 @@ export const FindMultisigAccountsProgress = () => (
         <span>Searching...</span>
       </div>
       <p className={cn.text}>
-        We looking for all your Multisig accounts associated with your Ledger.
+        We looking for all your Multisig accounts associated with your wallet.
         This may take a few moments
       </p>
     </div>

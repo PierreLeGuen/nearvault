@@ -2,6 +2,7 @@ import { thunk } from "easy-peasy";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toGas } from "~/store-easy-peasy/helpers/toGas";
 import { toBase64Json } from "~/store-easy-peasy/helpers/toBase64Json";
+import { config } from '~/config/config';
 
 type Payload = {
   contractId: string;
@@ -27,7 +28,7 @@ export const createMultisigViaFactory = thunk(
         method: "add_request",
         args: {
           request: {
-            receiver_id: "multisignature.near", // TODO move to config
+            receiver_id: config.accounts.multisigFactory,
             actions: [
               {
                 type: "FunctionCall",

@@ -2,13 +2,15 @@ import { requestConnect } from "./thunks/requestConnect";
 import { completeConnection } from "./thunks/completeConnect";
 import { signAndSendTx } from "~/store-easy-peasy/slices/wallets/slices/myNearWallet/thunks/signAndSendTx";
 import { handleRedirects } from '~/store-easy-peasy/slices/wallets/slices/myNearWallet/thunks/handleRedirects';
+import { config } from '~/config/config';
 
 export const myNearWallet = {
   // init state
-  networkId: "mainnet",
-  rpcUrl: "https://rpc.mainnet.near.org",
-  walletUrl: "https://app.mynearwallet.com",
-  loginUrl: "https://app.mynearwallet.com/login",
+  networkId: config.networkId,
+  rpcUrl: config.urls.rpc,
+  walletUrl: config.urls.myNearWallet,
+  loginUrl: `${config.urls.myNearWallet}/login`,
+  signUrl: `${config.urls.myNearWallet}/sign`,
   // thunks
   requestConnect,
   completeConnection,
