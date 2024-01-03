@@ -141,7 +141,7 @@ const ManageLockup: NextPageWithLayout = () => {
 
     try {
       const provider = new JsonRpcProvider({ url: config.urls.rpc });
-      const l = calculateLockup(prepareAccountId(account), "lockup.near");
+      const l = calculateLockup(prepareAccountId(account), config.accounts.lockupFactory);
       const r = await viewLockupAccount(l, provider);
       await updateTerminationStatus(account);
       setLockupInformation(r);
@@ -160,7 +160,7 @@ const ManageLockup: NextPageWithLayout = () => {
     const n = await newNearConnection();
     const l = await initLockupContract(
       account,
-      calculateLockup(account, "lockup.near"),
+      calculateLockup(account, config.accounts.lockupFactory),
       n,
     );
     const terminationStatus = await l.get_termination_status();
@@ -170,7 +170,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const tryWithdrawFn = async (account: string) => {
     if (!canSignTx(multisigWalletId)) return;
 
-    const lockupAccountId = calculateLockup(account, "lockup.near"); // TODO move to config
+    const lockupAccountId = calculateLockup(account, config.accounts.lockupFactory);
 
     if (
       terminationStatus === "VestingTerminatedWithDeficit" ||

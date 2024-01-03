@@ -38,6 +38,7 @@ import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
 import { useStoreActions } from "easy-peasy";
+import { config } from "~/config/config";
 
 interface CreateLockupProps {
   owner_account_id: string;
@@ -127,7 +128,7 @@ const CreateLockup: NextPageWithLayout = () => {
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
-              "lockup.near",
+              config.accounts.lockupFactory,
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
@@ -213,7 +214,7 @@ const CreateLockup: NextPageWithLayout = () => {
         method: "add_request",
         args: {
           request: {
-            receiver_id: "lockup.near", // TODO move to config
+            receiver_id: config.accounts.lockupFactory,
             actions: [
               {
                 type: "FunctionCall",

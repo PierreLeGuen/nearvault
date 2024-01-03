@@ -10,6 +10,7 @@ export type Config = {
   };
   accounts: {
     multisigFactory: string,
+    lockupFactory: string,
   }
 };
 

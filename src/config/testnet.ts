@@ -8,5 +8,6 @@ export const testnet: Config = {
   },
   accounts: {
     multisigFactory: "multisignature.testnet",
+    lockupFactory: "lockup.devnet"
   }
 }
