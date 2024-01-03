@@ -72,7 +72,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const [terminationStatus, setTerminationStatus] = useState<string | null>("");
 
   const { newNearConnection } = usePersistingStore();
-  const multisigWalletId = "foundation.near"; // TODO move to config
+  const multisigWalletId = config.accounts.lockupFactoryFoundation;
 
   const form = useForm<z.infer<typeof formLockupRequest>>({
     resolver: zodResolver(formLockupRequest),

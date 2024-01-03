@@ -12,6 +12,7 @@ export const mainnet: Config = {
   },
   accounts: {
     multisigFactory: "multisignature.near",
-    lockupFactory: "lockup.near"
+    lockupFactory: "lockup.near",
+    lockupFactoryFoundation: "foundation.near"
   },
 }
