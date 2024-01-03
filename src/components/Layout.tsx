@@ -1,8 +1,7 @@
-import { type ReactNode, FC } from "react";
-import Sidebar from "./Sidebar/Sidebar";
+import { FC, type ReactNode } from "react";
+import { Sidebar } from "./Sidebar/Sidebar";
 
-// TODO Rename on SidebarLayout !!!
-const Layout: FC<{
+const SidebarLayout: FC<{
   children: ReactNode;
 }> = ({ children }) => {
   return (
@@ -16,7 +15,7 @@ const Layout: FC<{
 };
 
 export function getSidebarLayout(page: ReactNode) {
-  return <Layout>{page}</Layout>;
+  return <SidebarLayout>{page}</SidebarLayout>;
 }
 
-export default Layout;
+export default SidebarLayout;

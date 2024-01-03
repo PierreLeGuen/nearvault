@@ -1,7 +1,7 @@
-import HeaderTitle from "~/components/ui/header";
-import { AddKey } from '~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/AddKey';
-import { Table, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { AddKey } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/AddKeyDialog";
 import { PublicKeys } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/PublicKeys/PublicKeys";
+import HeaderTitle from "~/components/ui/header";
+import { Table, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 
 export const MultisigAccount = ({ account, deleteKeyFn }: any) => (
   <>

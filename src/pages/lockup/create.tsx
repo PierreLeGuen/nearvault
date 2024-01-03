@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
+import { handleWalletRequestWithToast } from "~/components/ToastRequestResult";
 import { DateField } from "~/components/inputs/date";
 import { ReceiverFormField } from "~/components/inputs/receiver";
 import { SenderFormField } from "~/components/inputs/sender";

@@ -32,7 +32,6 @@ export default function TeamsMenu() {
   const mail = data?.user.email;
 
   const handleSignOut = async () => {
-    void signOut();
     resetTeams();
     resetWallet();
     // TODO remove all connected accounts from local storage
