@@ -7,17 +7,6 @@ export const modal = {
   isOpen: false,
   route: "/wallets",
   routeParams: null,
-
-  // isOpen: true,
-  // route: "/ledger/sign/error",
-  // routeParams: {
-  //   error: { message: "Transaction failed" },
-  //   tx: { receiverId: "dadadda.near" },
-  //   outcome: {
-  //     transaction: { hash: "4W5oo3KjV1UiXbKoC92YVYCzo4CSKSEK4QUxrCWyHm4y" },
-  //   },
-  // },
-
   // actions
   open,
   close,

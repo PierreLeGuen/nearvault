@@ -4,6 +4,7 @@ import { Header } from "../../general/Header/Header.jsx";
 import { CloseButton } from "../../general/CloseButton/CloseButton.jsx";
 import sendTx from "../../../../../../public/send-tx.png";
 import cn from "./SendTxSuccess.module.css";
+import { config } from "~/config/config";
 
 export const SendTxSuccess = ({ routeParams, closeModal }: any) => {
   const { outcome } = routeParams;
@@ -24,7 +25,7 @@ export const SendTxSuccess = ({ routeParams, closeModal }: any) => {
           <p>More details here:</p>
           <a
             className={cn.link}
-            href={`https://nearblocks.io/txns/${outcome.transaction.hash}`} // TODO move to config
+            href={config.getUrl.txDetails(outcome.transaction.hash)}
             target="_blank"
           >
             TX#{outcome.transaction.hash}

@@ -8,6 +8,10 @@ export type Config = {
     rpc: string;
     myNearWallet: string;
   };
+  getUrl: {
+    txDetails: (hash: string) => string;
+    accountDetails: (accountId: string) => string;
+  },
   accounts: {
     multisigFactory: string,
     lockupFactory: string,

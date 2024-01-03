@@ -2,6 +2,7 @@ import { getSidebarLayout } from "~/components/Layout";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
+import { config } from '~/config/config';
 
 const History: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();
@@ -49,7 +50,7 @@ const History: NextPageWithLayout = () => {
                 <td className="border px-4 py-2">{transaction.token}</td>
                 <td className="border px-4 py-2">
                   <a
-                    href={`https://nearblocks.io/txns/${transaction.createRequestTxnId}`}
+                    href={config.getUrl.txDetails(transaction.createRequestTxnId)}
                     target="_blank"
                     className="font-bold underline"
                   >

@@ -175,7 +175,7 @@ const CreateLockup: NextPageWithLayout = () => {
     if (!canSignTx(fromWallet.walletDetails.walletAddress)) return;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let createArgs: any = {};
+    let createArgs: any;
     if (cliffDate) {
       // lockup schedule
       createArgs = {

@@ -535,7 +535,7 @@ const ManageLockup: NextPageWithLayout = () => {
     </div>
   );
 };
-
+// TODO figure out how use this func on testnet
 function prepareAccountId(data: string) {
   if (data.toLowerCase().endsWith(".near")) {
     return data

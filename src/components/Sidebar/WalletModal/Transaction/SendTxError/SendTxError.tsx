@@ -4,6 +4,7 @@ import cn from "./SendTxError.module.css";
 import { Button } from "@mui/material";
 import sendTx from '../../../../../../public/send-tx.png';
 import Image from 'next/image';
+import { config } from '~/config/config';
 
 export const SendTxError = ({ routeParams, closeModal }: any) => {
   const { outcome } = routeParams;
@@ -24,7 +25,7 @@ export const SendTxError = ({ routeParams, closeModal }: any) => {
           <p>More details here:</p>
           <a
             className={cn.link}
-            href={`https://nearblocks.io/txns/${outcome.transaction.hash}`}
+            href={config.getUrl.txDetails(outcome.transaction.hash)}
             target="_blank"
           >
             TX#{outcome.transaction.hash}
