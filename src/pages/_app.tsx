@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { useEffect } from "react";
 import { useStoreRehydrated } from "easy-peasy";
 import { NearContextProvider } from "~/context/near";
-import { WalletSelectorContextProvider } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { store } from "~/store-easy-peasy/store";
 
@@ -33,9 +32,6 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-// http://localhost:3000/approval/pending?transactionHashes=7iTdECfWC9L1p8DddV9r3ukhBqVhmVqS76w7msrN5Ukw - success tx
-// http://localhost:3000/approval/pending?errorCode=Error&errorMessage=%257B%2522index%2522%253A0%252C%2522kind%2522%253A%257B%2522ExecutionError%2522%253A%2522Exceeded%2520the%2520account%2520balance.%2522%257D%257D
-// http://localhost:3000/approval/pending?errorCode=userRejected&errorMessage=User%2520rejected%2520transaction
 const RehydrateWrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
 
@@ -58,10 +54,8 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
         <StoreProvider store={store}>
           <RehydrateWrapper>
             <NearContextProvider>
-              <WalletSelectorContextProvider>
-                {layout}
-                <ToastContainer />
-              </WalletSelectorContextProvider>
+              {layout}
+              <ToastContainer />
             </NearContextProvider>
           </RehydrateWrapper>
         </StoreProvider>

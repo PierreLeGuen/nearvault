@@ -3,14 +3,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 
 const MyNearWallet = () => {
-  const completeConnection = useStoreActions(
-    (actions: any) => actions.wallets.myNearWallet.completeConnection,
+  const handleRedirects = useStoreActions(
+    (actions: any) => actions.wallets.myNearWallet.handleRedirects,
   );
   const router = useRouter();
 
   useEffect(() => {
-    console.log('render MyNearWallet redirect');
-    completeConnection({ router });
+    handleRedirects({ router });
   }, []);
 
   return null;

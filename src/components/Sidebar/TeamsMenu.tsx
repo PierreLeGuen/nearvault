@@ -3,7 +3,6 @@ import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
-import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "./CreateTeamDialog";
@@ -23,7 +22,6 @@ export default function TeamsMenu() {
     usePersistingStore();
 
   const { data: teams } = api.teams.getTeamsForUser.useQuery();
-  const walletSelector = useWalletSelector();
 
   useEffect(() => {
     if (!currentTeam && teams) {
@@ -36,12 +34,7 @@ export default function TeamsMenu() {
   const handleSignOut = async () => {
     resetTeams();
     resetWallet();
-    const w = await walletSelector?.selector.wallet();
-    if (!w) {
-      console.error("No wallet");
-      return;
-    }
-    await w.signOut();
+    // TODO remove all connected accounts from local storage
   };
   return (
     <>

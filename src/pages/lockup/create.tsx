@@ -30,14 +30,14 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { getFormattedAmount } from "~/lib/transformations";
-import { assertCorrectMultisigWallet, cn, getNearTimestamp } from "~/lib/utils";
+import { cn, getNearTimestamp } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
+import { useStoreActions } from "easy-peasy";
 
 interface CreateLockupProps {
   owner_account_id: string;
@@ -69,6 +69,10 @@ const createLockupForm = z.object({
 });
 
 const CreateLockup: NextPageWithLayout = () => {
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
+  const signAndSendTransaction = useStoreActions(
+    (actions: any) => actions.wallets.signAndSendTransaction,
+  );
   const form = useForm<z.infer<typeof createLockupForm>>({
     resolver: zodResolver(createLockupForm),
     defaultValues: {
@@ -87,12 +91,11 @@ const CreateLockup: NextPageWithLayout = () => {
     queryFn: async () => {
       const account = (await newNearConnection()).account(watchedSender);
       const balance = await (await account).getAccountBalance();
-      const formattedAmount = getFormattedAmount({
+      return getFormattedAmount({
         balance: balance.available,
         decimals: 24,
         symbol: "NEAR",
       });
-      return formattedAmount;
     },
   });
 
@@ -102,8 +105,6 @@ const CreateLockup: NextPageWithLayout = () => {
 
   const { newNearConnection } = usePersistingStore();
   const { currentTeam } = usePersistingStore.getState();
-
-  const walletSector = useWalletSelector();
 
   const { isLoading } = api.teams.getWalletsForTeam.useQuery(
     {
@@ -170,13 +171,7 @@ const CreateLockup: NextPageWithLayout = () => {
       throw new Error("Minimum amount is 3.5 NEAR");
     }
 
-    // const n = await newNearConnection();
-    await assertCorrectMultisigWallet(
-      walletSector,
-      fromWallet.walletDetails.walletAddress,
-    );
-
-    const w = await walletSector.selector.wallet();
+    if (!canSignTx(fromWallet.walletDetails.walletAddress)) return;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let createArgs: any = {};
@@ -209,35 +204,30 @@ const CreateLockup: NextPageWithLayout = () => {
     if (!allowStaking) {
       fnCallArgs["whitelist_account_id"] = "system";
     }
-    await handleWalletRequestWithToast(
-      w.signAndSendTransaction({
-        receiverId: fromWallet.walletDetails.walletAddress,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              gas: "300000000000000",
-              deposit: "0",
-              methodName: "add_request",
-              args: {
-                request: {
-                  receiver_id: "lockup.near",
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "create",
-                      args: btoa(JSON.stringify(fnCallArgs)),
-                      deposit: parseNearAmount(amount.toString()),
-                      gas: "150000000000000",
-                    },
-                  ],
-                },
+
+    await signAndSendTransaction({
+      senderId: fromWallet.walletDetails.walletAddress,
+      receiverId: fromWallet.walletDetails.walletAddress,
+      action: {
+        type: "FunctionCall",
+        method: "add_request",
+        args: {
+          request: {
+            receiver_id: "lockup.near", // TODO move to config
+            actions: [
+              {
+                type: "FunctionCall",
+                method_name: "create",
+                args: btoa(JSON.stringify(fnCallArgs)),
+                deposit: parseNearAmount(amount.toString()),
+                gas: "150000000000000",
               },
-            },
+            ],
           },
-        ],
-      }),
-    );
+        },
+        tGas: 300,
+      },
+    });
   };
 
   async function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {

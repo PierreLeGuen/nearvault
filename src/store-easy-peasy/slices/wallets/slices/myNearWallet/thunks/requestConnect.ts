@@ -1,22 +1,18 @@
 import { thunk } from "easy-peasy";
 
 export const requestConnect = thunk(
-  async (_, __, { getState, getStoreActions }) => {
+  async (_, __, { getState }) => {
     const slice: any = getState();
-    const actions: any = getStoreActions();
-
     const url = new URL(slice.loginUrl);
 
     url.searchParams.set(
       "success_url",
-      `${window.location.origin}/connect/my-near-wallet/success?prevPage=${window.location.pathname}`,
+      `${window.location.origin}/wallet-redirects/my-near-wallet?connectStatus=Allowed&returnTo=${window.location.pathname}`,
     );
     url.searchParams.set(
       "failure_url",
-      `${window.location.origin}/connect/my-near-wallet/failure?prevPage=${window.location.pathname}`,
+      `${window.location.origin}/wallet-redirects/my-near-wallet?connectStatus=Rejected&returnTo=${window.location.pathname}`,
     );
-
-    actions.wallets.setConnectInProgress("my-near-wallet");
 
     window.location.assign(url.toString());
   },

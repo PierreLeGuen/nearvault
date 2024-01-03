@@ -1,18 +1,13 @@
 import { type Wallet } from "@prisma/client";
 import { useStoreActions } from "easy-peasy";
-import * as naj from "near-api-js";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
 import { api } from "~/lib/api";
 import { explainAction, type RequestRow } from "~/lib/explain-transaction";
-import {
-  MultiSigRequestActionType,
-  initMultiSigContract,
-} from "~/lib/multisig/contract";
+import { MultiSigRequestActionType } from "~/lib/multisig/contract";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -20,14 +15,12 @@ export type ApproveOrReject = "approve" | "reject";
 
 const Pending: NextPageWithLayout = () => {
   useSession({ required: true });
-  const isAccountConnected = useStoreActions(
-    (store: any) => store.accounts.isAccountConnected,
-  );
-  const selectAccount = useStoreActions(
-    (store: any) => store.accounts.selectAccount,
-  );
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
   const onApproveOrRejectRequest = useStoreActions(
     (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
+  );
+  const getMultisigContract = useStoreActions(
+    (store: any) => store.multisig.getMultisigContract,
   );
 
   const { currentTeam, publicKey, newNearConnection } = usePersistingStore(); // TODO from where we take this publicKey?
@@ -35,7 +28,7 @@ const Pending: NextPageWithLayout = () => {
   const [requests, setRequests] = useState<Map<Wallet, Array<RequestRow>>>(
     new Map(),
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // TODO Does it work and don't break the useEffect? Also, we need to show some error message instead of break the app
   if (!currentTeam) {
@@ -47,31 +40,20 @@ const Pending: NextPageWithLayout = () => {
     null;
 
   const fetchWalletData = async (wallet: Wallet): Promise<RequestRow[]> => {
+    const multisig = getMultisigContract({ contractId: wallet.walletAddress });
     try {
-      // TODO rework to Account
-      const near = await newNearConnection(); //////////////////////////////// UPDATE!
-      const walletConnection = new naj.WalletConnection(near, ""); //////////////////////////////// UPDATE!
+      const requestIds = await multisig.listRequestIds();
+      const numConfirmations = await multisig.getNumConfirmations();
 
-      const contract = initMultiSigContract(
-        //////////////////////////////// UPDATE
-        walletConnection.account(),
-        wallet.walletAddress,
-      );
+      requestIds.sort((a, b) => Number(b) - Number(a));
 
-      const request_ids = await contract.list_request_ids();
-      const numConfirmations = await contract.get_num_confirmations();
-
-      request_ids.sort((a, b) => Number(b) - Number(a));
-
-      const requestPromises = request_ids.map(async (request_id) => {
-        const request = await contract.get_request({ request_id: request_id });
-        const confirmations = await contract.get_confirmations({
-          request_id: request_id,
-        });
+      const requestPromises = requestIds.map(async (requestId) => {
+        const request = await multisig.getRequest({ requestId });
+        const confirmations = await multisig.getConfirmations({ requestId });
 
         return {
           ...request,
-          request_id: Number(request_id),
+          request_id: Number(requestId),
           confirmations: confirmations,
           requiredConfirmations: numConfirmations,
           actions: request.actions.map((action) => {
@@ -104,7 +86,7 @@ const Pending: NextPageWithLayout = () => {
             action,
             request.receiver_id,
             wallet.walletAddress,
-            newNearConnection,
+            newNearConnection, // TODO replace
           ).catch((e) => {
             console.error(e);
             return undefined;
@@ -132,14 +114,7 @@ const Pending: NextPageWithLayout = () => {
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
 
-    if (!isAccountConnected(multisigAccountId)) {
-      toast.error(
-        `You need to connect ${multisigAccountId} before performing this action`,
-      );
-      return;
-    }
-
-    selectAccount(multisigAccountId);
+    if (!canSignTx(multisigAccountId)) return;
 
     try {
       await onApproveOrRejectRequest({ multisigAccountId, requestId, kind });
@@ -197,7 +172,7 @@ const Pending: NextPageWithLayout = () => {
                   data={_requests}
                   wallet={wallet}
                   approveRejectFn={approveOrRejectRequest}
-                  publicKey={publicKey || undefined}
+                  publicKey={publicKey || undefined} // TODO Fix it - we have a BUG here - never have the key
                 />
               </div>
             </div>
