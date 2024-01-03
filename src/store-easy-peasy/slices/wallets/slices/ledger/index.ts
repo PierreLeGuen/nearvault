@@ -4,7 +4,7 @@ import { signAndSendTx } from "~/store-easy-peasy/slices/wallets/slices/ledger/t
 export const ledger = {
   // init state
   networkId: "mainnet",
-  rpcUrl: "http://beta.rpc.mainnet.near.org",
+  rpcUrl: "https://rpc.mainnet.near.org",
   indexerUrl: "https://api.kitwallet.app",
   // thunks
   connect,

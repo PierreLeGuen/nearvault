@@ -5,7 +5,7 @@ import { signAndSendTx } from "~/store-easy-peasy/slices/wallets/slices/myNearWa
 export const myNearWallet = {
   // init state
   networkId: "mainnet",
-  rpcUrl: "http://beta.rpc.mainnet.near.org",
+  rpcUrl: "https://rpc.mainnet.near.org",
   walletUrl: "https://app.mynearwallet.com",
   loginUrl: "https://app.mynearwallet.com/login",
   // thunks

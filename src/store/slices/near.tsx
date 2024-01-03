@@ -15,7 +15,7 @@ export interface NearState {
 export const createNearSlice: StateCreator<NearState> = (set, get) => ({
   config: {
     networkId: "mainnet",
-    nodeUrl: "http://beta.rpc.mainnet.near.org",
+    nodeUrl: "https://rpc.mainnet.near.org",
   },
   nearConnection: undefined,
   switchNetwork: async () => {
@@ -30,7 +30,7 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       set({
         config: {
           networkId: "mainnet",
-          nodeUrl: "http://beta.rpc.mainnet.near.org",
+          nodeUrl: "https://rpc.mainnet.near.org",
         },
       });
     }
