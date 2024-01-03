@@ -2,7 +2,7 @@ import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { WalletData } from "~/components/Staking/AllStaked";
-import { WithdrawDialog } from "~/components/dialogs/withdraw";
+import { WithdrawDialog } from "~/components/dialogs/WithdrawDialog";
 import HeaderTitle from "~/components/ui/header";
 import {
   Table,
@@ -59,32 +59,39 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
         {filteredPools.map((walletData) => (
           <div key={walletData.wallet.walletDetails.walletAddress}>
             <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px] truncate">Pool ID</TableHead>
-                  <TableHead>Ready to withdraw</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from(walletData.stakedPools).map((pool, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <p className="break-all">{pool.validator_id}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="break-all">{`${formatNearAmount(
-                        pool.withdraw_available,
-                      )} Ⓝ`}</p>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <WithdrawDialog pool={pool} wallet={walletData.wallet} />
-                    </TableCell>
+            <div className="rounded-md border shadow-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px] truncate">
+                      Pool ID
+                    </TableHead>
+                    <TableHead>Ready to withdraw</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(walletData.stakedPools).map((pool, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <p className="break-all">{pool.validator_id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="break-all">{`${formatNearAmount(
+                          pool.withdraw_available,
+                        )} Ⓝ`}</p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <WithdrawDialog
+                          pool={pool}
+                          wallet={walletData.wallet}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         ))}
       </div>

@@ -8,7 +8,7 @@ import { type NextPageWithLayout } from "../_app";
 
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
-import { AddDialog } from "~/components/dialogs/add-beneficiary";
+import { AddDialog } from "~/components/dialogs/AddBeneficiaryDialog";
 import { Button } from "~/components/ui/button";
 import {
   Table,

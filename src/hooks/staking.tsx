@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
 import { StakedPool, WalletData } from "~/components/Staking/AllStaked";
-import { handleWalletRequestWithToast } from "~/components/toast-request-result";
+import { handleWalletRequestWithToast } from "~/components/ToastRequestResult";
 import { useWalletSelector } from "~/context/wallet";
 import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
-import { AddMemberDialog } from "~/components/dialogs/add-member";
-import { AddWalletDialog } from "~/components/dialogs/add-wallet";
+import { AddMemberDialog } from "~/components/dialogs/AddMemberDialog";
+import { AddWalletDialog } from "~/components/dialogs/AddWalletDialog";
 import { Button } from "~/components/ui/button";
 import HeaderTitle from "~/components/ui/header";
 import {

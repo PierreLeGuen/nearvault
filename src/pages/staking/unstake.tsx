@@ -1,7 +1,7 @@
 import { type Wallet } from "@prisma/client";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { getSidebarLayout } from "~/components/Layout";
-import { UnstakeDialog } from "~/components/dialogs/unstake";
+import { UnstakeDialog } from "~/components/dialogs/UnstakeDialog";
 import HeaderTitle from "~/components/ui/header";
 import {
   Table,
@@ -35,32 +35,36 @@ const Unstake: NextPageWithLayout = () => {
         {getStakingDetailsForWallets.data?.map((walletData) => (
           <div key={walletData.wallet.walletDetails.walletAddress}>
             <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px] truncate">Pool ID</TableHead>
-                  <TableHead>Deposit</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from(walletData.stakedPools).map((pool, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <p className="break-all">{pool.validator_id}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="break-all">{`${formatNearAmount(
-                        pool.deposit,
-                      )} Ⓝ`}</p>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <UnstakeDialog pool={pool} wallet={walletData.wallet} />
-                    </TableCell>
+            <div className="rounded-md border shadow-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px] truncate">
+                      Pool ID
+                    </TableHead>
+                    <TableHead>Deposit</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(walletData.stakedPools).map((pool, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <p className="break-all">{pool.validator_id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="break-all">{`${formatNearAmount(
+                          pool.deposit,
+                        )} Ⓝ`}</p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <UnstakeDialog pool={pool} wallet={walletData.wallet} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         ))}
       </div>

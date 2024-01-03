@@ -1,7 +1,6 @@
 import { FC, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
 
-// TODO Rename on SidebarLayout !!!
 const SidebarLayout: FC<{
   children: ReactNode;
 }> = ({ children }) => {

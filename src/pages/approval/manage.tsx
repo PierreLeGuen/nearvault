@@ -1,8 +1,8 @@
 import { type Wallet } from "@near-finance-near-wallet-selector/core";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
-import { AddKeyDialog } from "~/components/dialogs/add-key";
-import { handleWalletRequestWithToast } from "~/components/toast-request-result";
+import { handleWalletRequestWithToast } from "~/components/ToastRequestResult";
+import { AddKeyDialog } from "~/components/dialogs/AddKeyDialog";
 import { Button } from "~/components/ui/button";
 import HeaderTitle from "~/components/ui/header";
 import {
