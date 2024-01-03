@@ -1,17 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { getSidebarLayout } from "~/components/Layout";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
-import { useWalletSelector } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { calculateLockup } from "~/lib/lockup/lockup";
-import { assertCorrectMultisigWallet } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
-import { addRequestToMultisigWallet } from "./manage";
+import { useStoreActions } from "easy-peasy";
 
 interface IFormInput {
   newMultisigWalletId: string;
@@ -20,8 +17,6 @@ interface IFormInput {
   numConfirmations: number;
 }
 
-const MULTISIG_FACTORY = "multisignature.near";
-
 const CreateMultisigWallet: NextPageWithLayout = () => {
   const {
     register,
@@ -29,10 +24,10 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     formState: { errors },
   } = useForm<IFormInput>();
   const { currentTeam, newNearConnection } = usePersistingStore();
-
   const [fromWallet, setFromWallet] = useState<WalletPretty>();
-
-  const walletSelector = useWalletSelector();
+  const createMultisig = useStoreActions(
+    (actions: any) => actions.pages.approval.create.createMultisig,
+  );
 
   const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
     { teamId: currentTeam?.id || "" },
@@ -66,7 +61,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
             walletDetails: {
               walletAddress: lockupValue,
               id: lockupValue,
-              teamId: "na",
+              teamId: "na", // TODO Why teamId is 'na' ????
             },
             isLockup: true,
             ownerAccountId: wallet.walletAddress,
@@ -80,53 +75,12 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     },
   );
 
-  const onSubmit: SubmitHandler<IFormInput> = (data) => {
-    data.numConfirmations = Number(data.numConfirmations);
-    void createMultisigWalletRequest(data);
-  };
+  const onSubmit: SubmitHandler<IFormInput> = (values) =>
+    createMultisig({ values, creatorAccount: fromWallet });
 
   const r = register("newMultisigWalletId", {
-    validate: (value) => value === "multisig.pierre-dev.near",
+    validate: (value) => value === "multisig.pierre-dev.near", // TODO ???????
   });
-
-  const createMultisigWalletRequest = async (data: IFormInput) => {
-    const fromWalletId =
-      fromWallet?.ownerAccountId || fromWallet?.walletDetails.walletAddress;
-    if (!fromWalletId) {
-      throw new Error("No wallet selected");
-    }
-
-    const n = await newNearConnection();
-    try {
-      await (await n.account(data.newMultisigWalletId)).getAccountDetails();
-    } catch (e) {
-      console.log(e);
-    }
-
-    await assertCorrectMultisigWallet(walletSelector, fromWalletId);
-
-    const wallet = await walletSelector.selector.wallet();
-
-    await addRequestToMultisigWallet(wallet, fromWalletId, MULTISIG_FACTORY, [
-      {
-        type: "FunctionCall",
-        method_name: "create",
-        args: btoa(
-          JSON.stringify({
-            name: data.newMultisigWalletId,
-            members: data.members
-              .replaceAll(" ", "")
-              .split("\n")
-              .join(",")
-              .split(","),
-            num_confirmations: data.numConfirmations,
-          }),
-        ),
-        deposit: parseNearAmount("5"),
-        gas: "150000000000000",
-      },
-    ]);
-  };
 
   if (isLoading || walletsLoading) {
     return <div>Loading...</div>;

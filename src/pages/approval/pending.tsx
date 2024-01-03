@@ -2,15 +2,12 @@ import { type Wallet } from "@prisma/client";
 import { useStoreActions } from "easy-peasy";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
 import { api } from "~/lib/api";
 import { explainAction, type RequestRow } from "~/lib/explain-transaction";
-import {
-  MultiSigRequestActionType,
-} from "~/lib/multisig/contract";
+import { MultiSigRequestActionType } from "~/lib/multisig/contract";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -18,15 +15,12 @@ export type ApproveOrReject = "approve" | "reject";
 
 const Pending: NextPageWithLayout = () => {
   useSession({ required: true });
-  const isAccountConnected = useStoreActions(
-    (store: any) => store.accounts.isAccountConnected,
+  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
+  const onApproveOrRejectRequest = useStoreActions(
+    (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
   );
-  const { selectAccount } = useStoreActions((store: any) => store.accounts);
-  const { onApproveOrRejectRequest } = useStoreActions(
-    (store: any) => store.pages.approval.pending,
-  );
-  const { getMultisigContract } = useStoreActions(
-    (store: any) => store.multisig,
+  const getMultisigContract = useStoreActions(
+    (store: any) => store.multisig.getMultisigContract,
   );
 
   const { currentTeam, publicKey, newNearConnection } = usePersistingStore(); // TODO from where we take this publicKey?
@@ -120,14 +114,7 @@ const Pending: NextPageWithLayout = () => {
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
 
-    if (!isAccountConnected(multisigAccountId)) {
-      toast.error(
-        `You need to connect ${multisigAccountId} before performing this action`,
-      );
-      return;
-    }
-
-    selectAccount(multisigAccountId);
+    if (!canSignTx(multisigAccountId)) return;
 
     try {
       await onApproveOrRejectRequest({ multisigAccountId, requestId, kind });

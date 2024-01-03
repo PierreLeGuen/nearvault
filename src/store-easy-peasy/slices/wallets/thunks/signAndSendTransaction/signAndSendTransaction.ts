@@ -1,9 +1,16 @@
 import { thunk } from "easy-peasy";
 import { createTx } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/createTx";
 
+type Payload = {
+  senderId: string;
+  receiverId: string;
+  action: object;
+  actions: object[];
+};
+
 export const signAndSendTransaction = thunk(
   async (_, payload: any, { getStoreState, getStoreActions }) => {
-    const { senderId, receiverId, action, actions } = payload;
+    const { senderId, receiverId, action, actions }: Payload = payload;
     const state: any = getStoreState();
     const storeActions: any = getStoreActions();
 

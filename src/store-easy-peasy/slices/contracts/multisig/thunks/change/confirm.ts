@@ -13,7 +13,7 @@ export const confirm = thunk(async (_, payload: any, { getStoreActions }) => {
       args: {
         request_id: requestId,
       },
-      tGas: 25,
+      tGas: 85, // TODO create a gas calculator based on the type of action
     },
   });
 });

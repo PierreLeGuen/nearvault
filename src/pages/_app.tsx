@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { useEffect } from "react";
 import { useStoreRehydrated } from "easy-peasy";
 import { NearContextProvider } from "~/context/near";
-import { WalletSelectorContextProvider } from "~/context/wallet";
 import { api } from "~/lib/api";
 import { store } from "~/store-easy-peasy/store";
 
@@ -33,7 +32,6 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-
 const RehydrateWrapper = ({ children }: any) => {
   const isRehydrated = useStoreRehydrated();
 
@@ -56,10 +54,8 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
         <StoreProvider store={store}>
           <RehydrateWrapper>
             <NearContextProvider>
-              <WalletSelectorContextProvider>
-                {layout}
-                <ToastContainer />
-              </WalletSelectorContextProvider>
+              {layout}
+              <ToastContainer />
             </NearContextProvider>
           </RehydrateWrapper>
         </StoreProvider>
