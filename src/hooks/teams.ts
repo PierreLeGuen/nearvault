@@ -145,3 +145,11 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
     enabled: !!tokenAddresses,
   });
 }
+
+export function useCreateTeam() {
+  return api.teams.createTeam.useMutation();
+}
+
+export function useListTeams() {
+  return api.teams.getTeamsForUser.useQuery();
+}

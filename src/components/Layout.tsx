@@ -1,5 +1,5 @@
 import { FC, type ReactNode } from "react";
-import { Sidebar } from "./Sidebar/sidebarnew";
+import { Sidebar } from "./Sidebar/Sidebar";
 
 // TODO Rename on SidebarLayout !!!
 const SidebarLayout: FC<{
@@ -7,7 +7,7 @@ const SidebarLayout: FC<{
 }> = ({ children }) => {
   return (
     <div className="relative flex min-h-screen flex-row overflow-visible">
-      <Sidebar className="sticky top-0 flex h-screen w-[275px] flex-col" />
+      <Sidebar />
       <div className="flex flex-1 flex-col">
         <div className="flex h-full max-w-full flex-grow">{children}</div>
       </div>

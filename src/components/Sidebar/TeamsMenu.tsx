@@ -34,7 +34,6 @@ export default function TeamsMenu() {
   const mail = data?.user.email;
 
   const handleSignOut = async () => {
-    void signOut();
     resetTeams();
     resetWallet();
     const w = await walletSelector?.selector.wallet();
