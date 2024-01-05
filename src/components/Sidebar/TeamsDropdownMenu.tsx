@@ -40,7 +40,7 @@ export function TeamsDropdownMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="justify-between rounded-none px-7">
-            {currentTeam.name}
+            {currentTeam?.name}
             <ChevronDownIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
