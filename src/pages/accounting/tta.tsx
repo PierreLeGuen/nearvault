@@ -1,132 +1,130 @@
-import { useState } from "react";
+import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
+import { DateField } from "~/components/inputs/date";
+import { SwitchInput } from "~/components/inputs/switch";
+import { TextAreaInput } from "~/components/inputs/text-area";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { Form } from "~/components/ui/form";
+import { useReporting } from "~/hooks/accounting";
+import { useZodForm } from "~/hooks/form";
 import { type NextPageWithLayout } from "../_app";
 
-const TTA_URL = "https://tta-api.onrender.com";
+const formSchema = z.object({
+  from: z.date(),
+  to: z.date(),
+  includeBalances: z.boolean(),
+  accounts: z.string().transform((value) => {
+    const wallets = value
+      .split(/[\n,]+/)
+      .map((id) => id.trim())
+      .filter(Boolean);
+    const errors = [];
+    for (const walletId of wallets) {
+      try {
+        z.string().parse(walletId);
+      } catch (e) {
+        errors.push((e as Error).message);
+      }
+    }
+    if (errors.length > 0) {
+      throw new Error(errors.join("\n"));
+    }
+    return wallets;
+  }),
+});
 
 const Tta: NextPageWithLayout = () => {
-  const defaultStartDate = new Date();
-  const start = new Date();
-  const end = new Date();
+  const form = useZodForm(formSchema, {
+    defaultValues: {
+      // start one month ago
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+      includeBalances: false,
+    },
+  });
+  const mutation = useReporting();
 
-  start.setDate(defaultStartDate.getDate() - 30);
-  end.setDate(defaultStartDate.getDate() + 1);
-
-  // Create date strings in the format "YYYY-MM-DD"
-  const startDateString = start.toISOString().substring(0, 10);
-  const endDateString = end.toISOString().substring(0, 10);
-
-  const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(startDateString);
-  const [endDate, setEndDate] = useState(endDateString);
-  const [accountIds, setAccountIds] = useState("");
-  const [includeBalances, setIncludeBalances] = useState(false);
-
-  const handleDownloadClick = async () => {
-    setLoading(true);
-
-    const start = new Date(startDate).toISOString();
-    const end = new Date(endDate).toISOString();
-
-    // Split the accountIds by newline character
-    const accountIdsArray = accountIds.replaceAll(" ", "").split("\n");
-    const commaSeparatedAccountIds = accountIdsArray.join(",");
-
-    const url =
-      `${TTA_URL}/tta?start_date=${start}&end_date=${end}&accounts=${commaSeparatedAccountIds}` +
-      `&include_balances=${includeBalances.toString()}`;
-
-    console.log(url);
-
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const contentDisposition = response.headers.get("Content-Disposition");
-        let filename = "report.csv";
-        if (contentDisposition) {
-          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-          const matches = filenameRegex.exec(contentDisposition);
-          if (matches != null && matches[1]) {
-            filename = matches[1].replace(/['"]/g, "");
-          }
-        }
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log(values);
+    mutation.mutate({
+      startDate: values.from,
+      endDate: values.to,
+      accountIds: values.accounts,
+      includeBalances: values.includeBalances,
+    });
   };
 
   return (
-    <div className="prose flex flex-col p-3">
-      <h1>NEAR transaction report</h1>
-
-      <div className="flex flex-col items-center justify-center gap-3">
-        <div className="inline-flex items-center gap-1">
-          <input
-            type="date"
-            name="startDate"
-            placeholder="YYYY-MM-DD"
-            required
-            defaultValue={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          to
-          <input
-            type="date"
-            name="endDate"
-            placeholder="YYYY-MM-DD"
-            required
-            defaultValue={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-          (up until, and excluding)
-        </div>
-        <textarea
-          name="accountIds"
-          placeholder="account IDs separated by linebreaks or commas"
-          style={{ width: "100%", height: "20rem" }}
-          defaultValue={accountIds}
-          required
-          onChange={(e) => setAccountIds(e.target.value)}
-        ></textarea>
-
-        {/* Include Balances Switch */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="includeBalances">Include Balances:</label>
-          <input
-            type="checkbox"
-            id="includeBalances"
-            checked={includeBalances}
-            onChange={() => setIncludeBalances((prev) => !prev)}
-          />
-        </div>
-        <p className="text-sm text-red-500">
-          Note: Reports with balances may take significantly longer to generate.
-        </p>
-
-        <button
-          disabled={loading}
-          onClick={() => void handleDownloadClick()}
-          className="w-1/2 rounded bg-blue-100 px-2 py-1 hover:bg-blue-300"
-        >
-          {loading
-            ? "Loading, time to grab a coffee..."
-            : "Download report as CSV"}
-        </button>
-      </div>
+    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+      <Card className="max-w-[600px]">
+        <CardHeader>
+          <CardTitle>Reporting</CardTitle>
+          <CardDescription>
+            Generate a report of all outgoing and incoming token transactions
+            (supports NEAR and NEP-141 tokens).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <DateField
+                label="Start date"
+                placeholder="Select a date"
+                description="Date to start the report from."
+                name="from"
+                control={form.control}
+                rules={{
+                  required: "Please select a start date.",
+                }}
+              />
+              <DateField
+                label="End date"
+                placeholder="Select a date"
+                description="Date to end the report at."
+                name="to"
+                control={form.control}
+                rules={{
+                  required: "Please select an end date.",
+                }}
+              />
+              <TextAreaInput
+                control={form.control}
+                name={"accounts"}
+                label="Wallet IDs"
+                placeholder="Wallet IDs, seperated by commas or new lines, eg: acme.near, bob.multisignature.near"
+                rules={{ required: true }}
+              />
+              <SwitchInput
+                control={form.control}
+                name={"includeBalances"}
+                label="Include Balances"
+                description="Note: Reports with balances may take significantly longer to generate."
+                rules={{ required: false }}
+              />
+              <Button type="submit" disabled={mutation.isLoading}>
+                Submit
+              </Button>
+              {mutation.error && (
+                <div className="text-red-500">
+                  {(mutation.error as Error).message}
+                </div>
+              )}
+              {mutation.isSuccess && (
+                <div className="text-green-500">
+                  Successfully generated report!
+                </div>
+              )}
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
