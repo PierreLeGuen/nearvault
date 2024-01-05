@@ -1,4 +1,5 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
+import { config } from "~/config/config";
 
 const isMultisig = async (accountId: any, provider: any) =>
   await provider.query({
@@ -9,33 +10,33 @@ const isMultisig = async (accountId: any, provider: any) =>
     args_base64: "e30=",
   });
 
-const getAllAccountsWithSameKey1 = async (publicKey: any) =>
-  await fetch(`https://api.kitwallet.app/publicKey/${publicKey}/accounts`, {
-    headers: { "X-requestor": "near" },
-  }).then((r) => r.json());
+// const getAllAccountsWithSameKey1 = async (publicKey: string) =>
+//   await fetch(config.getUrl.kitWallet.keyAccounts(publicKey)).then((r) =>
+//     r.json(),
+//   );
+//
+// // eslint-disable-next-line
+// const getAllAccountsWithSameKey2 = async (publicKey: any) => {
+//   try {
+//     const res = await fetch(
+//       `https://api.nearblocks.io/v1/keys/${publicKey}`,
+//     ).then((r) => r.json());
+//     const a = res.keys.map(({ account_id }: any) => account_id);
+//     console.log(a);
+//     return a;
+//   } catch (e) {
+//     console.log(e);
+//   }
+// };
 
-// eslint-disable-next-line
-const getAllAccountsWithSameKey2 = async (publicKey: any) => {
-  try {
-    const res = await fetch(
-      `https://api.nearblocks.io/v1/keys/${publicKey}`,
-    ).then((r) => r.json());
-    const a = res.keys.map(({ account_id }: any) => account_id);
-    console.log(a);
-    return a;
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-const getMultisigAccounts = async (
+const getKeyMultisigAccounts = async (
   publicKey: any,
   wallet: string,
   rpcUrl: any,
 ) => {
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
-  const allAccountsWithSameKey = await getAllAccountsWithSameKey1(publicKey);
+  const allAccountsWithSameKey = await config.helpers.getKeyAccounts(publicKey);
   console.log(allAccountsWithSameKey);
 
   const results = await Promise.allSettled(
@@ -67,7 +68,7 @@ export const connectMultisigAccounts = async ({
   navigate("/multisig-accounts/progress");
 
   try {
-    const multisigAccounts = await getMultisigAccounts(
+    const multisigAccounts = await getKeyMultisigAccounts(
       publicKey,
       wallet,
       rpcUrl,

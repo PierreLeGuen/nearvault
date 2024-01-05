@@ -11,11 +11,17 @@ export type Config = {
   getUrl: {
     txDetails: (hash: string) => string;
     accountDetails: (accountId: string) => string;
-  },
+    kitWallet: {
+      keyAccounts: (publicKey: string) => string;
+    }
+  };
   accounts: {
-    multisigFactory: string,
-    lockupFactory: string,
-    lockupFactoryFoundation: string,
+    multisigFactory: string;
+    lockupFactory: string;
+    lockupFactoryFoundation: string;
+  };
+  helpers: {
+    getKeyAccounts: (publicKey: string) => Promise<string[]>;
   }
 };
 
