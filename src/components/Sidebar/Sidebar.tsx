@@ -15,7 +15,7 @@ import { useStoreActions, useStoreState } from "easy-peasy";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { SelectAccount } from "./SelectAccount/SelectAccount";
+import { SelectAccountDropdown } from "./SelectAccount/SelectAccountDropdown";
 import { TeamsDropdownMenu } from "./TeamsDropdownMenu";
 import { WalletModal } from "./WalletModal/WalletModal";
 
@@ -104,11 +104,15 @@ export function Sidebar() {
             </SidebarSectionBody>
           </SidebarSection>
         </div>
-
         {selectedAccount ? (
-          <SelectAccount openWalletModal={openWalletModal} />
+          <SelectAccountDropdown
+            openWalletModal={openWalletModal}
+            className="m-4"
+          />
         ) : (
-          <Button onClick={openWalletModal}>Connect Account</Button>
+          <Button className="m-4" onClick={openWalletModal}>
+            Connect wallet...
+          </Button>
         )}
       </div>
       <WalletModal />
