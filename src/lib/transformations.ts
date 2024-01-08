@@ -3,6 +3,7 @@ import type * as naj from "near-api-js";
 import { FungibleTokenMetadata } from "~/lib/ft/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { type WalletPretty } from "~/pages/staking/stake";
+import { config } from '~/config/config';
 
 export const dbDataToTransfersData = async ({
   data,
@@ -20,7 +21,7 @@ export const dbDataToTransfersData = async ({
       ownerAccountId: undefined,
     });
     try {
-      const lockupValue = calculateLockup(wallet.walletAddress, "lockup.near");
+      const lockupValue = calculateLockup(wallet.walletAddress, config.accounts.lockupFactory);
       const nearConn = await getNearConnection();
       await (await nearConn.account(lockupValue)).state();
 

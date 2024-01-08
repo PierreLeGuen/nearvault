@@ -34,7 +34,7 @@ const parseDerivationPath = (derivationPath: string = "44'/397'/0'/0'/1'") => {
   );
 };
 
-// TODO: Understand what this is exactly. What's so special about 87?
+// Understand what this is exactly. What's so special about 87?
 export const networkId = 'W'.charCodeAt(0);
 
 interface SignParams {

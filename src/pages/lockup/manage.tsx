@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type BN from "bn.js";
 import bs58 from "bs58";
-import { formatNearAmount } from 'near-api-js/lib/utils/format';
+import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { useSession } from "next-auth/react";
 import { Fragment, useEffect, useState } from "react";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
@@ -26,7 +26,6 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useNearContext } from "~/context/near";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
@@ -36,7 +35,9 @@ import {
 import { findProperVestingSchedule } from "~/lib/lockup/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { useStoreActions } from 'easy-peasy';
+import { useStoreActions } from "easy-peasy";
+import { JsonRpcProvider } from "near-api-js/lib/providers";
+import { config } from "~/config/config";
 
 const isPrivateSchedule = (
   vestingInformation: FromStateVestingInformation | undefined,
@@ -70,16 +71,14 @@ const ManageLockup: NextPageWithLayout = () => {
     useState<AccountLockup | null>(null);
   const [terminationStatus, setTerminationStatus] = useState<string | null>("");
 
-  const provider = useNearContext().provider;
   const { newNearConnection } = usePersistingStore();
-  const multisigWalletId = "foundation.near";
+  const multisigWalletId = config.accounts.lockupFactoryFoundation;
 
   const form = useForm<z.infer<typeof formLockupRequest>>({
     resolver: zodResolver(formLockupRequest),
   });
 
   // Lockup termination
-
   const {
     register,
     handleSubmit,
@@ -141,7 +140,8 @@ const ManageLockup: NextPageWithLayout = () => {
     console.log("getLockupInformation", account);
 
     try {
-      const l = calculateLockup(prepareAccountId(account), "lockup.near");
+      const provider = new JsonRpcProvider({ url: config.urls.rpc });
+      const l = calculateLockup(prepareAccountId(account), config.accounts.lockupFactory);
       const r = await viewLockupAccount(l, provider);
       await updateTerminationStatus(account);
       setLockupInformation(r);
@@ -160,7 +160,7 @@ const ManageLockup: NextPageWithLayout = () => {
     const n = await newNearConnection();
     const l = await initLockupContract(
       account,
-      calculateLockup(account, "lockup.near"),
+      calculateLockup(account, config.accounts.lockupFactory),
       n,
     );
     const terminationStatus = await l.get_termination_status();
@@ -170,7 +170,7 @@ const ManageLockup: NextPageWithLayout = () => {
   const tryWithdrawFn = async (account: string) => {
     if (!canSignTx(multisigWalletId)) return;
 
-    const lockupAccountId = calculateLockup(account, "lockup.near"); // TODO move to config
+    const lockupAccountId = calculateLockup(account, config.accounts.lockupFactory);
 
     if (
       terminationStatus === "VestingTerminatedWithDeficit" ||
@@ -535,7 +535,7 @@ const ManageLockup: NextPageWithLayout = () => {
     </div>
   );
 };
-
+// TODO figure out how use this func on testnet
 function prepareAccountId(data: string) {
   if (data.toLowerCase().endsWith(".near")) {
     return data

@@ -8,6 +8,8 @@ import { WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 import { useTeamsWalletsWithLockups } from "./teams";
 import { useStoreActions } from "easy-peasy";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
+import { config } from "~/config/config";
 
 export type PoolId = string;
 export type Percentage = number;
@@ -35,8 +37,10 @@ export function useIsPoolSelected(selectedWallet: WalletPretty | undefined) {
 
 export function useListAllStakingPools() {
   return useQuery(["allAvailablePools"], async () => {
-    const res = await fetch("https://api.kitwallet.app/stakingPools");
-    return await ((await res.json()) as Promise<PoolId[]>);
+    const res: Promise<PoolId[]> = await fetchJson(
+      config.urls.kitWallet.stakingPools,
+    );
+    return res;
   });
 }
 
@@ -233,10 +237,11 @@ export function useGetStakingDetailsForWallets() {
     async (): Promise<WalletData[]> => {
       const promises = listWallets.data.map(async (wallet) => {
         try {
-          const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
+          const data: StakedPool[] = await fetchJson(
+            config.urls.kitWallet.stakingDeposits(
+              wallet.walletDetails.walletAddress,
+            ),
           );
-          const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
           const stakedPools = [];
 

@@ -9,6 +9,7 @@ import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
 import { useStoreActions } from "easy-peasy";
+import { config } from "~/config/config";
 
 interface IFormInput {
   newMultisigWalletId: string;
@@ -51,7 +52,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
         try {
           const lockupValue = calculateLockup(
             wallet.walletAddress,
-            "lockup.near",
+            config.accounts.lockupFactory,
           );
           const nearConn = await newNearConnection();
           await (await nearConn.account(lockupValue)).state();
@@ -78,9 +79,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
   const onSubmit: SubmitHandler<IFormInput> = (values) =>
     createMultisig({ values, creatorAccount: fromWallet });
 
-  const r = register("newMultisigWalletId", {
-    validate: (value) => value === "multisig.pierre-dev.near", // TODO ???????
-  });
+  const r = register("newMultisigWalletId");
 
   if (isLoading || walletsLoading) {
     return <div>Loading...</div>;

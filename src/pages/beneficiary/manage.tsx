@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { config } from "~/config/config";
 
 const Manage: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();
@@ -34,9 +35,6 @@ const Manage: NextPageWithLayout = () => {
   } = api.teams.getBeneficiariesForTeam.useQuery({
     teamId: currentTeam.id,
   });
-
-  const getNearblocksUrl = (walletId: string) =>
-    `https://nearblocks.io/address/${walletId}`;
 
   const deleteBeneficiary = (b: Beneficiary) => {
     if (!currentTeam) {
@@ -87,7 +85,7 @@ const Manage: NextPageWithLayout = () => {
 
                     <Button variant={"ghost"} size={"icon"} asChild>
                       <Link
-                        href={getNearblocksUrl(benef.walletAddress)}
+                        href={config.urls.nearBlocks.accountDetails(benef.walletAddress)}
                         target="_blank"
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />

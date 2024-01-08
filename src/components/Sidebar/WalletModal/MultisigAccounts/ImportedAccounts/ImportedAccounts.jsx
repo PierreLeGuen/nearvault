@@ -17,7 +17,7 @@ export const ImportedAccounts = ({ routeParams, closeModal }) => {
         <Image src={img} alt="Account picture" className={cn.img} />
         <p className={cn.text}>
           We found the following Multisig {isSingleAccount ? 'account' : 'accounts'} associated with
-          your Ledger:
+          your wallet:
         </p>
         {routeParams?.accounts.map(({ accountId }) => (
           <p key={accountId} className={cn.account}>

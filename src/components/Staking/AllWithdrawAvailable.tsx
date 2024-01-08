@@ -6,7 +6,9 @@ import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 import { type StakedPool, type WalletData } from "./AllStaked";
 import WithdrawPoolComponent from "./WithdrawComponent";
-import { useStoreActions } from 'easy-peasy';
+import { useStoreActions } from "easy-peasy";
+import { config } from "~/config/config";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 
 const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
   const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
@@ -20,10 +22,11 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     async (): Promise<WalletData[]> => {
       const promises = wallets.map(async (wallet) => {
         try {
-          const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
+          const data: StakedPool[] = await fetchJson(
+            config.urls.kitWallet.stakingDeposits(
+              wallet.walletDetails.walletAddress,
+            ),
           );
-          const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
           const stakedPools: StakedPool[] = [];
 
@@ -89,7 +92,10 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     // If the staking was done through the lockup contract, then the request
     // should be sent to the lockup contract
     if (isLockup) {
-      requestReceiver = calculateLockup(multisigAcc, "lockup.near"); // TODO: move to config
+      requestReceiver = calculateLockup(
+        multisigAcc,
+        config.accounts.lockupFactory,
+      );
       methodName = "withdraw_from_staking_pool";
 
       if (amount === maxAmount) {
@@ -151,7 +157,7 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
                 wallet={walletData}
                 withdrawFn={sendWithdrawTransaction}
                 isLockup={walletData.wallet.walletDetails.walletAddress.includes(
-                  "lockup.near", // TODO: move to config
+                  config.accounts.lockupFactory,
                 )}
               />
             ))}

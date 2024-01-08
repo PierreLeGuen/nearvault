@@ -1,10 +1,11 @@
 import { thunk } from "easy-peasy";
 import { connect } from "near-api-js";
+import { config } from '~/config/config';
 
 const getAccountAccessKeys = async (accountId: string) => {
   const near = await connect({
-    networkId: "mainnet",
-    nodeUrl: "https://rpc.mainnet.near.org",
+    networkId: config.networkId,
+    nodeUrl: config.urls.rpc,
   });
   const account = await near.account(accountId);
   return await account.getAccessKeys();

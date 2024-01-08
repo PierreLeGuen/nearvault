@@ -6,7 +6,7 @@ export const signAndSendTx = thunk(async (_, payload: any, { getState }) => {
   const { transaction } = payload;
   const slice: any = getState();
 
-  const newUrl = new URL("sign", slice.walletUrl);
+  const newUrl = new URL(slice.signUrl);
 
   newUrl.searchParams.set(
     "transactions",

@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { getSidebarLayout } from "~/components/Layout";
-import { handleWalletRequestWithToast } from "~/components/ToastRequestResult";
 import { DateField } from "~/components/inputs/date";
 import { ReceiverFormField } from "~/components/inputs/receiver";
 import { SenderFormField } from "~/components/inputs/sender";
@@ -38,6 +37,7 @@ import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
 import { useStoreActions } from "easy-peasy";
+import { config } from "~/config/config";
 
 interface CreateLockupProps {
   owner_account_id: string;
@@ -127,7 +127,7 @@ const CreateLockup: NextPageWithLayout = () => {
           try {
             const lockupValue = calculateLockup(
               wallet.walletAddress,
-              "lockup.near",
+              config.accounts.lockupFactory,
             );
             const nearConn = await newNearConnection();
             await (await nearConn.account(lockupValue)).state();
@@ -174,7 +174,7 @@ const CreateLockup: NextPageWithLayout = () => {
     if (!canSignTx(fromWallet.walletDetails.walletAddress)) return;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let createArgs: any = {};
+    let createArgs: any;
     if (cliffDate) {
       // lockup schedule
       createArgs = {
@@ -213,7 +213,7 @@ const CreateLockup: NextPageWithLayout = () => {
         method: "add_request",
         args: {
           request: {
-            receiver_id: "lockup.near", // TODO move to config
+            receiver_id: config.accounts.lockupFactory,
             actions: [
               {
                 type: "FunctionCall",
