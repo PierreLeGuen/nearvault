@@ -49,6 +49,7 @@ import { cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { useStoreActions } from "easy-peasy";
+import { convertDecimalToBN } from '~/store-easy-peasy/helpers/convertDecimalToBN';
 
 const formSchema = z.object({
   fromWallet: z.string({
@@ -237,10 +238,9 @@ const TransfersPage: NextPageWithLayout = () => {
         }
       } else {
         // NEP-141 tokens
-        const _amount = amount * 10 ** token.decimals;
         const ftTransferArgs = {
           receiver_id: receiver.walletAddress,
-          amount: _amount.toString(),
+          amount: convertDecimalToBN(amount, token.decimals),
         };
 
         if (lockupAddress) {

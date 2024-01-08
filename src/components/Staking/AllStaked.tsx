@@ -6,7 +6,8 @@ import { type WalletPretty } from "~/pages/staking/stake";
 import usePersistingStore from "~/store/useStore";
 import StakedPoolComponent from "./StakedPoolComponent";
 import { useStoreActions } from "easy-peasy";
-import { config } from '~/config/config';
+import { config } from "~/config/config";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 
 export interface StakedPool {
   deposit: string;
@@ -31,11 +32,11 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
     async (): Promise<WalletData[]> => {
       const promises = wallets.map(async (wallet) => {
         try {
-          // TODO move to config
-          const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
+          const data: StakedPool[] = await fetchJson(
+            config.getUrl.kitWallet.stakingDeposits(
+              wallet.walletDetails.walletAddress,
+            ),
           );
-          const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
           const stakedPools = [];
 
@@ -86,7 +87,10 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
     // If the staking was done through the lockup contract, then the request
     // should be sent to the lockup contract
     if (isLockup) {
-      requestReceiver = calculateLockup(multisigAcc, config.accounts.lockupFactory);
+      requestReceiver = calculateLockup(
+        multisigAcc,
+        config.accounts.lockupFactory,
+      );
     }
 
     await signAndSendTransaction({

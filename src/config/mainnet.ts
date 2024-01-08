@@ -1,16 +1,7 @@
 import { Config } from "./config";
 
-const kitWallet = {
-  getKeyAccounts: async (publicKey: string) => {
-    try {
-      const response = await fetch(
-        `https://api.kitwallet.app/publicKey/${publicKey}/accounts`,
-      );
-      return await response.json();
-    } catch (e) {
-      console.log(e);
-    }
-  },
+const urls = {
+  kitWallet: "https://api.kitwallet.app",
 };
 
 export const mainnet: Config = {
@@ -18,21 +9,25 @@ export const mainnet: Config = {
   urls: {
     rpc: "https://rpc.mainnet.near.org",
     myNearWallet: "https://app.mynearwallet.com",
+    kitWallet: {
+      stakingPools: `${urls.kitWallet}/stakingPools`,
+    },
   },
   getUrl: {
     txDetails: (hash) => `https://nearblocks.io/txns/${hash}`,
     accountDetails: (accountId) => `https://nearblocks.io/address/${accountId}`,
     kitWallet: {
       keyAccounts: (publicKey) =>
-        `https://api.kitwallet.app/publicKey/${publicKey}/accounts`,
+        `${urls.kitWallet}/publicKey/${publicKey}/accounts`,
+      likelyTokens: (accountId) =>
+        `${urls.kitWallet}/account/${accountId}/likelyTokensFromBlock?fromBlockTimestamp=0`,
+      stakingDeposits: (accountId) =>
+        `${urls.kitWallet}/staking-deposits/${accountId}`,
     },
   },
   accounts: {
     multisigFactory: "multisignature.near",
     lockupFactory: "lockup.near",
     lockupFactoryFoundation: "foundation.near",
-  },
-  helpers: {
-    getKeyAccounts: kitWallet.getKeyAccounts,
   },
 };

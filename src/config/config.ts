@@ -7,12 +7,17 @@ export type Config = {
   urls: {
     rpc: string;
     myNearWallet: string;
+    kitWallet: {
+      stakingPools: string;
+    }
   };
   getUrl: {
     txDetails: (hash: string) => string;
     accountDetails: (accountId: string) => string;
     kitWallet: {
       keyAccounts: (publicKey: string) => string;
+      likelyTokens: (accountId: string) => string;
+      stakingDeposits: (accountId: string) => string;
     }
   };
   accounts: {
@@ -20,9 +25,6 @@ export type Config = {
     lockupFactory: string;
     lockupFactoryFoundation: string;
   };
-  helpers: {
-    getKeyAccounts: (publicKey: string) => Promise<string[]>;
-  }
 };
 
 const getConfig = () =>

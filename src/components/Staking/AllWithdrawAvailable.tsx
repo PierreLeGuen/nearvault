@@ -8,6 +8,7 @@ import { type StakedPool, type WalletData } from "./AllStaked";
 import WithdrawPoolComponent from "./WithdrawComponent";
 import { useStoreActions } from "easy-peasy";
 import { config } from "~/config/config";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 
 const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
   const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
@@ -21,10 +22,11 @@ const AllWithdrawAvailable = ({ wallets }: { wallets: WalletPretty[] }) => {
     async (): Promise<WalletData[]> => {
       const promises = wallets.map(async (wallet) => {
         try {
-          const res = await fetch(
-            `https://api.kitwallet.app/staking-deposits/${wallet.walletDetails.walletAddress}`,
+          const data: StakedPool[] = await fetchJson(
+            config.getUrl.kitWallet.stakingDeposits(
+              wallet.walletDetails.walletAddress,
+            ),
           );
-          const data = (await res.json()) as StakedPool[];
           const n = await newNearConnection();
           const stakedPools: StakedPool[] = [];
 

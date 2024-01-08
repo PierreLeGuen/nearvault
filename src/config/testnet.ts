@@ -1,38 +1,17 @@
 import { Config } from "~/config/config";
 
-const nearBlocks = {
-  getKeyAccounts: async (publicKey: any) => {
-    try {
-      const response = await fetch(
-        `https://api-testnet.nearblocks.io/v1/keys/${publicKey}`,
-      );
-      const json = await response.json();
-      return json.keys.map(({ account_id }: any) => account_id);
-    } catch (e) {
-      console.log(e);
-    }
-  },
-};
-
-const kitWallet = {
-  getKeyAccounts: async (publicKey: string) => {
-    try {
-      const response = await fetch(
-        `https://testnet-api.kitwallet.app/publicKey/${publicKey}/accounts`,
-      );
-      return await response.json();
-    } catch (e) {
-      console.log(e);
-    }
-  },
-};
+const urls = {
+  kitWallet: 'https://testnet-api.kitwallet.app'
+}
 
 export const testnet: Config = {
   networkId: "testnet",
   urls: {
     rpc: "https://rpc.testnet.near.org",
-    // rpc: "https://endpoints.omniatech.io/v1/near/testnet/public",
     myNearWallet: "https://testnet.mynearwallet.com",
+    kitWallet: {
+      stakingPools: `${urls.kitWallet}/stakingPools`,
+    }
   },
   getUrl: {
     txDetails: (hash) => `https://testnet.nearblocks.io/txns/${hash}`,
@@ -40,7 +19,11 @@ export const testnet: Config = {
       `https://testnet.nearblocks.io/address/${accountId}`,
     kitWallet: {
       keyAccounts: (publicKey) =>
-        `https://testnet-api.kitwallet.app/publicKey/${publicKey}/accounts`,
+        `${urls.kitWallet}/publicKey/${publicKey}/accounts`,
+      likelyTokens: (accountId) =>
+        `${urls.kitWallet}/account/${accountId}/likelyTokensFromBlock?fromBlockTimestamp=0`,
+      stakingDeposits: (accountId) =>
+        `${urls.kitWallet}/staking-deposits/${accountId}`,
     },
   },
   accounts: {
@@ -48,24 +31,5 @@ export const testnet: Config = {
     lockupFactory: "lockup.devnet", // TODO create a real one
     lockupFactoryFoundation: "foundation.testnet", // TODO create a real one
   },
-  helpers: {
-    getKeyAccounts: kitWallet.getKeyAccounts,
-  },
 };
 
-/*
-"keys": [
-        {
-            "public_key": "ed25519:F2RJPxru3LrZyfDr8YVidkofo5Mk33eU5NRV9PF6FcWe",
-            "account_id": "multisig.pierre-dev.near",
-            "permission_kind": "FUNCTION_CALL",
-            "created": {
-                "transaction_hash": "4DJtsU3jgkfsjuWDB5SWh8cL6FpjRbspRt2LfvRV3MHP",
-                "block_timestamp": 1702379621468024800
-            },
-            "deleted": {
-                "transaction_hash": null,
-                "block_timestamp": null
-            }
-        },
- */

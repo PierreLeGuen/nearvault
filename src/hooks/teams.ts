@@ -8,6 +8,7 @@ import {
   dbDataToTransfersData,
 } from "~/lib/transformations";
 import usePersistingStore from "~/store/useStore";
+import { config } from "~/config/config";
 
 export function useAddMember() {
   const inviteMutation = api.teams.inviteToTeam.useMutation();
@@ -74,12 +75,9 @@ export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["tokens", walletId],
     queryFn: async () => {
-      const res = fetch(
-        `https://api.kitwallet.app/account/${walletId}/likelyTokensFromBlock?fromBlockTimestamp=0`,
-      );
-      const data = (await (await res).json()) as LikelyTokens;
+      const res = await fetch(config.getUrl.kitWallet.likelyTokens(walletId));
+      const data: LikelyTokens = await res.json();
       console.log(data);
-
       return data;
     },
     enabled: !!walletId,

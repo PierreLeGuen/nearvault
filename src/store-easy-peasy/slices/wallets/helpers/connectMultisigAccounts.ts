@@ -1,5 +1,6 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { config } from "~/config/config";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 
 const isMultisig = async (accountId: any, provider: any) =>
   await provider.query({
@@ -10,25 +11,6 @@ const isMultisig = async (accountId: any, provider: any) =>
     args_base64: "e30=",
   });
 
-// const getAllAccountsWithSameKey1 = async (publicKey: string) =>
-//   await fetch(config.getUrl.kitWallet.keyAccounts(publicKey)).then((r) =>
-//     r.json(),
-//   );
-//
-// // eslint-disable-next-line
-// const getAllAccountsWithSameKey2 = async (publicKey: any) => {
-//   try {
-//     const res = await fetch(
-//       `https://api.nearblocks.io/v1/keys/${publicKey}`,
-//     ).then((r) => r.json());
-//     const a = res.keys.map(({ account_id }: any) => account_id);
-//     console.log(a);
-//     return a;
-//   } catch (e) {
-//     console.log(e);
-//   }
-// };
-
 const getKeyMultisigAccounts = async (
   publicKey: any,
   wallet: string,
@@ -36,8 +18,9 @@ const getKeyMultisigAccounts = async (
 ) => {
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
-  const allAccountsWithSameKey = await config.helpers.getKeyAccounts(publicKey);
-  console.log(allAccountsWithSameKey);
+  const allAccountsWithSameKey = await fetchJson(
+    config.getUrl.kitWallet.keyAccounts(publicKey),
+  );
 
   const results = await Promise.allSettled(
     allAccountsWithSameKey.map((accountId: any) =>
