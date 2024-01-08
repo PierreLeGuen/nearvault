@@ -33,7 +33,7 @@ const AllStaked = ({ wallets }: { wallets: WalletPretty[] }) => {
       const promises = wallets.map(async (wallet) => {
         try {
           const data: StakedPool[] = await fetchJson(
-            config.getUrl.kitWallet.stakingDeposits(
+            config.urls.kitWallet.stakingDeposits(
               wallet.walletDetails.walletAddress,
             ),
           );

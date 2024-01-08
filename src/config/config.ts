@@ -1,24 +1,16 @@
 import * as process from "process";
 import { mainnet } from "~/config/mainnet";
 import { testnet } from "~/config/testnet";
+import type { KitWalletUrls } from "~/config/kitWallet";
+import { NearBlocksUrls } from '~/config/nearBlocks';
 
 export type Config = {
   networkId: "mainnet" | "testnet";
   urls: {
     rpc: string;
     myNearWallet: string;
-    kitWallet: {
-      stakingPools: string;
-    }
-  };
-  getUrl: {
-    txDetails: (hash: string) => string;
-    accountDetails: (accountId: string) => string;
-    kitWallet: {
-      keyAccounts: (publicKey: string) => string;
-      likelyTokens: (accountId: string) => string;
-      stakingDeposits: (accountId: string) => string;
-    }
+    kitWallet: KitWalletUrls;
+    nearBlocks: NearBlocksUrls;
   };
   accounts: {
     multisigFactory: string;

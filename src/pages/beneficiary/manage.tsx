@@ -85,7 +85,7 @@ const Manage: NextPageWithLayout = () => {
 
                     <Button variant={"ghost"} size={"icon"} asChild>
                       <Link
-                        href={config.getUrl.accountDetails(benef.walletAddress)}
+                        href={config.urls.nearBlocks.accountDetails(benef.walletAddress)}
                         target="_blank"
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />

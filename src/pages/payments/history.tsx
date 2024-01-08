@@ -50,7 +50,7 @@ const History: NextPageWithLayout = () => {
                 <td className="border px-4 py-2">{transaction.token}</td>
                 <td className="border px-4 py-2">
                   <a
-                    href={config.getUrl.txDetails(transaction.createRequestTxnId)}
+                    href={config.urls.nearBlocks.txDetails(transaction.createRequestTxnId)}
                     target="_blank"
                     className="font-bold underline"
                   >

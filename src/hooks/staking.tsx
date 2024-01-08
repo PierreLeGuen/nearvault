@@ -238,7 +238,7 @@ export function useGetStakingDetailsForWallets() {
       const promises = listWallets.data.map(async (wallet) => {
         try {
           const data: StakedPool[] = await fetchJson(
-            config.getUrl.kitWallet.stakingDeposits(
+            config.urls.kitWallet.stakingDeposits(
               wallet.walletDetails.walletAddress,
             ),
           );

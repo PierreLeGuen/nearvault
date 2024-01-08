@@ -19,7 +19,7 @@ const getKeyMultisigAccounts = async (
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
   const allAccountsWithSameKey = await fetchJson(
-    config.getUrl.kitWallet.keyAccounts(publicKey),
+    config.urls.kitWallet.keyAccounts(publicKey),
   );
 
   const results = await Promise.allSettled(

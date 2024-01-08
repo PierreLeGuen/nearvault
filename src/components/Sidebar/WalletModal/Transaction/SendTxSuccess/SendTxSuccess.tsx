@@ -25,7 +25,7 @@ export const SendTxSuccess = ({ routeParams, closeModal }: any) => {
           <p>More details here:</p>
           <a
             className={cn.link}
-            href={config.getUrl.txDetails(outcome.transaction.hash)}
+            href={config.urls.nearBlocks.txDetails(outcome.transaction.hash)}
             target="_blank"
           >
             TX#{outcome.transaction.hash}
