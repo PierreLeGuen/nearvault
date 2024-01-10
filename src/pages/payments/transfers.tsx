@@ -49,7 +49,7 @@ import { cn } from "~/lib/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 import { useStoreActions } from "easy-peasy";
-import { convertDecimalToBN } from '~/store-easy-peasy/helpers/convertDecimalToBN';
+import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
 
 const formSchema = z.object({
   fromWallet: z.string({

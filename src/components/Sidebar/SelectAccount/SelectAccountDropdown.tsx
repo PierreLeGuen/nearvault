@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { useStoreActions, useStoreState } from "easy-peasy";
+import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
+import type { ActionCreator } from 'redux';
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -11,8 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-interface Props extends React.HTMLAttributes<HTMLDivElement> {
-  openWalletModal: () => void;
+type Props = {
+  openWalletModal: ActionCreator<any>;
+  className: string;
 }
 
 export const SelectAccountDropdown = ({

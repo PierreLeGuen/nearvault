@@ -1,6 +1,6 @@
 import { Config } from "~/config/config";
-import { createKitWalletUrls } from '~/config/kitWallet';
-import { createNearBlocksUrls } from '~/config/nearBlocks';
+import { createKitWalletUrls } from "~/config/kitWallet";
+import { createNearBlocksUrls } from "~/config/nearBlocks";
 
 export const testnet: Config = {
   networkId: "testnet",
@@ -12,8 +12,7 @@ export const testnet: Config = {
   },
   accounts: {
     multisigFactory: "multisignature.testnet",
-    lockupFactory: "lockup.devnet", // TODO create a real one
-    lockupFactoryFoundation: "foundation.testnet", // TODO create a real one
+    lockupFactory: "dev-lockup.testnet",
+    lockupFactoryFoundation: "dev-lockup-foundation.testnet",
   },
 };
-

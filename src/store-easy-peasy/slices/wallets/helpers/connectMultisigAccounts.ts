@@ -1,8 +1,9 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
+import type { AccountId, PublicKey } from "~/store-easy-peasy/types";
 
-const isMultisig = async (accountId: any, provider: any) =>
+const isMultisig = async (accountId: string, provider: JsonRpcProvider) =>
   await provider.query({
     request_type: "call_function",
     finality: "final",
@@ -12,20 +13,18 @@ const isMultisig = async (accountId: any, provider: any) =>
   });
 
 const getKeyMultisigAccounts = async (
-  publicKey: any,
+  publicKey: PublicKey,
   wallet: string,
-  rpcUrl: any,
+  rpcUrl: string,
 ) => {
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
-  const allAccountsWithSameKey = await fetchJson(
+  const allAccountsWithSameKey: AccountId[] = await fetchJson(
     config.urls.kitWallet.keyAccounts(publicKey),
   );
 
   const results = await Promise.allSettled(
-    allAccountsWithSameKey.map((accountId: any) =>
-      isMultisig(accountId, provider),
-    ),
+    allAccountsWithSameKey.map((accountId) => isMultisig(accountId, provider)),
   );
 
   return results
@@ -41,13 +40,21 @@ const getKeyMultisigAccounts = async (
     }));
 };
 
+type ConnectMultisigAccountsArgs = {
+  publicKey: PublicKey;
+  navigate: any;
+  rpcUrl: string;
+  addAccounts: any;
+  wallet: string;
+};
+
 export const connectMultisigAccounts = async ({
   publicKey,
   navigate,
   rpcUrl,
   addAccounts,
   wallet,
-}) => {
+}: ConnectMultisigAccountsArgs) => {
   navigate("/multisig-accounts/progress");
 
   try {

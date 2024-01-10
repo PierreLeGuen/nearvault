@@ -11,22 +11,21 @@ import {
   QueueListIcon,
 } from "@heroicons/react/20/solid";
 import { PieChartIcon } from "@radix-ui/react-icons";
-import { useStoreActions, useStoreState } from "easy-peasy";
+import { useStoreState, useStoreActions } from "~/store-easy-peasy/hooks";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { SelectAccountDropdown } from "./SelectAccount/SelectAccountDropdown";
 import { TeamsDropdownMenu } from "./TeamsDropdownMenu";
 import { WalletModal } from "./WalletModal/WalletModal";
+import { ReactNode } from "react";
 
 export function Sidebar() {
   const iconsClasses = "mr-2 h-4 w-4";
 
-  const selectedAccount = useStoreState(
-    (state: any) => state.accounts.selected,
-  );
+  const selectedAccount = useStoreState((state) => state.accounts.selected);
   const openWalletModal = useStoreActions(
-    (actions: any) => actions.wallets.modal.open,
+    (actions) => actions.wallets.modal.open,
   );
 
   return (
@@ -120,11 +119,11 @@ export function Sidebar() {
   );
 }
 
-function SidebarSection({ children }: { children: React.ReactNode }) {
+function SidebarSection({ children }: { children: ReactNode }) {
   return <div className="px-3 py-2">{children}</div>;
 }
 
-function SidebarSectionHeader({ children }: { children: React.ReactNode }) {
+function SidebarSectionHeader({ children }: { children: ReactNode }) {
   return (
     <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
       {children}
@@ -132,7 +131,7 @@ function SidebarSectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SidebarSectionBody({ children }: { children: React.ReactNode }) {
+function SidebarSectionBody({ children }: { children: ReactNode }) {
   return <div className="space-y-1">{children}</div>;
 }
 
@@ -141,7 +140,7 @@ function SidebarSectionItem({
   className,
   href,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   href: string;
 }) {

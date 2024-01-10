@@ -4,6 +4,7 @@ import { initFungibleTokenContract } from '~/lib/ft/contract';
 import { dbDataToTransfersData, LikelyTokens, Token } from '~/lib/transformations';
 import usePersistingStore from '~/store/useStore';
 import { config } from '~/config/config';
+import { fetchJson } from '~/store-easy-peasy/helpers/fetchJson';
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
@@ -66,8 +67,7 @@ export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["tokens", walletId],
     queryFn: async () => {
-      const res = await fetch(config.urls.kitWallet.likelyTokens(walletId));
-      const data: LikelyTokens = await res.json();
+      const data: LikelyTokens = await fetchJson(config.urls.kitWallet.likelyTokens(walletId));
       console.log(data);
       return data;
     },

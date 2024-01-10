@@ -1,9 +1,10 @@
 import { thunk } from "easy-peasy";
 import { toast } from "react-toastify";
+import type { CanSignTx } from '~/store-easy-peasy/slices/accounts/types';
 
-export const canSignTx = thunk(
-  (actions: any, accountId: string, { getState }) => {
-    const slice: any = getState();
+export const canSignTx: CanSignTx = thunk(
+  (actions, accountId, { getState }) => {
+    const slice = getState();
 
     const isConnected = Boolean(slice.map[accountId]);
 

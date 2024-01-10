@@ -1,7 +1,8 @@
 import { action } from "easy-peasy";
+import type { AddAccounts } from "~/store-easy-peasy/slices/accounts/types";
 
-export const addAccounts = action((slice: any, accounts) => {
-  accounts.forEach((account: any) => {
+export const addAccounts: AddAccounts = action((slice, accounts) => {
+  accounts.forEach((account) => {
     slice.map[account.accountId] = account;
   });
 
