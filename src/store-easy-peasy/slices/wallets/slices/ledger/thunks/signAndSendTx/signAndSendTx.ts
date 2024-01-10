@@ -1,12 +1,13 @@
 import { thunk } from "easy-peasy";
 import { signTx } from "~/store-easy-peasy/slices/wallets/slices/ledger/thunks/signAndSendTx/signTx";
 import { sendTx } from "~/store-easy-peasy/slices/wallets/slices/ledger/thunks/signAndSendTx/sendTx";
+import type { SignAndSendTx } from '~/store-easy-peasy/slices/wallets/slices/ledger/types';
 
-export const signAndSendTx = thunk(
-  async (_, payload: any, { getState, getStoreActions }) => {
+export const signAndSendTx: SignAndSendTx = thunk(
+  async (_, payload, { getState, getStoreActions }) => {
     const { transaction } = payload;
-    const slice: any = getState();
-    const actions: any = getStoreActions();
+    const slice = getState();
+    const actions = getStoreActions();
 
     const navigate = actions.wallets.modal.navigate;
 

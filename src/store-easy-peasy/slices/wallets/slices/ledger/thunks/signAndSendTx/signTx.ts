@@ -1,11 +1,12 @@
 import { Transaction } from "@near-js/transactions";
 import { transactions } from "near-api-js";
 import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
+import type { NavigateFn } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
 
 export const signTx = async (
   transaction: Transaction,
-  navigate: any,
-  retrySignTxFn: any,
+  navigate: NavigateFn,
+  retrySignTxFn: () => void,
 ) => {
   navigate("/ledger/sign/progress");
 

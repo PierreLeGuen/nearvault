@@ -2,6 +2,8 @@ import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import type { AccountId, PublicKey } from "~/store-easy-peasy/types";
+import type { NavigateFn } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
+import type { AddAccountsFn } from "~/store-easy-peasy/slices/accounts/types";
 
 type Key = {
   public_key: string;
@@ -62,9 +64,9 @@ const getKeyMultisigAccounts = async (
 
 type ConnectMultisigAccountsArgs = {
   publicKey: PublicKey;
-  navigate: any;
+  navigate: NavigateFn;
   rpcUrl: string;
-  addAccounts: any;
+  addAccounts: AddAccountsFn;
   wallet: string;
 };
 

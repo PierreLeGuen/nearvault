@@ -1,6 +1,7 @@
 import type { Action, Thunk } from "easy-peasy";
 import type { AccountId } from "~/store-easy-peasy/types";
 import type { Store } from '~/store-easy-peasy/types';
+import { ActionCreator } from 'easy-peasy';
 
 export type Account = {
   accountId: AccountId;
@@ -15,7 +16,10 @@ export type State = {
 };
 
 export type SelectAccount = Action<Accounts, AccountId>;
-export type AddAccounts = Action<Accounts, Account[]>;
+
+type AddAccountsPayload = Account[];
+export type AddAccounts = Action<Accounts, AddAccountsPayload>;
+export type AddAccountsFn = ActionCreator<AddAccountsPayload>;
 
 type Actions = {
   selectAccount: SelectAccount;

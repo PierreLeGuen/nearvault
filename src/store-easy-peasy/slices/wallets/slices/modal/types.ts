@@ -1,4 +1,4 @@
-import { Action } from "easy-peasy";
+import { Action, ActionCreator } from "easy-peasy";
 
 type Route = string;
 type RouteParams = object | null;
@@ -10,12 +10,14 @@ type State = {
 };
 
 export type Open = Action<State>;
+export type OpenFn = ActionCreator;
+
 export type Close = Action<State>;
 
-export type Navigate = Action<
-  State,
-  Route | { route: Route; routeParams: RouteParams }
->;
+type NavigatePayload = Route | { route: Route; routeParams: RouteParams };
+
+export type Navigate = Action<State, NavigatePayload>;
+export type NavigateFn = ActionCreator<NavigatePayload>;
 
 type Actions = {
   open: Open;

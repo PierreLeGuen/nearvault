@@ -9,11 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import type { OpenFn } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
 
 type Props = {
-  openWalletModal: () => void;
+  openWalletModal: OpenFn;
   className: string;
-}
+};
 
 export const SelectAccountDropdown = ({
   className,
@@ -48,7 +49,7 @@ export const SelectAccountDropdown = ({
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={openWalletModal}>
+        <DropdownMenuItem onClick={() => openWalletModal()}>
           Add wallet...
         </DropdownMenuItem>
       </DropdownMenuContent>
