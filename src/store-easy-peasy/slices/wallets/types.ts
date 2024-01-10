@@ -1,6 +1,7 @@
 import { Thunk } from "easy-peasy";
 import type { Store } from "~/store-easy-peasy/types";
-import type { Modal } from '~/store-easy-peasy/slices/wallets/slices/modal/types';
+import type { Modal } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
+import type { Ledger } from "~/store-easy-peasy/slices/wallets/slices/ledger/types";
 
 type SignAndSendTransactionPayload = {
   senderId: string;
@@ -23,7 +24,7 @@ type Thunks = {
 type Slices = {
   modal: Modal;
   myNearWallet: {};
-  ledger: {};
+  ledger: Ledger;
 };
 
 export type Wallets = Thunks & Slices;
