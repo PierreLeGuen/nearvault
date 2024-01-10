@@ -17,7 +17,7 @@ export const testnet: Config = {
   },
   accounts: {
     multisigFactory: "multisignature.testnet",
-    lockupFactory: "lockup.devnet", // TODO create a real one
-    lockupFactoryFoundation: "foundation.testnet", // TODO create a real one
+    lockupFactory: "dev-lockup.testnet",
+    lockupFactoryFoundation: "dev-lockup-foundation.testnet",
   },
 };

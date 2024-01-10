@@ -3,6 +3,7 @@ import { accounts } from "~/store-easy-peasy/slices/accounts";
 import { wallets } from "./slices/wallets";
 import { pages } from "src/store-easy-peasy/slices/pages";
 import { multisig } from "src/store-easy-peasy/slices/contracts/multisig";
+import type { Store } from '~/store-easy-peasy/types';
 
 const model = {
   // nested slices
@@ -12,4 +13,4 @@ const model = {
   wallets,
 };
 
-export const store = createStore(model, { name: "Near-Finance" });
+export const store = createStore<Store>(model, { name: "Near-Finance" });
