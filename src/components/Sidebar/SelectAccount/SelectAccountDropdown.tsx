@@ -1,5 +1,4 @@
 import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
-import type { ActionCreator } from 'redux';
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +11,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 
 type Props = {
-  openWalletModal: ActionCreator<any>;
+  openWalletModal: () => void;
   className: string;
 }
 

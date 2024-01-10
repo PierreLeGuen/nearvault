@@ -30,7 +30,7 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-const RehydrateWrapper = ({ children }: any) => {
+const RehydrateWrapper = ({ children }) => {
   const isRehydrated = useStoreRehydrated();
   return !isRehydrated ? <div>Loading...</div> : children;
 };

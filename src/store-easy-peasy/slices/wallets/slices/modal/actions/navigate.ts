@@ -1,6 +1,7 @@
 import { action } from "easy-peasy";
+import type { Navigate } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
 
-export const navigate = action((slice: any, payload: any) => {
+export const navigate: Navigate = action((slice, payload) => {
   if (typeof payload === "string") {
     slice.route = payload;
     slice.routeParams = null;
