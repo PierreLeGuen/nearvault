@@ -2,6 +2,24 @@ import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 
+type Key = {
+  public_key: string;
+  account_id: string;
+  permission_kind: "FULL_ACCESS" | "FUNCTION_CALL";
+  created: {
+    transaction_hash: string;
+    block_timestamp: number;
+  };
+  deleted: {
+    transaction_hash: string | null;
+    block_timestamp: number | null;
+  };
+};
+
+type KeysResponse = {
+  keys: Key[];
+};
+
 const isMultisig = async (accountId: any, provider: any) =>
   await provider.query({
     request_type: "call_function",
@@ -18,20 +36,20 @@ const getKeyMultisigAccounts = async (
 ) => {
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
-  const allAccountsWithSameKey = await fetchJson(
-    config.urls.kitWallet.keyAccounts(publicKey),
+  const accountsWithSameKey: KeysResponse = await fetchJson(
+    config.urls.nearBlocksApi.getAccountsUrl(publicKey),
   );
 
   const results = await Promise.allSettled(
-    allAccountsWithSameKey.map((accountId: any) =>
-      isMultisig(accountId, provider),
+    accountsWithSameKey.keys.map((account) =>
+      isMultisig(account.account_id, provider),
     ),
   );
 
   return results
     .map((promise, index) => ({
       status: promise.status,
-      accountId: allAccountsWithSameKey[index],
+      accountId: accountsWithSameKey.keys[index].account_id,
     }))
     .filter((promise) => promise.status === "fulfilled")
     .map(({ accountId }) => ({

@@ -2,7 +2,8 @@ import * as process from "process";
 import { mainnet } from "~/config/mainnet";
 import { testnet } from "~/config/testnet";
 import type { KitWalletUrls } from "~/config/kitWallet";
-import { NearBlocksUrls } from '~/config/nearBlocks';
+import { NearBlocksUrls } from "~/config/nearBlocks";
+import { NearBlocksApiUrls } from "./nearBlocksApi";
 
 export type Config = {
   networkId: "mainnet" | "testnet";
@@ -11,6 +12,7 @@ export type Config = {
     myNearWallet: string;
     kitWallet: KitWalletUrls;
     nearBlocks: NearBlocksUrls;
+    nearBlocksApi: NearBlocksApiUrls;
   };
   accounts: {
     multisigFactory: string;
