@@ -1,5 +1,6 @@
 import type { Action, Thunk } from "easy-peasy";
 import type { AccountId } from "~/store-easy-peasy/types";
+import type { Store } from '~/store-easy-peasy/types';
 
 export type Account = {
   accountId: AccountId;
@@ -21,7 +22,7 @@ type Actions = {
   addAccounts: AddAccounts;
 };
 
-export type CanSignTx = Thunk<Accounts, string, void, Accounts, boolean>;
+export type CanSignTx = Thunk<Accounts, AccountId, void, Store, boolean>;
 
 type Thunks = {
   canSignTx: CanSignTx;

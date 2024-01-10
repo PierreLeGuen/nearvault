@@ -109,7 +109,7 @@ export function Sidebar() {
             className="m-4"
           />
         ) : (
-          <Button className="m-4" onClick={openWalletModal}>
+          <Button className="m-4" onClick={() => openWalletModal()}>
             Connect wallet...
           </Button>
         )}
