@@ -52,6 +52,9 @@ export const WalletModal = () => {
         {route === "/multisig-accounts/error" && (
           <NoMultisigAccounts routeParams={routeParams} /> // TODO Create New component
         )}
+        {route === "/regular-account/success" && (
+          <ImportedAccounts routeParams={routeParams} closeModal={close} />
+        )}
         {route === "/ledger/sign/progress" && <SignTxProgress />}
         {route === "/ledger/sign/error" && (
           <SignTxError routeParams={routeParams} />

@@ -1,8 +1,7 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StoreProvider } from "easy-peasy";
+import { StoreProvider, useStoreRehydrated } from "easy-peasy";
 import { SessionProvider } from "next-auth/react";
-import { useStoreRehydrated } from "easy-peasy";
 import { api } from "~/lib/api";
 import { store } from "~/store-easy-peasy/store";
 
@@ -13,7 +12,7 @@ import { type ReactElement, type ReactNode } from "react";
 import { ToastContainer } from "react-toastify";
 
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import "@near-finance-near-wallet-selector/modal-ui/styles.css";
+import "@near-wallet-selector/modal-ui/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import "~/styles/globals.css";
 

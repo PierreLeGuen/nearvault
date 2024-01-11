@@ -4,7 +4,7 @@ import {
 } from "@heroicons/react/20/solid";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import { Skeleton } from "../ui/skeleton";
 
 export function TeamsDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
-
+  const router = useRouter();
   const { setCurrentTeam, currentTeam } = usePersistingStore();
 
   const { data: teams, isLoading } = useListTeams();
@@ -31,8 +31,7 @@ export function TeamsDropdownMenu() {
   if (isLoading) return <Skeleton className="h-8 rounded-none" />;
 
   const handleSignOut = async () => {
-    await signOut();
-    redirect("/");
+    await signOut({ redirect: true, callbackUrl: "/welcome/start" });
   };
 
   return (
