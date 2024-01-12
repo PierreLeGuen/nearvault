@@ -3,7 +3,6 @@ import { type StateCreator } from "zustand";
 import { config } from "~/config/config";
 
 export interface NearState {
-  // Won't change current NEAR connection if already exists
   newNearConnection: () => Promise<Near>;
 }
 
