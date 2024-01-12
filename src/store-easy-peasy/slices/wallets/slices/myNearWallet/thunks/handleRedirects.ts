@@ -17,7 +17,8 @@ const getSearchParams = () => {
     return {
       connectAllowed: true,
       returnTo,
-      accountId: searchParams.get("accountId"),
+      accountId:
+        searchParams.get("accountId") || searchParams.get("account_id"),
       publicKey: searchParams.get("all_keys").split(",")[0],
     };
 
