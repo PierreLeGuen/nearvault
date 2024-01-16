@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { z } from "zod";
 import { KeysInput } from "~/components/inputs/keys";
 import { TextInput } from "~/components/inputs/text";
@@ -18,6 +19,7 @@ import { useZodForm } from "~/hooks/form";
 import {
   multisigFactoryFormSchema,
   useCreateMultisigWithFactory,
+  useIsMultisigWalletSuccessfullyCreated,
 } from "~/hooks/multisigFactory";
 
 type Params = {
@@ -37,6 +39,25 @@ export function CreateMultisigWalletCard(params: Params) {
   const createMultisigWithFactory = useCreateMultisigWithFactory();
   const { selector, modal, account: fundingAccount } = useWalletSelector();
 
+  const { setTransactionHashes, query } =
+    useIsMultisigWalletSuccessfullyCreated();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const transactionHashes = urlParams.get("transactionHashes");
+    if (!transactionHashes) {
+      return;
+    }
+
+    setTransactionHashes(transactionHashes.split(","));
+  }, []);
+
+  useEffect(() => {
+    if (query.isSuccess) {
+      params.onMultisigCreateSuccess(query.data);
+    }
+  }, [query.isSuccess]);
+
   const handleSignOut = async () => {
     if (!fundingAccount) return;
     const w = await selector.wallet();
@@ -50,12 +71,9 @@ export function CreateMultisigWalletCard(params: Params) {
   const onSubmit = async (
     values: z.infer<typeof multisigFactoryFormSchema>,
   ) => {
-    params.onMultisigCreateSuccess("test");
-
-    const multisigAccId = await createMultisigWithFactory.mutateAsync(values);
-    console.log(multisigAccId);
-
-    params.onMultisigCreateSuccess(multisigAccId);
+    // we can't use the promise because the wallet selector overrides the
+    // current window
+    await createMultisigWithFactory.mutateAsync(values);
   };
 
   return (
@@ -116,6 +134,16 @@ export function CreateMultisigWalletCard(params: Params) {
               disabled={watched.owners?.length === 0}
             />
             <Button type="submit">Create</Button>
+            {query.isError && (
+              <div className="text-red-500">
+                Failed to create multisig, error {JSON.stringify(query.error)}
+              </div>
+            )}
+            {query.isSuccess && (
+              <div className="text-green-500">
+                Successfully created multisig: {query.data}
+              </div>
+            )}
           </form>
         </Form>
       </CardContent>
