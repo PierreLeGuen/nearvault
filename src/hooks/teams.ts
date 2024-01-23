@@ -1,10 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '~/lib/api';
-import { initFungibleTokenContract } from '~/lib/ft/contract';
-import { dbDataToTransfersData, LikelyTokens, Token } from '~/lib/transformations';
-import usePersistingStore from '~/store/useStore';
-import { config } from '~/config/config';
-import { fetchJson } from '~/store-easy-peasy/helpers/fetchJson';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { api } from "~/lib/api";
+import { initFungibleTokenContract } from "~/lib/ft/contract";
+import {
+  dbDataToTransfersData,
+  LikelyTokens,
+  Token,
+} from "~/lib/transformations";
+import usePersistingStore from "~/store/useStore";
+import { config } from "~/config/config";
+import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
+import { z } from "zod";
+import { useSession } from "next-auth/react";
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
@@ -67,7 +73,9 @@ export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["tokens", walletId],
     queryFn: async () => {
-      const data: LikelyTokens = await fetchJson(config.urls.kitWallet.likelyTokens(walletId));
+      const data: LikelyTokens = await fetchJson(
+        config.urls.kitWallet.likelyTokens(walletId),
+      );
       console.log(data);
       return data;
     },
@@ -124,9 +132,9 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
         }
       };
 
-      return (
-        await Promise.all(promises.concat(nearPromise()))
-      ).filter((t) => !!t);
+      return (await Promise.all(promises.concat(nearPromise()))).filter(
+        (t) => !!t,
+      );
     },
     enabled: !!tokenAddresses,
   });
@@ -138,4 +146,47 @@ export function useCreateTeam() {
 
 export function useListTeams() {
   return api.teams.getTeamsForUser.useQuery();
+}
+
+export const createTeamAndInviteUsers = z.object({
+  name: z.string(),
+  members: z.array(z.string()).transform((value) => {
+    return value.filter(Boolean);
+  }),
+  wallets: z.array(z.string()).transform((value) => {
+    return value.filter(Boolean);
+  }),
+});
+
+export function useCreateTeamAndInviteUsers() {
+  const createTeam = useCreateTeam();
+  const addMember = useAddMember();
+  const addWallet = useAddWallet();
+  const session = useSession();
+
+  return useMutation({
+    mutationFn: async (data: z.infer<typeof createTeamAndInviteUsers>) => {
+      const team = await createTeam.mutateAsync({
+        teamName: data.name,
+      });
+
+      await Promise.all(
+        data.members
+          .filter((member) => member !== session.data.user.email)
+          .map((member) =>
+            addMember.mutateAsync({
+              teamId: team.id,
+              invitedEmail: member,
+            }),
+          ),
+      );
+
+      await addWallet.mutateAsync({
+        teamId: team.id,
+        walletAddresses: data.wallets,
+      });
+
+      return team;
+    },
+  });
 }

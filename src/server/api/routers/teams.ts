@@ -407,6 +407,23 @@ export const teamsRouter = createTRPCRouter({
 
       if (invitedUser) {
         invitedUserId = invitedUser.id;
+
+        // Check if the user is already part of the team
+        const existingMember = await ctx.prisma.userTeam.findUnique({
+          where: {
+            userId_teamId: {
+              userId: invitedUserId,
+              teamId: input.teamId,
+            },
+          },
+        });
+
+        if (existingMember) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "The user is already a member of the team.",
+          });
+        }
       }
 
       const newInvitation = await ctx.prisma.teamInvitation.create({

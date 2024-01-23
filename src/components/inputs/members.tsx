@@ -16,14 +16,13 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 
-export function KeysInput<
+export function MembersInput<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >(
   props: UseControllerProps<TFieldValues, TName> &
     InputProps & {
       maxLength?: number;
-      currentPublicKey?: string;
     },
 ) {
   return (
@@ -37,9 +36,10 @@ export function KeysInput<
           </FormLabel>
           <FormControl>
             <>
-              {field.value.map((value, index) => (
+              {field?.value?.map((value, index) => (
                 <div key={index} className="flex flex-row gap-2">
                   <Input
+                    value={value}
                     placeholder={props.placeholder}
                     key={index}
                     onChange={(event) => {

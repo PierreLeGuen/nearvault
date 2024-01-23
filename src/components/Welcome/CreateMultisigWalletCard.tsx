@@ -24,7 +24,7 @@ import {
 
 type Params = {
   onMultisigCreateSuccess: (multisigAccId: string) => void;
-};
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export function CreateMultisigWalletCard(params: Params) {
   const form = useZodForm(multisigFactoryFormSchema, {
@@ -77,7 +77,7 @@ export function CreateMultisigWalletCard(params: Params) {
   };
 
   return (
-    <Card>
+    <Card className={params.className}>
       <CardHeader>
         <CardTitle>Create multisig wallet</CardTitle>
         <CardDescription>Create your multisig wallet</CardDescription>
