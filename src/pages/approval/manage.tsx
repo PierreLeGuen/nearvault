@@ -1,6 +1,8 @@
 import { useStoreState } from "easy-peasy";
+import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { ManageMultisigAccounts } from "~/components/approval/manage/ManageMultisigAccounts/ManageMultisigAccounts";
+import HeaderTitle from "~/components/ui/header";
 import { useGetMultisigAccounts } from "~/store-easy-peasy/slices/pages/approval/manage/hooks/useGetMultisigAccounts";
 import { type NextPageWithLayout } from "../_app";
 
@@ -12,17 +14,19 @@ const Manage: NextPageWithLayout = () => {
 
   if (isLoading)
     return (
-      <div className="flex w-full items-center justify-center">
+      <ContentCentered>
+        <HeaderTitle level="h1" text="Manage wallets" />
         <p>Loading...</p>
-      </div>
+      </ContentCentered>
     );
 
   return multisigAccounts.length > 0 ? (
     <ManageMultisigAccounts multisigAccounts={multisigAccounts} />
   ) : (
-    <div className="flex w-full items-center justify-center">
+    <ContentCentered>
+      <HeaderTitle level="h1" text="Manage wallets" />
       <p>No accounts</p>
-    </div>
+    </ContentCentered>
   );
 };
 

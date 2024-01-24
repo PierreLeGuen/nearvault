@@ -1,13 +1,18 @@
-import { TableBody } from "~/components/ui/table";
 import { Key } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/PublicKeys/Key";
+import { TableBody } from "~/components/ui/table";
 
-export const PublicKeys = ({ account, deleteKeyFn }: any) => (
+type Props = {
+  multisigContractId: any;
+  deleteKeyFn: any;
+};
+
+export const PublicKeys = ({ multisigContractId, deleteKeyFn }: Props) => (
   <TableBody>
-    {account.keys.map((publicKey: string) => (
+    {multisigContractId.keys.map((publicKey: string) => (
       <Key
         key={publicKey}
         publicKey={publicKey}
-        contractId={account.accountId}
+        contractId={multisigContractId.accountId}
         deleteKeyFn={deleteKeyFn}
       />
     ))}

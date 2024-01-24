@@ -1,6 +1,7 @@
-import HeaderTitle from "~/components/ui/header";
-import { MultisigAccount } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/MultisigAccount";
 import { useStoreActions } from "easy-peasy";
+import ContentCentered from "~/components/ContentCentered";
+import { MultisigAccount } from "~/components/approval/manage/ManageMultisigAccounts/MultisigAccount/MultisigAccount";
+import HeaderTitle from "~/components/ui/header";
 
 export const ManageMultisigAccounts = ({ multisigAccounts }: any) => {
   const deleteKeyFn = useStoreActions(
@@ -8,7 +9,7 @@ export const ManageMultisigAccounts = ({ multisigAccounts }: any) => {
   );
 
   return (
-    <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+    <ContentCentered>
       <HeaderTitle level="h1" text="Manage wallets" />
       {multisigAccounts.map((account: any) => (
         <MultisigAccount
@@ -17,6 +18,6 @@ export const ManageMultisigAccounts = ({ multisigAccounts }: any) => {
           deleteKeyFn={deleteKeyFn}
         />
       ))}
-    </div>
+    </ContentCentered>
   );
 };
