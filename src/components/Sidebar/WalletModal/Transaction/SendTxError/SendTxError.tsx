@@ -1,10 +1,9 @@
-import { Header } from "../../general/Header/Header.jsx";
-import { CloseButton } from "../../general/CloseButton/CloseButton.jsx";
-import cn from "./SendTxError.module.css";
 import { Button } from "@mui/material";
-import sendTx from '../../../../../../public/send-tx.png';
-import Image from 'next/image';
-import { config } from '~/config/config';
+import Image from "next/image";
+import sendTx from "../../../../../../public/send-tx.png";
+import { CloseButton } from "../../general/CloseButton/CloseButton.jsx";
+import { Header } from "../../general/Header/Header.jsx";
+import cn from "./SendTxError.module.css";
 
 export const SendTxError = ({ routeParams, closeModal }: any) => {
   const { outcome } = routeParams;
@@ -23,13 +22,13 @@ export const SendTxError = ({ routeParams, closeModal }: any) => {
         <p className={cn.status}>Transaction failed</p>
         <div className={cn.details}>
           <p>More details here:</p>
-          <a
+          {/* <a
             className={cn.link}
             href={config.urls.nearBlocks.txDetails(outcome.transaction.hash)}
             target="_blank"
           >
             TX#{outcome.transaction.hash}
-          </a>
+          </a> */}
         </div>
         <Button
           variant="outlined"

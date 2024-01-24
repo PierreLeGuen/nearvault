@@ -1,6 +1,7 @@
 import { type Wallet } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { NumberInput } from "~/components/inputs/number";
 import { SenderFormField } from "~/components/inputs/sender";
@@ -79,11 +80,16 @@ const Stake: NextPageWithLayout = () => {
   }, [pools, watchedWallet]);
 
   if (isLoading || !filteredPools) {
-    return <div>Loading...</div>;
+    return (
+      <ContentCentered>
+        <HeaderTitle level="h1" text="Stake" />
+        Loading...
+      </ContentCentered>
+    );
   }
 
   return (
-    <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+    <ContentCentered>
       <HeaderTitle level="h1" text="Stake" />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -148,7 +154,7 @@ const Stake: NextPageWithLayout = () => {
           </div>
         </form>
       </Form>
-    </div>
+    </ContentCentered>
   );
 };
 

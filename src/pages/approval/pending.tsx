@@ -158,7 +158,6 @@ const Pending: NextPageWithLayout = () => {
     <div className="flex flex-col gap-10 px-12 py-10">
       <HeaderTitle level="h1" text="Pending requests" />
       {loading && <p>Loading...</p>}
-      {!loading && requests.entries.length === 0 && <p>No pending requests.</p>}
       {!loading &&
         requests.size > 0 &&
         Array.from(requests).map(([wallet, _requests]) =>

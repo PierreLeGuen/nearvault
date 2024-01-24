@@ -1,8 +1,19 @@
+import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
+import HeaderTitle from "~/components/ui/header";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { config } from "~/config/config";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { config } from '~/config/config';
 
 const History: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();
@@ -17,68 +28,71 @@ const History: NextPageWithLayout = () => {
 
   if (isLoading) {
     return (
-      <div className="p-3">
-        <h1 className="mb-4 text-2xl font-semibold">Transfer history</h1>
+      <ContentCentered>
+        <HeaderTitle level="h1" text="Transfer history" />
         <div>Loading...</div>
-      </div>
+      </ContentCentered>
     );
   }
 
   return (
-    <div className="p-3">
-      <h1 className="mb-4 text-2xl font-semibold">Transfer history</h1>
+    <ContentCentered className="lg:px-6">
+      <HeaderTitle level="h1" text="Transfer history" />
       {transactions && transactions.length > 0 ? (
-        <table className="w-full table-auto">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">Wallet</th>
-              <th className="px-4 py-2">Token</th>
-              <th className="px-4 py-2">Create request txn ID</th>
-              <th className="px-4 py-2">Amount</th>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Approved Date</th>
-              <th className="px-4 py-2">Memo</th>
-              <th className="px-4 py-2">Creator</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableCaption>List of your teams transfers.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Wallet</TableHead>
+              <TableHead>Token</TableHead>
+              <TableHead>Transaction ID</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Approved Date</TableHead>
+              <TableHead>Memo</TableHead>
+              <TableHead>Creator</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {transactions.map((transaction) => (
-              <tr key={transaction.id}>
-                <td className="border px-4 py-2">
+              <TableRow key={transaction.id}>
+                <TableCell className="font-medium">
                   {transaction.wallet.walletAddress}
-                </td>
-                <td className="border px-4 py-2">{transaction.token}</td>
-                <td className="border px-4 py-2">
+                </TableCell>
+                <TableCell className="max-w-[100px] truncate">
+                  {transaction.token}
+                </TableCell>{" "}
+                <TableCell>
                   <a
-                    href={config.urls.nearBlocks.txDetails(transaction.createRequestTxnId)}
+                    href={config.urls.nearBlocks.txDetails(
+                      transaction.createRequestTxnId,
+                    )}
                     target="_blank"
                     className="font-bold underline"
                   >
                     {transaction.createRequestTxnId.slice(0, 8) + "..."}
                   </a>
-                </td>
-                <td className="border px-4 py-2">
-                  {transaction.amount.toString()}
-                </td>
-                <td className="border px-4 py-2">
+                </TableCell>
+                <TableCell>
                   {new Date(transaction.creationDate).toLocaleString()}
-                </td>
-                <td className="border px-4 py-2">
+                </TableCell>
+                <TableCell>
                   {transaction.approvedDate &&
                     new Date(transaction.approvedDate).toLocaleString()}
-                </td>
-                <td className="border px-4 py-2">
-                  {transaction.memo || "N/A"}
-                </td>
-                <td className="border px-4 py-2">{transaction.creatorMail}</td>
-              </tr>
+                </TableCell>
+                <TableCell>{transaction.memo || "N/A"}</TableCell>
+                <TableCell>{transaction.creatorMail}</TableCell>
+                <TableCell className="text-right">
+                  {transaction.amount.toString()}
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       ) : (
         <p>No transaction history.</p>
       )}
-    </div>
+    </ContentCentered>
   );
 };
 

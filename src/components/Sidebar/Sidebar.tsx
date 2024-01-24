@@ -10,15 +10,15 @@ import {
   PlusCircleIcon,
   QueueListIcon,
 } from "@heroicons/react/20/solid";
-import { PieChartIcon } from "@radix-ui/react-icons";
-import { useStoreState, useStoreActions } from "~/store-easy-peasy/hooks";
+import { DashboardIcon, PieChartIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
 import { SelectAccountDropdown } from "./SelectAccount/SelectAccountDropdown";
 import { TeamsDropdownMenu } from "./TeamsDropdownMenu";
 import { WalletModal } from "./WalletModal/WalletModal";
-import { ReactNode } from "react";
 
 export function Sidebar() {
   const iconsClasses = "mr-2 h-4 w-4";
@@ -34,29 +34,10 @@ export function Sidebar() {
         <div className="flex flex-col">
           <TeamsDropdownMenu />
           <SidebarSection>
-            <SidebarSectionHeader>Treasury</SidebarSectionHeader>
-            <SidebarSectionBody>
-              <SidebarSectionItem href="/lockup/create">
-                <BanknotesIcon className={iconsClasses} />
-                Create lockup
-              </SidebarSectionItem>
-              <SidebarSectionItem href="/lockup/manage">
-                <EyeIcon className={iconsClasses} />
-                Manage lockup
-              </SidebarSectionItem>
-              <SidebarSectionItem href="/staking/stake">
-                <ArrowUpTrayIcon className={iconsClasses} />
-                Stake
-              </SidebarSectionItem>
-              <SidebarSectionItem href="/staking/unstake">
-                <ArrowUturnDownIcon className={iconsClasses} />
-                Unstake
-              </SidebarSectionItem>
-              <SidebarSectionItem href="/staking/withdraw">
-                <ArrowDownTrayIcon className={iconsClasses} />
-                Withdraw
-              </SidebarSectionItem>
-            </SidebarSectionBody>
+            <SidebarSectionItem href="/dashboard">
+              <DashboardIcon className={iconsClasses} />
+              Dashboard
+            </SidebarSectionItem>
           </SidebarSection>
 
           <SidebarSection>
@@ -90,6 +71,32 @@ export function Sidebar() {
               <SidebarSectionItem href="/approval/create">
                 <PlusCircleIcon className={iconsClasses} /> Create multisig
                 wallets
+              </SidebarSectionItem>
+            </SidebarSectionBody>
+          </SidebarSection>
+
+          <SidebarSection>
+            <SidebarSectionHeader>Treasury</SidebarSectionHeader>
+            <SidebarSectionBody>
+              <SidebarSectionItem href="/lockup/create">
+                <BanknotesIcon className={iconsClasses} />
+                Create lockup
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/lockup/manage">
+                <EyeIcon className={iconsClasses} />
+                Manage lockup
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/staking/stake">
+                <ArrowUpTrayIcon className={iconsClasses} />
+                Stake
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/staking/unstake">
+                <ArrowUturnDownIcon className={iconsClasses} />
+                Unstake
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/staking/withdraw">
+                <ArrowDownTrayIcon className={iconsClasses} />
+                Withdraw
               </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>

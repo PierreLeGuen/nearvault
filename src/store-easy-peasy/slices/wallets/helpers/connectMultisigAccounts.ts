@@ -43,16 +43,27 @@ const getKeyMultisigAccounts = async (
     config.urls.nearBlocksApi.getAccountsUrl(publicKey),
   );
 
+  const accounts: string[] = await (
+    await fetch(config.urls.kitWallet.keyAccounts(publicKey))
+  ).json();
+
+  // merge accounts from NEAR Blocks API and Kit Wallet API
+  const a: string[] = accountsWithSameKey.keys.map((a) => a.account_id);
+
+  const accountsWithSameKeyAndKitWallet = Array.from(
+    new Set([...a, ...accounts]),
+  );
+
   const results = await Promise.allSettled(
-    accountsWithSameKey.keys.map((account) =>
-      isMultisig(account.account_id, provider),
+    accountsWithSameKeyAndKitWallet.map((account) =>
+      isMultisig(account, provider),
     ),
   );
 
   return results
     .map((promise, index) => ({
       status: promise.status,
-      accountId: accountsWithSameKey.keys[index].account_id,
+      accountId: accountsWithSameKeyAndKitWallet[index],
     }))
     .filter((promise) => promise.status === "fulfilled")
     .map(({ accountId }) => ({
