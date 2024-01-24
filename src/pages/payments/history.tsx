@@ -44,13 +44,13 @@ const History: NextPageWithLayout = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Wallet</TableHead>
-              <TableHead>Token</TableHead>
               <TableHead>Transaction ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Approved Date</TableHead>
               <TableHead>Memo</TableHead>
               <TableHead>Creator</TableHead>
               <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Token</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -59,9 +59,6 @@ const History: NextPageWithLayout = () => {
                 <TableCell className="font-medium">
                   {transaction.wallet.walletAddress}
                 </TableCell>
-                <TableCell className="max-w-[100px] truncate">
-                  {transaction.token}
-                </TableCell>{" "}
                 <TableCell>
                   <a
                     href={config.urls.nearBlocks.txDetails(
@@ -84,6 +81,9 @@ const History: NextPageWithLayout = () => {
                 <TableCell>{transaction.creatorMail}</TableCell>
                 <TableCell className="text-right">
                   {transaction.amount.toString()}
+                </TableCell>
+                <TableCell className="max-w-[100px] truncate ">
+                  {transaction.token}
                 </TableCell>
               </TableRow>
             ))}
