@@ -6,7 +6,7 @@ import { createNearBlocksApiUrls } from "./nearBlocksApi";
 export const mainnet: Config = {
   networkId: "mainnet",
   urls: {
-    rpc: "https://rpc.mainnet.near.org",
+    rpc: "https://beta.rpc.mainnet.near.org",
     myNearWallet: "https://app.mynearwallet.com",
     kitWallet: createKitWalletUrls("https://api.kitwallet.app"),
     nearBlocks: createNearBlocksUrls("https://nearblocks.io"),

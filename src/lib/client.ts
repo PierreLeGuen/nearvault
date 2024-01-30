@@ -1,5 +1,13 @@
 import * as nearAPI from "near-api-js";
 import { initLockupContract } from "./lockup/contract";
+import { Provider } from "near-api-js/lib/providers";
+import { FungibleTokenMetadata } from "./ft/contract";
+import {
+  CodeResult,
+  QueryResponseKind,
+} from "near-api-js/lib/providers/provider";
+import { providers } from "near-api-js";
+import { config } from "~/config/config";
 
 export async function getSelectedPool(
   accountId: string,
@@ -11,6 +19,12 @@ export async function getSelectedPool(
 }
 
 const TTA_URL = "https://tta-api.onrender.com";
+
+function getProvider() {
+  return new providers.JsonRpcProvider({
+    url: config.urls.rpc,
+  });
+}
 
 export async function getTransactionsReport(
   startDate: Date,
@@ -49,4 +63,88 @@ export async function getTransactionsReport(
     a.click();
     a.remove();
   }
+}
+
+export async function getFtBalanceAtDate(date: Date, accountId: string) {
+  const blockId = await getLikelyBlockIdForDate(date);
+
+  const balance = await getFtBalanceAtBlock(
+    "usdt.tether-token.near",
+    accountId,
+    Number(blockId),
+  );
+  return balance;
+}
+
+export async function getFtBalanceAtBlock(
+  contractId: string,
+  accountId: string,
+  blockId: number,
+) {
+  const balance = await viewCall<string>(
+    contractId,
+    "ft_balance_of",
+    {
+      account_id: accountId,
+    },
+    Number(blockId),
+  );
+
+  console.log(balance);
+
+  const ftMetadata = await viewCall<FungibleTokenMetadata>(
+    contractId,
+    "ft_metadata",
+    {},
+    blockId,
+  );
+
+  console.log({
+    balance,
+    ftMetadata,
+  });
+
+  return {
+    balance,
+    ftMetadata,
+  };
+}
+
+export async function getLikelyBlockIdForDate(date: Date) {
+  const rfcDate = date.toISOString();
+
+  const response = await (
+    await fetch(TTA_URL + "/likelyBlockId?date=" + rfcDate)
+  ).text();
+
+  return response;
+}
+
+export function encodeArgs(args: Record<string, unknown>) {
+  return Buffer.from(JSON.stringify(args)).toString("base64");
+}
+
+export async function viewCall<T>(
+  contract: string,
+  method: string,
+  args: Record<string, unknown>,
+  blockId?: number,
+) {
+  const provider = getProvider();
+
+  const blockIdObj = {};
+  if (blockId) {
+    blockIdObj["block_id"] = blockId;
+  }
+
+  const result = await provider.query<CodeResult>({
+    request_type: "call_function",
+    finality: "final",
+    account_id: contract,
+    method_name: method,
+    args_base64: encodeArgs(args),
+    ...blockIdObj,
+  });
+
+  return JSON.parse(Buffer.from(result.result).toString()) as T;
 }
