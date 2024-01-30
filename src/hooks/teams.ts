@@ -11,6 +11,11 @@ import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
+import {
+  getDaysDateBetweenDates,
+  useGetBalanceBetweenDates,
+} from "./dashboard";
+import { getFtBalanceAtDate } from "~/lib/client";
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
@@ -188,5 +193,36 @@ export function useCreateTeamAndInviteUsers() {
 
       return team;
     },
+  });
+}
+
+export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
+  const wallets = useTeamsWalletsWithLockups();
+  const days = getDaysDateBetweenDates(from, to);
+
+  return useQuery({
+    queryKey: ["balances", from, to],
+    queryFn: async () => {
+      const balances = await Promise.all(
+        wallets.data?.flatMap(async (wallet) => {
+          return days.map(async (date) => {
+            const balance = await getFtBalanceAtDate(
+              date,
+              wallet.walletDetails.walletAddress,
+            );
+            return {
+              date,
+              wallet,
+              balance,
+            };
+          });
+        }) || [],
+      );
+      const res = await Promise.all(balances.flat());
+      console.log(res);
+
+      return res;
+    },
+    enabled: !!wallets.data,
   });
 }

@@ -90,19 +90,12 @@ export async function getFtBalanceAtBlock(
     Number(blockId),
   );
 
-  console.log(balance);
-
   const ftMetadata = await viewCall<FungibleTokenMetadata>(
     contractId,
     "ft_metadata",
     {},
     blockId,
   );
-
-  console.log({
-    balance,
-    ftMetadata,
-  });
 
   return {
     balance,
@@ -132,18 +125,19 @@ export async function viewCall<T>(
 ) {
   const provider = getProvider();
 
-  const blockIdObj = {};
+  const opt = {};
   if (blockId) {
-    blockIdObj["block_id"] = blockId;
+    opt["block_id"] = blockId;
+  } else {
+    opt["finality"] = "final";
   }
 
   const result = await provider.query<CodeResult>({
     request_type: "call_function",
-    finality: "final",
     account_id: contract,
     method_name: method,
     args_base64: encodeArgs(args),
-    ...blockIdObj,
+    ...opt,
   });
 
   return JSON.parse(Buffer.from(result.result).toString()) as T;

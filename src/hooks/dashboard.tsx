@@ -5,19 +5,20 @@ import usePersistingStore from "~/store/useStore";
 export function useGetBalanceBetweenDates(
   from: Date,
   to: Date,
-  accountId: string,
+  accounts: string[],
 ) {
+  console.log("useGetBalanceBetweenDates", from, to, accounts);
   const daysTimestamps = getDaysDateBetweenDates(from, to);
 
   return useQueries({
-    queries: daysTimestamps.map((date, idx) => {
-      return {
+    queries: daysTimestamps.flatMap((date) =>
+      accounts.map((accountId) => ({
         queryKey: ["coinBalance", date, accountId],
         queryFn: async () => {
           return getFtBalanceAtDate(date, accountId);
         },
-      };
-    }),
+      })),
+    ),
   });
 }
 
@@ -50,7 +51,7 @@ export function useLikelyBlockIdForDate(date: Date) {
   });
 }
 
-function getDaysDateBetweenDates(from: Date, to: Date) {
+export function getDaysDateBetweenDates(from: Date, to: Date) {
   const daysTimestamps: Date[] = [];
   const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
   const diffDays = Math.round(
