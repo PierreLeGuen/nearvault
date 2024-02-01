@@ -7,7 +7,9 @@ export const completeConnection = thunk(
     const slice: any = getState();
     const actions: any = getStoreActions();
     const navigate = actions.wallets.modal.navigate;
-
+    
+    console.log('completeConnection', { publicKey });
+    
     actions.wallets.modal.open();
 
     await connectMultisigAccounts({

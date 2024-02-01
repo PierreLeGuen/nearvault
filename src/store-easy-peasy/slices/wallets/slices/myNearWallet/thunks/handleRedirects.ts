@@ -1,4 +1,5 @@
 import { thunk } from "easy-peasy";
+import { PublicKey } from "near-api-js/lib/utils";
 
 // connectStatus=Allowed - open modal and start looking for multisig accounts
 // connectStatus=Rejected - do nothing
@@ -13,15 +14,29 @@ const getSearchParams = () => {
   const connectStatus = searchParams.get("connectStatus");
   const returnTo = searchParams.get("returnTo");
 
-  if (connectStatus === "Allowed")
+  if (connectStatus === "Allowed") {
+    const _publicKey = searchParams.get("all_keys").split(",")[0];
+    if (!_publicKey) {
+      throw new Error("No public key found in the URL");
+    }
+
+    const publicKey = PublicKey.from(_publicKey);
+
+    const _accId = searchParams.get("accountId") || searchParams.get("account_id");
+    if (!_accId) {
+      throw new Error("No account ID found in the URL");
+    }
+
+    const accountId = _accId;
+
     return {
       connectAllowed: true,
       returnTo,
-      accountId:
-        searchParams.get("accountId") || searchParams.get("account_id"),
-      publicKey: searchParams.get("all_keys").split(",")[0],
+      accountId,
+      publicKey,
     };
-
+  }
+  
   const transactionHashes = searchParams.get("transactionHashes");
 
   if (transactionHashes)
@@ -48,11 +63,14 @@ export const handleRedirects = thunk(
       returnTo,
     } = getSearchParams();
 
+    const pk = PublicKey.from(publicKey);
+    console.log(pk);
+    
     if (connectAllowed) {
       actions.wallets.myNearWallet.completeConnection({
         router,
         accountId,
-        publicKey,
+        publicKey: pk,
       });
     }
 
