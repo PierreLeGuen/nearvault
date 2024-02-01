@@ -17,8 +17,10 @@ export const sendTx = async (
     
 
     const provider = new JsonRpcProvider({ url });
-    const outcome = await provider.sendTransaction(signedTx);
-
+    const outcome: any = await provider.sendJsonRpc("broadcast_tx_commit", [
+      Buffer.from(signedTx.encode()).toString("base64"),
+    ]);
+    
     // @ts-ignore
     if (outcome.status.Failure) {
       navigate({ route: "/tx/send/error", routeParams: { outcome } });
