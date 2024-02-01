@@ -1,8 +1,9 @@
 import { thunk } from "easy-peasy";
+import { PublicKey } from "near-api-js/lib/utils";
 
 type Payload = {
   contractId: string;
-  publicKey: string;
+  publicKey: PublicKey;
 }
 
 export const deleteKey = thunk(async (_, payload: Payload, { getStoreActions }) => {

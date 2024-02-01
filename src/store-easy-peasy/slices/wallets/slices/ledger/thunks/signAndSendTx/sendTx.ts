@@ -13,6 +13,9 @@ export const sendTx = async (
       routeParams: { tx: signedTx.transaction },
     });
 
+    console.log('sendTx', { signedTx, url });
+    
+
     const provider = new JsonRpcProvider({ url });
     const outcome = await provider.sendTransaction(signedTx);
 
@@ -23,6 +26,7 @@ export const sendTx = async (
     }
     navigate({ route: "/tx/send/success", routeParams: { outcome } });
   } catch (error) {
+    console.error("sendTx error:", error);
     navigate({ route: "/tx/send/error", routeParams: { error } });
   }
 };

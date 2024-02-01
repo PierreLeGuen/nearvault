@@ -124,6 +124,8 @@ export class LedgerClient {
   };
 
   sign = async ({ data, derivationPath }: SignParams) => {
+    console.log('sign', { data, derivationPath });
+    
     this.ifNotConnected();
     // NOTE: getVersion call resets state to avoid starting from partially filled buffer
     await this.getVersion();

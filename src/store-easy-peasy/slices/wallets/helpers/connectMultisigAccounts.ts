@@ -1,9 +1,9 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
-import type { AccountId, PublicKey } from "~/store-easy-peasy/types";
 import type { NavigateFn } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
 import type { AddAccountsFn } from "~/store-easy-peasy/slices/accounts/types";
+import { PublicKey } from "near-api-js/lib/utils";
 
 type Key = {
   public_key: string;
@@ -37,18 +37,20 @@ const getKeyMultisigAccounts = async (
   wallet: string,
   rpcUrl: string,
 ) => {
+  console.log('getKeyMultisigAccounts', { publicKey, wallet, rpcUrl });
+  
   const provider = new JsonRpcProvider({ url: rpcUrl });
 
   const accountsWithSameKey: KeysResponse = await fetchJson(
-    config.urls.nearBlocksApi.getAccountsUrl(publicKey),
+    config.urls.nearBlocksApi.getAccountsUrl(publicKey.toString()),
   );
 
   const accounts: string[] = await (
-    await fetch(config.urls.kitWallet.keyAccounts(publicKey))
+    await fetch(config.urls.kitWallet.keyAccounts(publicKey.toString()))
   ).json();
 
   // merge accounts from NEAR Blocks API and Kit Wallet API
-  const a: string[] = accountsWithSameKey.keys.map((a) => a.account_id);
+  const a: string[] = accountsWithSameKey.keys.filter((k) => k.deleted.block_timestamp == null).map((a) => a.account_id);
 
   const accountsWithSameKeyAndKitWallet = Array.from(
     new Set([...a, ...accounts]),
@@ -60,17 +62,26 @@ const getKeyMultisigAccounts = async (
     ),
   );
 
-  return results
-    .map((promise, index) => ({
-      status: promise.status,
-      accountId: accountsWithSameKeyAndKitWallet[index],
-    }))
-    .filter((promise) => promise.status === "fulfilled")
-    .map(({ accountId }) => ({
-      accountId,
-      publicKey,
-      wallet,
-    }));
+  console.log(results);
+  
+
+  const res = results
+  .map((promise, index) => ({
+    status: promise.status,
+    accountId: accountsWithSameKeyAndKitWallet[index],
+  }))
+  .filter((promise) => promise.status === "fulfilled")
+  .map(({ accountId }) => {
+    return{
+    accountId,
+    publicKey,
+    wallet,
+  };});
+
+  console.log(res);
+  
+
+  return res;
 };
 
 type ConnectMultisigAccountsArgs = {
@@ -89,7 +100,8 @@ export const connectMultisigAccounts = async ({
   wallet,
 }: ConnectMultisigAccountsArgs) => {
   navigate("/multisig-accounts/progress");
-
+  console.log('connectMultisigAccounts', { publicKey, navigate, rpcUrl, addAccounts, wallet });
+  
   try {
     const multisigAccounts = await getKeyMultisigAccounts(
       publicKey,
@@ -106,7 +118,8 @@ export const connectMultisigAccounts = async ({
       route: "/multisig-accounts/success",
       routeParams: { accounts: multisigAccounts },
     });
-    addAccounts(multisigAccounts);
+    const a = multisigAccounts.map((a) => ({accountId: a.accountId, publicKey: a.publicKey.toString(),wallet: a.wallet}));
+    addAccounts(a);
   } catch (error) {
     console.error(error);
     navigate({

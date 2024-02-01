@@ -8,11 +8,13 @@ export const signAndSendTx = thunk(async (_, payload: any, { getState }) => {
 
   const newUrl = new URL(slice.signUrl);
 
+  const encodedTx = serialize(SCHEMA, transaction);
   newUrl.searchParams.set(
     "transactions",
-    Buffer.from(serialize(SCHEMA, transaction)).toString("base64"),
+    Buffer.from(encodedTx).toString("base64"),
   );
 
+  
   const callbackUrl = `${window.location.origin}/wallet-redirects/my-near-wallet?returnTo=${window.location.pathname}`;
   newUrl.searchParams.set("callbackUrl", callbackUrl);
 

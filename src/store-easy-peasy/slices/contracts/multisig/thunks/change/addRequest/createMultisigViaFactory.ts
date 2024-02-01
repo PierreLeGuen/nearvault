@@ -3,10 +3,11 @@ import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toGas } from "~/store-easy-peasy/helpers/toGas";
 import { toBase64Json } from "~/store-easy-peasy/helpers/toBase64Json";
 import { config } from '~/config/config';
+import { PublicKey } from "near-api-js/lib/utils";
 
 type Payload = {
   contractId: string;
-  publicKey: string;
+  publicKey: PublicKey;
 };
 
 export const createMultisigViaFactory = thunk(

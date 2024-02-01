@@ -2,7 +2,6 @@ import { Accounts } from '~/store-easy-peasy/slices/accounts/types';
 import { Wallets } from '~/store-easy-peasy/slices/wallets/types';
 
 export type AccountId = string;
-export type PublicKey = string;
 
 export type Store = {
   accounts: Accounts,

@@ -24,6 +24,10 @@ export const connect: Connect = thunk(
       ledger.isConnected() && (await ledger.disconnect());
     }
 
+    console.log('connect', { publicKey });
+    console.log(publicKey.toString());
+    
+
     if (!publicKey) return;
 
     await connectMultisigAccounts({

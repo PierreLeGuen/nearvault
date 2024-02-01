@@ -1,5 +1,6 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useStoreActions } from "easy-peasy";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -46,10 +47,9 @@ import {
 import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
 import { cn } from "~/lib/utils";
+import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { useStoreActions } from "easy-peasy";
-import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
 
 const formSchema = z.object({
   fromWallet: z.string({
@@ -137,6 +137,9 @@ const TransfersPage: NextPageWithLayout = () => {
     }
 
     if (!canSignTx(senderAddress)) return;
+
+    console.log("senderAddress", senderAddress);
+    
 
     try {
       const transactions: any = [];
