@@ -21,6 +21,7 @@ import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSend
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type StateCreator } from "zustand";
 import { NextRouter } from "next/router";
+import { NavActions, NavState, createWalletNavigation } from "./navigation";
 
 type PublicKeyStr = string;
 type AccountId = string;
@@ -29,13 +30,13 @@ type Source = "ledger" | "mynearwallet";
 type PkAndAccounts = Record<PublicKeyStr, AccountId[]>;
 type PkAndSources = Record<PublicKeyStr, Source>;
 
-interface State {
+export interface WsState {
   accounts: PkAndAccounts;
   sources: PkAndSources;
   selectedPublicKey: PublicKeyStr;
 }
 
-interface Actions {
+interface WsActions {
   addAccounts: (accounts: PkAndAccounts, sources: PkAndSources) => void;
   signWithLedger: (tx: Transaction) => Promise<SignedTransaction>;
   signWithMnw: (tx: Transaction) => void;
@@ -63,10 +64,12 @@ interface Actions {
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
 }
 
-export const createWalletTerminator: StateCreator<State & Actions> = (
-  set,
-  get,
-) => ({
+export const createWalletTerminator: StateCreator<
+  WsState & WsActions & NavActions,
+  [],
+  [],
+  WsState & WsActions
+> = (set, get) => ({
   accounts: {},
   sources: {},
   selectedPublicKey: "",
@@ -119,12 +122,13 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
       if (!ledger.isConnected()) {
         await ledger.connect();
       }
-
+      get().goToLedgerSharePublicKey();
       const publicKey = await ledger.getPublicKey(derivationPath);
 
       pkStr = publicKey.toString();
     } catch (e) {
       console.error(e);
+      get().goToLedgerDerivationPath(e.message);
     } finally {
       if (ledger.isConnected()) {
         await ledger.disconnect();
@@ -146,6 +150,8 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
     const newSources: Record<PublicKeyStr, Source> = { [pkStr]: "ledger" };
 
     get().addAccounts(newAccounts, newSources);
+
+    get().goToLedgerSharePublicKeySuccess(pkStr);
 
     get().setSelectedPublicKey(pkStr);
 
@@ -274,6 +280,16 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
   },
 });
 
-export const useWalletTerminator = create<State & Actions>()(
-  devtools(persist(createWalletTerminator, { name: "wallet-terminator" })),
+export const useWalletTerminator = create<
+  WsState & WsActions & NavState & NavActions
+>()(
+  devtools(
+    persist(
+      (...a) => ({
+        ...createWalletTerminator(...a),
+        ...createWalletNavigation(...a),
+      }),
+      { name: "wallet-terminator" },
+    ),
+  ),
 );
