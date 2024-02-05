@@ -14,6 +14,7 @@ import { ToastContainer } from "react-toastify";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "react-toastify/dist/ReactToastify.css";
+import { WalletHome } from "~/components/Modal/ModalHome";
 import "~/styles/globals.css";
 
 config.autoAddCss = false;
@@ -47,6 +48,7 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
           <RehydrateWrapper>
             {layout}
             <ToastContainer />
+            <WalletHome />
           </RehydrateWrapper>
         </StoreProvider>
       </QueryClientProvider>

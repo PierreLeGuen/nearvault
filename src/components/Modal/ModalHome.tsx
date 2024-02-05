@@ -22,7 +22,7 @@ const Default = () => {
   return (
     <>
       <Button onClick={() => startLedgerConnect()}>Ledger connect</Button>
-      <Button onClick={() => wsStore.connectWithMyNearWallet()}>
+      <Button onClick={() => wsStore.connectWithMyNearWallet()} disabled={true}>
         MyNearWallet connect
       </Button>
       <Button onClick={() => wsStore.closeModal()} variant={"outline"}>
@@ -106,8 +106,9 @@ const LedgerSharePublicKey = () => {
 
 const LedgerSharePublicKeySuccess = () => {
   const wsStore = useWalletTerminator();
+
   return (
-    <div className="w-100% flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <p className="break-word break-alls">
         Found the following accounts associated to the key: {wsStore.sharedPk}.
       </p>
@@ -119,13 +120,25 @@ const LedgerSharePublicKeySuccess = () => {
       {wsStore.discoveredAccounts.length === 0 && (
         <p className="text-red-500">No accounts found for this public key.</p>
       )}
-      <Button onClick={wsStore.closeModal} variant={"outline"}>
-        Close
-      </Button>
+      <Button onClick={wsStore.closeModal}>Close</Button>
       <Button onClick={wsStore.goHome} variant={"outline"}>
         Back home
       </Button>
     </div>
+  );
+};
+
+const LedgerSignTransaction = () => {
+  const wsStore = useWalletTerminator();
+
+  return (
+    <>
+      <p>Sign the transaction on your ledger device.</p>
+      {wsStore.ledgerError && (
+        <p className="text-red-500">{wsStore.ledgerError}</p>
+      )}
+      <Button onClick={wsStore.closeModal}>Cancel</Button>{" "}
+    </>
   );
 };
 
@@ -138,6 +151,21 @@ const LedgerError = () => {
       <Button onClick={wsStore.goHome}>Back home</Button>{" "}
     </>
   );
+};
+
+const WaitForTransaction = () => {
+  const wsStore = useWalletTerminator();
+
+  if (wsStore.transactionId) {
+    return (
+      <>
+        <p>Transaction ID: {wsStore.transactionId}</p>
+        <Button onClick={wsStore.closeModal}>Close</Button>
+      </>
+    );
+  }
+
+  return <p>Waiting for transaction to be processed by the chain...</p>;
 };
 
 const GetGoodModal = () => {
@@ -154,8 +182,12 @@ const GetGoodModal = () => {
       return <LedgerError />;
     case ModalState.LedgerSharePublicKeySuccess:
       return <LedgerSharePublicKeySuccess />;
+    case ModalState.LedgerSignTransaction:
+      return <LedgerSignTransaction />;
+    case ModalState.WaitForTransaction:
+      return <WaitForTransaction />;
     default:
-      return "Not implemented yet";
+      return "Not implemented yet: " + JSON.stringify(wsStore.modalState);
   }
 };
 
