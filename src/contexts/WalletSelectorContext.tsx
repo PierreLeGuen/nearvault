@@ -50,15 +50,13 @@ export const WalletSelectorContextProvider: React.FC<{
     const _selector = await setupWalletSelector({
       network: {
         networkId: NETWORK_ID,
-        nodeUrl: "http://beta.rpc.testnet.near.org",
+        nodeUrl: config.urls.rpc,
         helperUrl: "https://helper.testnet.near.org",
         explorerUrl: "https://testnet.nearblocks.io",
         indexerUrl: "https://testnet-api.kitwallet.app",
       },
       debug: true,
-      modules: [setupLedger(), setupMyNearWallet({
-        
-      })],
+      modules: [setupLedger(), setupMyNearWallet({})],
     });
     const _modal = setupModal(_selector, {
       contractId: CONTRACT_ID,
@@ -69,7 +67,7 @@ export const WalletSelectorContextProvider: React.FC<{
     setSelector(_selector);
     setModal(_modal);
     setLoading(false);
-  }, []);
+  }, [NETWORK_ID]);
 
   useEffect(() => {
     init().catch((err) => {

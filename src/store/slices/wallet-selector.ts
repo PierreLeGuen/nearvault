@@ -10,6 +10,7 @@ import {
   filterMultisig,
   getAccessKey,
   getAccountsForPublicKey,
+  getLatestBlockHash,
 } from "../helpers/utils";
 import { PublicKey } from "near-api-js/lib/utils";
 import { transactions, utils } from "near-api-js";
@@ -19,7 +20,7 @@ import { devtools, persist } from "zustand/middleware";
 import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type StateCreator } from "zustand";
-import { NextRouter, Router } from "next/router";
+import { NextRouter } from "next/router";
 
 type PublicKeyStr = string;
 type AccountId = string;
@@ -56,7 +57,7 @@ interface Actions {
   }: {
     senderId: AccountId;
     receiverId: AccountId;
-    action: Action;
+    action?: Action;
     actions: Action[];
   }) => Promise<void>;
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
@@ -112,17 +113,23 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
     set({ selectedPublicKey: pk });
   },
   connectWithLedger: async (derivationPath?: string) => {
+    let pkStr = "";
     const ledger = new LedgerClient();
-    if (!ledger.isConnected()) {
-      await ledger.connect();
-    }
+    try {
+      if (!ledger.isConnected()) {
+        await ledger.connect();
+      }
 
-    const publicKey = await ledger.getPublicKey(derivationPath);
-    if (ledger.isConnected()) {
-      await ledger.disconnect();
-    }
+      const publicKey = await ledger.getPublicKey(derivationPath);
 
-    const pkStr = publicKey.toString();
+      pkStr = publicKey.toString();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (ledger.isConnected()) {
+        await ledger.disconnect();
+      }
+    }
 
     console.log("connectWithLedger", { pkStr });
 
@@ -205,21 +212,23 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
     const accessKey: any = await getAccessKey({
       rpcUrl: rpc,
       senderId,
-      publicKey: PublicKey.from(publicKey),
+      signerPublicKey: PublicKey.from(publicKey),
     });
+    const block = await getLatestBlockHash(rpc);
     const nonce = accessKey.nonce + 1_000;
-    const blockHash = utils.serialize.base_decode(accessKey.block_hash);
     const tx = createTransaction(
       senderId,
       PublicKey.from(publicKey),
       recvId,
       nonce,
       getActions(action, actions),
-      blockHash,
+      utils.serialize.base_decode(block.header.hash),
     );
     return tx;
   },
   signAndSendTransaction: async (params) => {
+    console.log("signAndSendTransaction", params);
+
     const selectedPk = get().selectedPublicKey;
     const tx = await get().createTx(
       selectedPk,
@@ -228,6 +237,8 @@ export const createWalletTerminator: StateCreator<State & Actions> = (
       params.action,
       params.actions,
     );
+    console.log("signAndSendTransaction", { tx });
+
     const source = get().sources[selectedPk];
     if (source === "ledger") {
       const signedTx = await get().signWithLedger(tx);
