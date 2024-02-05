@@ -6,7 +6,9 @@ export enum ModalState {
   LedgerDerivationPath,
   LedgerSharePublicKey,
   LedgerSharePublicKeySuccess,
+  LedgerSignTransaction,
   LedgerError,
+  WaitForTransaction,
 }
 
 export interface NavState {
@@ -15,6 +17,7 @@ export interface NavState {
   ledgerError: string;
   sharedPk: string;
   discoveredAccounts: string[];
+  transactionId: string;
 }
 
 export interface NavActions {
@@ -25,6 +28,8 @@ export interface NavActions {
   goToLedgerSharePublicKey: () => void;
   goToLedgerSharePublicKeySuccess: (key: string) => void;
   goToLedgerError: (error) => void;
+  goToLedgerSignTransaction: (error?: string) => void;
+  goToWaitForTransaction: (transactionId?: string) => void;
 }
 
 export const createWalletNavigation: StateCreator<
@@ -38,6 +43,7 @@ export const createWalletNavigation: StateCreator<
   ledgerError: "",
   sharedPk: "",
   discoveredAccounts: [],
+  transactionId: "",
   openModal: () => {
     set({ isModalOpen: true });
   },
@@ -62,6 +68,19 @@ export const createWalletNavigation: StateCreator<
       sharedPk: key,
       discoveredAccounts: discoveredAccounts.filter(Boolean),
       modalState: ModalState.LedgerSharePublicKeySuccess,
+    });
+  },
+  goToLedgerSignTransaction: (error?: string) => {
+    set({
+      isModalOpen: true,
+      modalState: ModalState.LedgerSignTransaction,
+      ledgerError: error,
+    });
+  },
+  goToWaitForTransaction: (transactionId?: string) => {
+    set({
+      modalState: ModalState.WaitForTransaction,
+      transactionId: transactionId,
     });
   },
 });
