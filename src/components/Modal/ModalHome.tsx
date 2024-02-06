@@ -1,3 +1,4 @@
+import { ReloadIcon } from "@radix-ui/react-icons";
 import { z } from "zod";
 import {
   Dialog,
@@ -98,7 +99,18 @@ const LedgerSharePublicKey = () => {
   const wsStore = useWalletTerminator();
   return (
     <>
-      Check your ledger device and confirm the public key.
+      <strong>Action required on Ledger device</strong>
+      <p>
+        Make sure your Ledger is connected securely via USB, and that the NEAR
+        app is open on your device
+      </p>
+      <p>
+        Please share the public key to discover associated multisig accounts.
+      </p>
+      <Button disabled>
+        <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+        Waiting for approval
+      </Button>
       <Button onClick={wsStore.goHome}>Back home</Button>{" "}
     </>
   );
@@ -120,7 +132,7 @@ const LedgerSharePublicKeySuccess = () => {
       {wsStore.discoveredAccounts.length === 0 && (
         <p className="text-red-500">No accounts found for this public key.</p>
       )}
-      <Button onClick={wsStore.closeModal}>Close</Button>
+      <Button onClick={() => wsStore.goToLedgerDerivationPath()}>Back</Button>
       <Button onClick={wsStore.goHome} variant={"outline"}>
         Back home
       </Button>
@@ -133,22 +145,18 @@ const LedgerSignTransaction = () => {
 
   return (
     <>
+      <strong>Action required on Ledger device</strong>
       <p>Sign the transaction on your ledger device.</p>
       {wsStore.ledgerError && (
         <p className="text-red-500">{wsStore.ledgerError}</p>
       )}
+      {!wsStore.ledgerError && (
+        <Button disabled>
+          <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+          Waiting for approval
+        </Button>
+      )}
       <Button onClick={wsStore.closeModal}>Cancel</Button>{" "}
-    </>
-  );
-};
-
-const LedgerError = () => {
-  const wsStore = useWalletTerminator();
-
-  return (
-    <>
-      {wsStore.ledgerError}
-      <Button onClick={wsStore.goHome}>Back home</Button>{" "}
     </>
   );
 };
@@ -159,13 +167,22 @@ const WaitForTransaction = () => {
   if (wsStore.transactionId) {
     return (
       <>
+        <p>Success!</p>
         <p>Transaction ID: {wsStore.transactionId}</p>
         <Button onClick={wsStore.closeModal}>Close</Button>
       </>
     );
   }
 
-  return <p>Waiting for transaction to be processed by the chain...</p>;
+  return (
+    <>
+      <p>Waiting for transaction to be processed by the chain...</p>
+      <Button disabled>
+        <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+        Processing
+      </Button>
+    </>
+  );
 };
 
 const GetGoodModal = () => {
@@ -178,8 +195,6 @@ const GetGoodModal = () => {
       return <DerivationPath />;
     case ModalState.LedgerSharePublicKey:
       return <LedgerSharePublicKey />;
-    case ModalState.LedgerError:
-      return <LedgerError />;
     case ModalState.LedgerSharePublicKeySuccess:
       return <LedgerSharePublicKeySuccess />;
     case ModalState.LedgerSignTransaction:

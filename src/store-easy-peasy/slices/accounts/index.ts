@@ -2,7 +2,8 @@ import { persist } from "easy-peasy";
 import { selectAccount } from "~/store-easy-peasy/slices/accounts/actions/selectAccount";
 import { addAccounts } from "~/store-easy-peasy/slices/accounts/actions/addAccounts";
 import { canSignTx } from "~/store-easy-peasy/slices/accounts/thunks/canSignTx";
-import { Accounts } from '~/store-easy-peasy/slices/accounts/types';
+import { Accounts } from "~/store-easy-peasy/slices/accounts/types";
+import { logOutFromAccounts } from "./actions/logOutFromAccounts";
 
 const model = {
   selected: null,
@@ -11,6 +12,7 @@ const model = {
   // actions
   selectAccount,
   addAccounts,
+  logOutFromAccounts,
   // thunks
   canSignTx,
 };
