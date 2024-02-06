@@ -23,7 +23,11 @@ const functionCall = (action: FunctionCallAction) => {
 
 export const getActions = (action: any, actions: any) => {
   const list = actions ? actions : [action];
-  return list.map((action: any) => {
+  // check if action is of type Uint8Array
+  const l = list.map((action: any) => {
     if (action.type === "FunctionCall") return functionCall(action);
+    return action;
   });
+  console.log("getActions", { l });
+  return l;
 };

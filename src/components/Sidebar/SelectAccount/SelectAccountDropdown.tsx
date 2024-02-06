@@ -1,4 +1,3 @@
-import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -9,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
 import type { OpenFn } from "~/store-easy-peasy/slices/wallets/slices/modal/types";
 
 type Props = {
@@ -51,6 +51,9 @@ export const SelectAccountDropdown = ({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => openWalletModal()}>
           Add wallet...
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openWalletModal()}>
+          Log out from wallet(s)...
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

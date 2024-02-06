@@ -48,6 +48,7 @@ import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
 import { cn } from "~/lib/utils";
 import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -70,6 +71,8 @@ const TransfersPage: NextPageWithLayout = () => {
   const signAndSendTransaction = useStoreActions(
     (actions: any) => actions.wallets.signAndSendTransaction,
   );
+
+  const wsStore = useWalletTerminator();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -139,7 +142,6 @@ const TransfersPage: NextPageWithLayout = () => {
     if (!canSignTx(senderAddress)) return;
 
     console.log("senderAddress", senderAddress);
-    
 
     try {
       const transactions: any = [];
@@ -275,7 +277,8 @@ const TransfersPage: NextPageWithLayout = () => {
         }
       }
       console.log("transfer transactions", transactions);
-      await signAndSendTransaction(transactions[0]);
+      // await signAndSendTransaction(transactions[0]);
+      await wsStore.signAndSendTransaction(transactions[0]);
     } catch (e) {
       console.error(e);
     }
@@ -291,6 +294,15 @@ const TransfersPage: NextPageWithLayout = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {JSON.stringify(wsStore.accounts)}
+          {wsStore.selectedPublicKey}
+          <Button onClick={() => wsStore.connectWithLedger()}>
+            Connect Ledger
+          </Button>
+          <Button onClick={() => wsStore.connectWithMyNearWallet()}>
+            Connect MyNearWallet
+          </Button>
+          <Button onClick={() => wsStore.openModal()}>Open Modal</Button>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <SenderFormField

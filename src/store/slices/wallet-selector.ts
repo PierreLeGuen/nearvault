@@ -250,10 +250,8 @@ export const createWalletTerminator: StateCreator<
       const signedTx = await get().signWithLedger(tx);
       const provider = new JsonRpcProvider({ url: config.urls.rpc });
       get().goToWaitForTransaction();
-      const txn = await provider.sendJsonRpc("broadcast_tx_commit", [
-        Buffer.from(signedTx.encode()).toString("base64"),
-      ]);
-      get().goToWaitForTransaction("done");
+      const txn = await provider.sendTransaction(signedTx);
+      get().goToWaitForTransaction(txn.transaction_outcome.id);
     } else if (source === "mynearwallet") {
       get().signWithMnw(tx);
     }
@@ -261,7 +259,6 @@ export const createWalletTerminator: StateCreator<
   signWithLedger: async (tx: Transaction) => {
     try {
       get().goToLedgerSignTransaction();
-      console.log(JSON.stringify(tx));
       const [_, signedTransaction] = await transactions.signTransaction(
         tx,
         new LedgerSigner(),
