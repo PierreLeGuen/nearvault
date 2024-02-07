@@ -131,7 +131,9 @@ const LedgerSharePublicKeySuccess = () => {
         ))}
       </ul>
       {wsStore.discoveredAccounts.length === 0 && (
-        <p className="text-red-500">No accounts found for this public key.</p>
+        <p className="text-red-500">
+          No multisig accounts found for this public key.
+        </p>
       )}
       <Button onClick={() => wsStore.goToLedgerDerivationPath()}>Back</Button>
       <Button onClick={wsStore.goHome} variant={"outline"}>

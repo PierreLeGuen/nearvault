@@ -1,7 +1,7 @@
 import {
-  Action,
-  SignedTransaction,
-  Transaction,
+  type Action,
+  type SignedTransaction,
+  type Transaction,
   createTransaction,
 } from "near-api-js/lib/transaction";
 import { create } from "zustand";
@@ -20,8 +20,12 @@ import { devtools, persist } from "zustand/middleware";
 import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type StateCreator } from "zustand";
-import { NextRouter } from "next/router";
-import { NavActions, NavState, createWalletNavigation } from "./navigation";
+import { type NextRouter } from "next/router";
+import {
+  type NavActions,
+  type NavState,
+  createWalletNavigation,
+} from "./navigation";
 import { toast } from "react-toastify";
 
 type PublicKeyStr = string;
@@ -49,7 +53,7 @@ interface WsActions {
     actions: Action[],
   ) => Promise<Transaction>;
   connectWithLedger: (derivationPath?: string) => Promise<PublicKeyStr>;
-  connectWithMyNearWallet: () => Promise<void>;
+  connectWithMyNearWallet: () => void;
   handleMnwRedirect: (router: NextRouter) => Promise<void>;
   signAndSendTransaction: ({
     senderId,
@@ -130,7 +134,7 @@ export const createWalletTerminator: StateCreator<
       pkStr = publicKey.toString();
     } catch (e) {
       console.error(e);
-      get().goToLedgerDerivationPath(e.message);
+      get().goToLedgerDerivationPath((e as Error).message);
     } finally {
       if (ledger.isConnected()) {
         await ledger.disconnect();
@@ -159,7 +163,7 @@ export const createWalletTerminator: StateCreator<
 
     return pkStr;
   },
-  connectWithMyNearWallet: async () => {
+  connectWithMyNearWallet: () => {
     const loginUrl = new URL(config.urls.myNearWallet + "/login");
     loginUrl.searchParams.set(
       "success_url",
@@ -236,10 +240,20 @@ export const createWalletTerminator: StateCreator<
   },
   signAndSendTransaction: async (params) => {
     console.log("signAndSendTransaction", params);
+    // find a pk that can be used to sign for the senderId
+    if (!get().canSignForAccount(params.senderId)) {
+      throw new Error(`No public key found for ${params.senderId}`);
+    }
 
-    const selectedPk = get().selectedPublicKey;
+    let publicKeyForTxn = "";
+    for (const pk in get().accounts) {
+      if (get().accounts[pk].includes(params.senderId)) {
+        publicKeyForTxn = pk;
+      }
+    }
+
     const tx = await get().createTx(
-      selectedPk,
+      publicKeyForTxn,
       params.receiverId,
       params.senderId,
       params.action,
@@ -247,7 +261,7 @@ export const createWalletTerminator: StateCreator<
     );
     console.log("signAndSendTransaction", { tx });
 
-    const source = get().sources[selectedPk];
+    const source = get().sources[publicKeyForTxn];
     if (source === "ledger") {
       const signedTx = await get().signWithLedger(tx);
       const provider = new JsonRpcProvider({ url: config.urls.rpc });
@@ -261,13 +275,13 @@ export const createWalletTerminator: StateCreator<
   signWithLedger: async (tx: Transaction) => {
     try {
       get().goToLedgerSignTransaction();
-      const [_, signedTransaction] = await transactions.signTransaction(
+      const [, signedTransaction] = await transactions.signTransaction(
         tx,
         new LedgerSigner(),
       );
       return signedTransaction;
     } catch (e) {
-      get().goToLedgerSignTransaction(e.message);
+      get().goToLedgerSignTransaction((e as Error).message);
       throw e;
     }
   },
