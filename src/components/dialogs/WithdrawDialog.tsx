@@ -2,7 +2,10 @@ import { formatNearAmount } from "near-api-js/lib/utils/format";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
-import { useWithdrawTransaction } from "~/hooks/staking";
+import {
+  useWithdrawAllTransaction,
+  useWithdrawTransaction,
+} from "~/hooks/staking";
 import { WalletPretty } from "~/pages/staking/stake";
 import { StakedPool } from "../Staking/AllStaked";
 import { NearWithMaxInput } from "../inputs/near";
@@ -32,7 +35,9 @@ export function WithdrawDialog(props: {
   pool: StakedPool;
 }) {
   const form = useZodForm(formSchema);
+
   const withdrawTxn = useWithdrawTransaction();
+  const withdrawAllTxn = useWithdrawAllTransaction();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
@@ -41,6 +46,13 @@ export function WithdrawDialog(props: {
       poolId: props.pool.validator_id,
       amountNear: values.amountNear,
       maxAmountYocto: props.pool.withdraw_available,
+    });
+  }
+
+  async function onWithdrawAll() {
+    withdrawAllTxn.mutate({
+      wallet: props.wallet,
+      poolId: props.pool.validator_id,
     });
   }
 
@@ -71,15 +83,27 @@ export function WithdrawDialog(props: {
               disabled={false}
               yoctoMax={props.pool.withdraw_available}
             />
-            <Button type="submit">
-              <div className="inline-flex items-center">Withdraw</div>
-            </Button>
+
+            <span className="inline-flex gap-2">
+              <Button type="submit">Withdraw</Button>
+              <Button type="button" variant="outline" onClick={onWithdrawAll}>
+                Unstake all tokens
+              </Button>
+            </span>
             {withdrawTxn.isError && (
               <div className="text-red-500">
                 {(withdrawTxn.error as Error).message}
               </div>
             )}
             {withdrawTxn.isSuccess && (
+              <div className="text-green-500">Successfully sent request!</div>
+            )}
+            {withdrawAllTxn.isError && (
+              <div className="text-red-500">
+                {(withdrawAllTxn.error as Error).message}
+              </div>
+            )}
+            {withdrawAllTxn.isSuccess && (
               <div className="text-green-500">Successfully sent request!</div>
             )}
           </form>

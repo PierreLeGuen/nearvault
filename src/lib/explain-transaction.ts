@@ -256,9 +256,7 @@ const methodDescriptions: {
     getExplanation: async (args: MethodArgs) => {
       const depositAndStakeParams = args as DepositAndStakeParams;
       return {
-        desc: `Deposits and stakes ${formatNearAmount(
-          depositAndStakeParams.amount,
-        )}Ⓝ.`,
+        desc: `Stakes the attached deposit.`,
         fnReceiverId: undefined, // No specific receiver ID for this action
       };
     },

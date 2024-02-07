@@ -1,18 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import BN from "bn.js";
+import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
 import { StakedPool, WalletData } from "~/components/Staking/AllStaked";
+import { config } from "~/config/config";
 import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
 import { WalletPretty } from "~/pages/staking/stake";
-import usePersistingStore from "~/store/useStore";
-import { useTeamsWalletsWithLockups } from "./teams";
-import { useStoreActions } from "easy-peasy";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
-import { config } from "~/config/config";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import usePersistingStore from "~/store/useStore";
+import { addMultisigRequestAction } from "./manage";
+import { useTeamsWalletsWithLockups } from "./teams";
 
 export type PoolId = string;
 export type Percentage = number;
+
+export const TGas = 1000000000000;
 
 export type Pool = {
   id: PoolId;
@@ -103,10 +108,7 @@ export function useListAllStakingPoolsWithDetails() {
 }
 
 export function useAddRequestStakeToPool() {
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
+  const wsStore = useWalletTerminator();
   const { newNearConnection } = usePersistingStore();
   const queryClient = useQueryClient();
 
@@ -120,14 +122,6 @@ export function useAddRequestStakeToPool() {
       poolId: string;
       amountNear: number;
     }) => {
-      const accId = await getSelectedPool(
-        "",
-        selectedWallet.walletDetails.walletAddress,
-        await newNearConnection(),
-      );
-      console.log(selectedWallet);
-      console.log(accId);
-
       try {
         let fromAddress = selectedWallet.walletDetails.walletAddress;
 
@@ -137,25 +131,35 @@ export function useAddRequestStakeToPool() {
           }
           fromAddress = selectedWallet.ownerAccountId;
         }
-        if (!canSignTx(fromAddress)) return;
+        if (!wsStore.canSignForAccount(fromAddress)) return;
 
         if (selectedWallet.isLockup) {
           if (!selectedWallet.ownerAccountId) {
             throw new Error("No owner account id");
           }
 
+          console.log(selectedWallet, poolId);
+
+          const selectedPoolId = await getSelectedPool(
+            "",
+            selectedWallet.walletDetails.walletAddress,
+            await newNearConnection(),
+          );
+          console.log(selectedWallet);
+          console.log(selectedPoolId);
+
           // selectStakingPoolAction will be empty if the user already has a staking pool selected
-          let action: any[];
-          if (accId) {
-            const ftArgs = {
+          let requestActions: any[];
+          if (selectedPoolId) {
+            const stakeArgs = {
               amount: parseNearAmount(amountDivisible.toString()),
             };
 
-            action = [
+            requestActions = [
               {
                 type: "FunctionCall",
                 method_name: "deposit_and_stake",
-                args: btoa(JSON.stringify(ftArgs)),
+                args: btoa(JSON.stringify(stakeArgs)),
                 deposit: "0",
                 gas: "150000000000000",
               },
@@ -164,7 +168,7 @@ export function useAddRequestStakeToPool() {
             toast.info(
               "You need to first select the staking pool with the following transaction then come back again here to deposit and stake.",
             );
-            action = [
+            requestActions = [
               {
                 type: "FunctionCall",
                 method_name: "select_staking_pool",
@@ -175,44 +179,39 @@ export function useAddRequestStakeToPool() {
             ];
           }
 
-          await signAndSendTransaction({
+          const action = transactions.functionCall(
+            "add_request",
+            addMultisigRequestAction(
+              selectedWallet.walletDetails.walletAddress,
+              requestActions,
+            ),
+            new BN("30000000000000"),
+            new BN("0"),
+          );
+          await wsStore.signAndSendTransaction({
             senderId: selectedWallet.ownerAccountId,
             receiverId: selectedWallet.ownerAccountId,
-            action: {
-              type: "FunctionCall",
-              method: "add_request",
-              args: {
-                request: {
-                  receiver_id: selectedWallet.walletDetails.walletAddress,
-                  actions: action,
-                },
-              },
-              tGas: 300,
-            },
+            actions: [action],
           });
         } else {
-          await signAndSendTransaction({
-            senderId: selectedWallet.walletDetails.walletAddress,
-            receiverId: selectedWallet.walletDetails.walletAddress,
-            action: {
-              type: "FunctionCall",
-              method: "add_request",
-              args: {
-                request: {
-                  receiver_id: poolId,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "deposit_and_stake",
-                      args: btoa(JSON.stringify({})),
-                      deposit: parseNearAmount(amountDivisible.toString()),
-                      gas: "200000000000000",
-                    },
-                  ],
-                },
+          const action = transactions.functionCall(
+            "add_request",
+            addMultisigRequestAction(poolId, [
+              {
+                type: "FunctionCall",
+                method_name: "deposit_and_stake",
+                args: btoa(JSON.stringify({})),
+                deposit: parseNearAmount(amountDivisible.toString()),
+                gas: (290 * TGas).toString(),
               },
-              tGas: 300,
-            },
+            ]),
+            new BN(300 * TGas),
+            new BN("0"),
+          );
+          await wsStore.signAndSendTransaction({
+            senderId: fromAddress,
+            receiverId: fromAddress,
+            actions: [action],
           });
         }
       } catch (e) {
@@ -294,11 +293,7 @@ export function useGetStakingDetailsForWallets() {
 }
 
 export function useUnstakeTransaction() {
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
-
+  const wsStore = useWalletTerminator();
   return useMutation({
     mutationFn: async ({
       wallet,
@@ -312,7 +307,7 @@ export function useUnstakeTransaction() {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
 
-      if (!canSignTx(multisigWallet)) return;
+      if (!wsStore.canSignForAccount(multisigWallet)) return;
 
       let requestReceiver = poolId;
       // If the staking was done through the lockup contract, then the request
@@ -321,42 +316,80 @@ export function useUnstakeTransaction() {
         requestReceiver = wallet.walletDetails.walletAddress;
       }
 
-      await signAndSendTransaction({
+      const action = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(requestReceiver, [
+          {
+            type: "FunctionCall",
+            method_name: "unstake",
+            args: btoa(
+              JSON.stringify({
+                amount: parseNearAmount(amountNear),
+              }),
+            ),
+            deposit: parseNearAmount("0"),
+            gas: "200000000000000",
+          },
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+      await wsStore.signAndSendTransaction({
         senderId: multisigWallet,
         receiverId: multisigWallet,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: requestReceiver,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: "unstake",
-                  args: btoa(
-                    JSON.stringify({
-                      amount: parseNearAmount(amountNear),
-                    }),
-                  ),
-                  deposit: parseNearAmount("0"),
-                  gas: "200000000000000",
-                },
-              ],
-            },
+        actions: [action],
+      });
+    },
+  });
+}
+
+export function useUnstakeAllTransaction() {
+  const wsStore = useWalletTerminator();
+  return useMutation({
+    mutationFn: async ({
+      wallet,
+      poolId,
+    }: {
+      wallet: WalletPretty;
+      poolId: string;
+    }) => {
+      const multisigWallet =
+        wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
+
+      if (!wsStore.canSignForAccount(multisigWallet)) return;
+
+      let requestReceiver = poolId;
+      // If the staking was done through the lockup contract, then the request
+      // should be sent to the lockup contract
+      if (wallet.isLockup) {
+        requestReceiver = wallet.walletDetails.walletAddress;
+      }
+
+      const addRequestAction = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(requestReceiver, [
+          {
+            type: "FunctionCall",
+            method_name: "unstake_all",
+            args: btoa(JSON.stringify({})),
+            deposit: parseNearAmount("0"),
+            gas: (200 * TGas).toString(),
           },
-          tGas: 300,
-        },
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+      await wsStore.signAndSendTransaction({
+        senderId: multisigWallet,
+        receiverId: multisigWallet,
+        actions: [addRequestAction],
       });
     },
   });
 }
 
 export function useWithdrawTransaction() {
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
+  const wsStore = useWalletTerminator();
 
   return useMutation({
     mutationFn: async ({
@@ -373,51 +406,114 @@ export function useWithdrawTransaction() {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
 
-      if (!canSignTx(multisigWallet)) return;
+      if (!wsStore.canSignForAccount(multisigWallet)) return;
 
       const yoctoAmount = parseNearAmount(amountNear);
       let requestReceiver = poolId;
       let methodName = "withdraw";
-      let deselectAction = undefined;
+
+      // let deselectAction = undefined;
+
       // If the staking was done through the lockup contract, then the request
       // should be sent to the lockup contract
       if (wallet.isLockup) {
         requestReceiver = wallet.walletDetails.walletAddress;
         methodName = "withdraw_from_staking_pool";
 
-        if (yoctoAmount === maxAmountYocto) {
-          deselectAction = {
-            type: "FunctionCall",
-            method_name: "unselect_staking_pool",
-            args: btoa(JSON.stringify({})),
-            deposit: parseNearAmount("0"),
-            gas: "150000000000000",
-          };
-        }
+        // TODO(fix): needs to be done in a seperate transaction
+        // if (yoctoAmount === maxAmountYocto) {
+        //   deselectAction = {
+        //     type: "FunctionCall",
+        //     method_name: "unselect_staking_pool",
+        //     args: btoa(JSON.stringify({})),
+        //     deposit: parseNearAmount("0"),
+        //     gas: "150000000000000",
+        //   };
+        // }
       }
 
-      await signAndSendTransaction({
+      const addRequestAction = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(requestReceiver, [
+          {
+            type: "FunctionCall",
+            method_name: methodName,
+            args: btoa(JSON.stringify({ amount: yoctoAmount })),
+            deposit: parseNearAmount("0"),
+            gas: (200 * TGas).toString(),
+          },
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
         senderId: multisigWallet,
         receiverId: multisigWallet,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: requestReceiver,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: methodName,
-                  args: btoa(JSON.stringify({ amount: yoctoAmount })),
-                  deposit: parseNearAmount("0"),
-                  gas: "150000000000000",
-                },
-              ].concat(deselectAction ? [deselectAction] : []),
-            },
+        actions: [addRequestAction],
+      });
+    },
+  });
+}
+
+export function useWithdrawAllTransaction() {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async ({
+      wallet,
+      poolId,
+    }: {
+      wallet: WalletPretty;
+      poolId: string;
+    }) => {
+      const multisigWallet =
+        wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
+
+      if (!wsStore.canSignForAccount(multisigWallet)) return;
+
+      let requestReceiver = poolId;
+      let methodName = "withdraw_all";
+
+      // let deselectAction = undefined;
+
+      // If the staking was done through the lockup contract, then the request
+      // should be sent to the lockup contract
+      if (wallet.isLockup) {
+        requestReceiver = wallet.walletDetails.walletAddress;
+        methodName = "withdraw_all_from_staking_pool";
+
+        // TODO(fix): needs to be done in a seperate transaction
+        // if (yoctoAmount === maxAmountYocto) {
+        //   deselectAction = {
+        //     type: "FunctionCall",
+        //     method_name: "unselect_staking_pool",
+        //     args: btoa(JSON.stringify({})),
+        //     deposit: parseNearAmount("0"),
+        //     gas: "150000000000000",
+        //   };
+        // }
+      }
+
+      const addRequestAction = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(requestReceiver, [
+          {
+            type: "FunctionCall",
+            method_name: methodName,
+            args: btoa(JSON.stringify({})),
+            deposit: parseNearAmount("0"),
+            gas: (200 * TGas).toString(),
           },
-          tGas: 300,
-        },
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: multisigWallet,
+        receiverId: multisigWallet,
+        actions: [addRequestAction],
       });
     },
   });

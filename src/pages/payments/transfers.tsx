@@ -1,6 +1,5 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useStoreActions } from "easy-peasy";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -67,10 +66,6 @@ const formSchema = z.object({
 const TransfersPage: NextPageWithLayout = () => {
   const { newNearConnection } = usePersistingStore();
   const [formattedBalance, setFormattedBalance] = useState<string>("");
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
 
   const wsStore = useWalletTerminator();
 
@@ -139,7 +134,7 @@ const TransfersPage: NextPageWithLayout = () => {
       throw new Error("Sender address not found");
     }
 
-    if (!canSignTx(senderAddress)) return;
+    if (!wsStore.canSignForAccount(senderAddress)) return;
 
     console.log("senderAddress", senderAddress);
 
