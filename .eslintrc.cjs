@@ -13,22 +13,18 @@ const config = {
         project: path.join(__dirname, "tsconfig.json"),
       },
       rules: {
-        "@typescript-eslint/ban-ts-comment": 0,
-        "@typescript-eslint/no-explicit-any": 0,
-        "react/no-unescaped-entities": 0,
-        "@typescript-eslint/no-unsafe-member-access": 0,
-        "@typescript-eslint/no-unsafe-call": 0,
-        "@typescript-eslint/no-unsafe-argument": 0,
-        "@typescript-eslint/no-unsafe-return": 0,
-        "@typescript-eslint/no-unsafe-assignment": 0,
-        "@typescript-eslint/no-redundant-type-constituents": 0,
-        "@typescript-eslint/restrict-template-expressions": 0,
-        "@typescript-eslint/require-await": 0,
-        "@typescript-eslint/consistent-type-imports": 0,
-        "@typescript-eslint/no-unnecessary-type-assertion": 0,
-        "@typescript-eslint/no-base-to-string": 0,
-        "@typescript-eslint/no-misused-promises": 0,
-        "@typescript-eslint/no-unused-vars": 0,
+        "@typescript-eslint/ban-ts-comment": "warn",
+        "@typescript-eslint/no-explicit-any": "warn",
+        "react/no-unescaped-entities": "warn",
+        "@typescript-eslint/no-unused-vars": "warn",
+        "@typescript-eslint/no-unsafe-member-access": "warn",
+        "@typescript-eslint/no-unsafe-call": "warn",
+        "@typescript-eslint/no-unsafe-argument": "warn",
+        "@typescript-eslint/no-unsafe-return": "warn",
+        "@typescript-eslint/no-unsafe-assignment": "warn",
+        "@typescript-eslint/no-redundant-type-constituents": "warn",
+        "@typescript-eslint/restrict-template-expressions": "warn",
+        "@typescript-eslint/require-await": "warn",
       },
     },
   ],
@@ -39,24 +35,22 @@ const config = {
   plugins: ["@typescript-eslint"],
   extends: ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
   rules: {
-    "@typescript-eslint/no-unused-vars": 0,
-    "react-hooks/exhaustive-deps": 0,
-    // "@typescript-eslint/consistent-type-imports": [
-    //   "warn",
-    //   {
-    //     prefer: "type-imports",
-    //     fixStyle: "inline-type-imports",
-    //   },
-    // ],
-    // "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-    // "@typescript-eslint/no-misused-promises": [
-    //   2,
-    //   {
-    //     checksVoidReturn: {
-    //       attributes: false,
-    //     },
-    //   },
-    // ],
+    "@typescript-eslint/consistent-type-imports": [
+      "warn",
+      {
+        prefer: "type-imports",
+        fixStyle: "inline-type-imports",
+      },
+    ],
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-misused-promises": [
+      2,
+      {
+        checksVoidReturn: {
+          attributes: false,
+        },
+      },
+    ],
   },
 };
 

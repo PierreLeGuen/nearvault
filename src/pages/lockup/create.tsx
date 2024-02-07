@@ -1,6 +1,5 @@
 import { ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, subDays } from "date-fns";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useEffect, useState } from "react";
@@ -29,17 +28,16 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import { api } from "~/lib/api";
-import { calculateLockup } from "~/lib/lockup/lockup";
-import { getFormattedAmount } from "~/lib/transformations";
-import { cn, getNearTimestamp } from "~/lib/utils";
-import usePersistingStore from "~/store/useStore";
+import { useCreateLockup } from "~/hooks/lockup";
+import {
+  useGetNearBalanceForWallet,
+  useListAddressBook,
+  useTeamsWalletsWithLockups,
+} from "~/hooks/teams";
+import { cn } from "~/lib/utils";
 import { type NextPageWithLayout } from "../_app";
-import { type WalletPretty } from "../staking/stake";
-import { useStoreActions } from "easy-peasy";
-import { config } from "~/config/config";
 
-interface CreateLockupProps {
+export interface CreateLockupProps {
   owner_account_id: string;
   lockup_duration: number;
   vesting_schedule:
@@ -69,191 +67,50 @@ const createLockupForm = z.object({
 });
 
 const CreateLockup: NextPageWithLayout = () => {
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
+  const [explanation, setExplanation] = useState("");
+
   const form = useForm<z.infer<typeof createLockupForm>>({
     resolver: zodResolver(createLockupForm),
     defaultValues: {
       allowStaking: true,
       startDate: new Date(),
-      endDate: new Date(),
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
       cliffDate: undefined,
     },
   });
 
   const watchedSender = form.watch("fromWallet");
-
-  const { data: balance, isLoading: balanceLoading } = useQuery({
-    queryKey: ["wallet", watchedSender],
-    enabled: !!watchedSender,
-    queryFn: async () => {
-      const account = (await newNearConnection()).account(watchedSender);
-      const balance = await (await account).getAccountBalance();
-      return getFormattedAmount({
-        balance: balance.available,
-        decimals: 24,
-        symbol: "NEAR",
-      });
-    },
-  });
-
-  const [explenation, setExplenation] = useState("");
-
-  const [teamsWallet, setTeamsWallet] = useState<WalletPretty[]>([]);
-
-  const { newNearConnection } = usePersistingStore();
-  const { currentTeam } = usePersistingStore.getState();
-
-  const { isLoading } = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeam?.id || "",
-    },
-    {
-      enabled: true,
-      async onSuccess(data) {
-        if (!data || data.length == 0 || data[0] === undefined) {
-          throw new Error("No wallets found");
-        }
-        const w: WalletPretty[] = [];
-        for (const wallet of data) {
-          w.push({
-            walletDetails: wallet,
-            prettyName: wallet.walletAddress,
-            isLockup: false,
-            ownerAccountId: undefined,
-          });
-          try {
-            const lockupValue = calculateLockup(
-              wallet.walletAddress,
-              config.accounts.lockupFactory,
-            );
-            const nearConn = await newNearConnection();
-            await (await nearConn.account(lockupValue)).state();
-
-            w.push({
-              prettyName: "Lockup of " + wallet.walletAddress,
-              walletDetails: {
-                walletAddress: lockupValue,
-                id: lockupValue,
-                teamId: "na",
-              },
-              isLockup: true,
-              ownerAccountId: wallet.walletAddress,
-            });
-          } catch (_) {}
-        }
-        setTeamsWallet(w);
-      },
-    },
-  );
-
-  const { data: addressBook, isLoading: addrBookLoading } =
-    api.teams.getBeneficiariesForTeam.useQuery({
-      teamId: currentTeam?.id || "",
-    });
-
-  const createLockup = async (
-    startDate: Date,
-    endDate: Date,
-    cliffDate: Date | undefined,
-    fromWallet: WalletPretty,
-    amount: number,
-  ) => {
-    if (endDate < startDate) {
-      throw new Error("End date cannot be before start date");
-    }
-    if (fromWallet.isLockup) {
-      throw new Error("Cannot create a lockup from a lockup wallet");
-    }
-    if (amount < 3.5) {
-      throw new Error("Minimum amount is 3.5 NEAR");
-    }
-
-    if (!canSignTx(fromWallet.walletDetails.walletAddress)) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let createArgs: any;
-    if (cliffDate) {
-      // lockup schedule
-      createArgs = {
-        vesting_schedule: {
-          VestingSchedule: {
-            start_timestamp: getNearTimestamp(startDate).toString(),
-            cliff_timestamp: getNearTimestamp(cliffDate).toString(),
-            end_timestamp: getNearTimestamp(endDate).toString(),
-          },
-        },
-      };
-    } else {
-      // linear release
-      createArgs = {
-        lockup_timestamp: getNearTimestamp(startDate).toString(),
-        release_duration: (
-          getNearTimestamp(endDate) - getNearTimestamp(startDate)
-        ).toString(),
-      };
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const fnCallArgs: CreateLockupProps = {
-      owner_account_id: account,
-      lockup_duration: "0",
-      ...createArgs,
-    };
-    if (!allowStaking) {
-      fnCallArgs["whitelist_account_id"] = "system";
-    }
-
-    await signAndSendTransaction({
-      senderId: fromWallet.walletDetails.walletAddress,
-      receiverId: fromWallet.walletDetails.walletAddress,
-      action: {
-        type: "FunctionCall",
-        method: "add_request",
-        args: {
-          request: {
-            receiver_id: config.accounts.lockupFactory,
-            actions: [
-              {
-                type: "FunctionCall",
-                method_name: "create",
-                args: btoa(JSON.stringify(fnCallArgs)),
-                deposit: parseNearAmount(amount.toString()),
-                gas: "150000000000000",
-              },
-            ],
-          },
-        },
-        tGas: 300,
-      },
-    });
-  };
-
-  async function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
-    console.log(values);
-
-    const fromWallet = teamsWallet.find(
-      (w) => w.walletDetails.walletAddress == values.fromWallet,
-    );
-    if (!fromWallet) {
-      throw new Error("Sender wallet is missing");
-    }
-    await createLockup(
-      values.startDate,
-      values.endDate,
-      values.cliffDate,
-      fromWallet,
-      values.amount,
-    );
-  }
-
   const amount = form.watch("amount");
   const account = form.watch("toWallet");
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
   const cliffDate = form.watch("cliffDate");
   const allowStaking = form.watch("allowStaking");
+
+  const createLockup = useCreateLockup();
+  const walletsWithLockupQuery = useTeamsWalletsWithLockups();
+  const nearBalanceQuery = useGetNearBalanceForWallet(watchedSender);
+
+  const listAddressBookQuery = useListAddressBook();
+
+  function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
+    const fromWallet = walletsWithLockupQuery.data.find(
+      (w) => w.walletDetails.walletAddress == values.fromWallet,
+    );
+    if (!fromWallet) {
+      throw new Error("Sender wallet is missing");
+    }
+
+    createLockup.mutate({
+      fundingAccountId: values.fromWallet,
+      ownerId: values.toWallet,
+      yoctoDeposit: parseNearAmount(values.amount.toString()),
+      start: values.startDate,
+      end: values.endDate,
+      cliff: values.cliffDate,
+      allowStaking: values.allowStaking,
+    });
+  }
 
   useEffect(() => {
     if (!form.formState.isValid) {
@@ -287,7 +144,7 @@ const CreateLockup: NextPageWithLayout = () => {
       explenation += `Staking is not allowed during the lockup period.`;
     }
 
-    setExplenation(explenation);
+    setExplanation(explenation);
   }, [
     amount,
     account,
@@ -303,7 +160,7 @@ const CreateLockup: NextPageWithLayout = () => {
       <Card>
         <CardHeader>
           <CardTitle>Create lockup</CardTitle>
-          <CardDescription>Create NEAR lockup.</CardDescription>
+          <CardDescription>Create a cancellable NEAR lockup.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col">
@@ -313,8 +170,8 @@ const CreateLockup: NextPageWithLayout = () => {
                 className="space-y-8"
               >
                 <SenderFormField
-                  isLoading={isLoading}
-                  wallets={teamsWallet}
+                  isLoading={walletsWithLockupQuery.isLoading}
+                  wallets={walletsWithLockupQuery.data}
                   name="fromWallet"
                   control={form.control}
                   rules={{
@@ -325,8 +182,8 @@ const CreateLockup: NextPageWithLayout = () => {
                   label="Sender"
                 />
                 <ReceiverFormField
-                  isLoading={addrBookLoading}
-                  receivers={addressBook}
+                  isLoading={listAddressBookQuery.isLoading}
+                  receivers={listAddressBookQuery.data}
                   name="toWallet"
                   control={form.control}
                   rules={{
@@ -376,7 +233,10 @@ const CreateLockup: NextPageWithLayout = () => {
                           />
                         </FormControl>
                         <FormDescription>
-                          Balance: {balanceLoading ? "Loading..." : balance}
+                          Balance:{" "}
+                          {nearBalanceQuery.isLoading
+                            ? "Loading..."
+                            : nearBalanceQuery.data}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -432,7 +292,7 @@ const CreateLockup: NextPageWithLayout = () => {
                     </FormItem>
                   )}
                 />
-                {explenation && <div>{explenation}</div>}
+                {explanation && <div>{explanation}</div>}
                 <Button type="submit">Submit</Button>
               </form>
             </Form>
