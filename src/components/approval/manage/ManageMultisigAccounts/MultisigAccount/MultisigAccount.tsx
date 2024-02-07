@@ -4,7 +4,7 @@ import HeaderTitle from "~/components/ui/header";
 import { Table, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { SetNumberConfirmations } from "./SetNumberConfirmations";
 
-export const MultisigAccount = ({ account, deleteKeyFn }: any) => (
+export const MultisigAccount = ({ account }: any) => (
   <>
     <div className="flex flex-row justify-between">
       <HeaderTitle level="h3" text={account.accountId} />
@@ -24,7 +24,7 @@ export const MultisigAccount = ({ account, deleteKeyFn }: any) => (
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
-        <PublicKeys multisigContractId={account} deleteKeyFn={deleteKeyFn} />
+        <PublicKeys multisigContractId={account} />
       </Table>
     </div>
   </>

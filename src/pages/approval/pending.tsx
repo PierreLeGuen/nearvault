@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
+import { useConfirmRequest, useDeleteRequest } from "~/hooks/manage";
 import { api } from "~/lib/api";
 import { explainAction, type RequestRow } from "~/lib/explain-transaction";
 import { MultiSigRequestActionType } from "~/lib/multisig/contract";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -15,10 +17,11 @@ export type ApproveOrReject = "approve" | "reject";
 
 const Pending: NextPageWithLayout = () => {
   useSession({ required: true });
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const onApproveOrRejectRequest = useStoreActions(
-    (store: any) => store.pages.approval.pending.onApproveOrRejectRequest,
-  );
+  const wsStore = useWalletTerminator();
+
+  const confirmRequest = useConfirmRequest();
+  const deleteRequest = useDeleteRequest();
+
   const getMultisigContract = useStoreActions(
     (store: any) => store.multisig.getMultisigContract,
   );
@@ -114,10 +117,26 @@ const Pending: NextPageWithLayout = () => {
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
 
-    if (!canSignTx(multisigAccountId)) return;
+    if (!wsStore.canSignForAccount(multisigAccountId)) return;
 
     try {
-      await onApproveOrRejectRequest({ multisigAccountId, requestId, kind });
+      console.log("Approving or rejecting request", requestId, kind);
+
+      if (kind === "approve") {
+        console.log("Approving request");
+
+        await confirmRequest.mutateAsync({
+          accountId: multisigAccountId,
+          requestId: requestId,
+        });
+      } else if (kind === "reject") {
+        console.log("Rejecting request");
+
+        await deleteRequest.mutateAsync({
+          accountId: multisigAccountId,
+          requestId: requestId,
+        });
+      }
       // If we store data in global store - we won't need to re-fetch this data cuz we have
       // all info for update - it helps keep the app fast
       const updatedRequests = new Map(requests);

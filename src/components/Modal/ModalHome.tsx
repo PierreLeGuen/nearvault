@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { config } from "~/config/config";
 import { useZodForm } from "~/hooks/form";
 import { ModalState } from "~/store/slices/navigation";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
@@ -165,10 +166,19 @@ const WaitForTransaction = () => {
   const wsStore = useWalletTerminator();
 
   if (wsStore.transactionId) {
+    const nbUrl = config.urls.nearBlocks.txDetails(wsStore.transactionId);
     return (
       <>
         <p>Success!</p>
         <p>Transaction ID: {wsStore.transactionId}</p>
+        <a
+          href={nbUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-500"
+        >
+          View transaction on NearBlocks
+        </a>
         <Button onClick={wsStore.closeModal}>Close</Button>
       </>
     );

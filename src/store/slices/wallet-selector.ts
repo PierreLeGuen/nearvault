@@ -22,6 +22,7 @@ import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type StateCreator } from "zustand";
 import { NextRouter } from "next/router";
 import { NavActions, NavState, createWalletNavigation } from "./navigation";
+import { toast } from "react-toastify";
 
 type PublicKeyStr = string;
 type AccountId = string;
@@ -62,6 +63,7 @@ interface WsActions {
     actions: Action[];
   }) => Promise<void>;
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
+  canSignForAccount: (accountId: AccountId) => boolean;
 }
 
 export const createWalletTerminator: StateCreator<
@@ -282,6 +284,20 @@ export const createWalletTerminator: StateCreator<
     signUrl.searchParams.set("callbackUrl", callbackUrl);
 
     window.location.assign(signUrl);
+  },
+  canSignForAccount: (accountId: AccountId) => {
+    const pkAndAccounts = get().accounts;
+
+    const can = Object.keys(pkAndAccounts).some((pk) =>
+      pkAndAccounts[pk].includes(accountId),
+    );
+    if (!can) {
+      toast.error(
+        `You need to connect ${accountId} before performing this action`,
+      );
+    }
+
+    return can;
   },
 });
 

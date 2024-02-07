@@ -1,9 +1,9 @@
 import { KeyIcon } from "@heroicons/react/20/solid";
-import { useStoreActions } from "easy-peasy";
 import { z } from "zod";
 import { ThresholdInput } from "~/components/inputs/threshold";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
+import { useSetNumConfirmations } from "~/hooks/manage";
 import {
   Dialog,
   DialogContent,
@@ -25,14 +25,12 @@ type Params = {
 
 export const SetNumberConfirmations = ({ accountId, maxThreshold }: Params) => {
   const form = useZodForm(formSchema);
-  const setNumConfirmations = useStoreActions(
-    (actions: any) => actions.pages.approval.manage.setNumConfirmations,
-  );
+  const setNumConfirmations = useSetNumConfirmations();
 
   const onSubmit = (values: z.infer<typeof formSchema>) =>
-    setNumConfirmations({
-      contractId: accountId,
-      numConfirmations: values.numConfirmations,
+    setNumConfirmations.mutate({
+      accountId,
+      numConfirmations: parseInt(values.numConfirmations),
     });
 
   return (

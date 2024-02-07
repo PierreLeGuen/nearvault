@@ -1,5 +1,4 @@
 import { KeyIcon } from "@heroicons/react/20/solid";
-import { useStoreActions } from "easy-peasy";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
@@ -21,14 +20,10 @@ const formSchema = z.object({
 
 export const AddKey = ({ accountId }: any) => {
   const form = useZodForm(formSchema);
-  const addKey = useStoreActions(
-    (actions: any) => actions.pages.approval.manage.addKey,
-  );
-  const addKeyN = useAddKey();
+  const addKey = useAddKey();
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // addKey({ contractId: accountId, publicKey: values.publicKey });
-    addKeyN.mutate({ accountId: accountId, key: values.publicKey });
+    addKey.mutate({ accountId, publicKey: values.publicKey });
   };
 
   return (
