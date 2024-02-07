@@ -2,8 +2,8 @@ import { Dialog, Transition } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type BN from "bn.js";
 import bs58 from "bs58";
+import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
-import { useSession } from "next-auth/react";
 import { Fragment, useEffect, useState } from "react";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -26,18 +26,21 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { config } from "~/config/config";
+import {
+  useTerminatePrivateVestingSchedule,
+  useTerminateVestingSchedule,
+  useTerminationPrepareToWithdraw,
+  useTerminationWithdraw,
+} from "~/hooks/lockup";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { calculateLockup, viewLockupAccount } from "~/lib/lockup/lockup";
 import {
   type AccountLockup,
   type FromStateVestingInformation,
 } from "~/lib/lockup/types";
-import { findProperVestingSchedule } from "~/lib/lockup/utils";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
-import { useStoreActions } from "easy-peasy";
-import { JsonRpcProvider } from "near-api-js/lib/providers";
-import { config } from "~/config/config";
 
 const isPrivateSchedule = (
   vestingInformation: FromStateVestingInformation | undefined,
@@ -60,11 +63,6 @@ const formLockupRequest = z.object({
 });
 
 const ManageLockup: NextPageWithLayout = () => {
-  useSession({ required: true });
-  const canSignTx = useStoreActions((store: any) => store.accounts.canSignTx);
-  const signAndSendTransaction = useStoreActions(
-    (actions: any) => actions.wallets.signAndSendTransaction,
-  );
   const [accountError, setAccountError] = useState("");
   const [cancelLockupModalIsOpen, cancelSetIsOpen] = useState(false);
   const [lockupInformation, setLockupInformation] =
@@ -112,6 +110,11 @@ const ManageLockup: NextPageWithLayout = () => {
     name: "endDate",
   });
 
+  const terminateVesting = useTerminateVestingSchedule();
+  const terminatePrivateVesting = useTerminatePrivateVestingSchedule();
+  const terminationPrepareToWithdraw = useTerminationPrepareToWithdraw();
+  const terminationWithdraw = useTerminationWithdraw();
+
   useEffect(() => {
     if (startDate && cliffDate && endDate) {
       // Start Date vs Cliff Date validation
@@ -141,7 +144,10 @@ const ManageLockup: NextPageWithLayout = () => {
 
     try {
       const provider = new JsonRpcProvider({ url: config.urls.rpc });
-      const l = calculateLockup(prepareAccountId(account), config.accounts.lockupFactory);
+      const l = calculateLockup(
+        prepareAccountId(account),
+        config.accounts.lockupFactory,
+      );
       const r = await viewLockupAccount(l, provider);
       await updateTerminationStatus(account);
       setLockupInformation(r);
@@ -168,36 +174,18 @@ const ManageLockup: NextPageWithLayout = () => {
   }
 
   const tryWithdrawFn = async (account: string) => {
-    if (!canSignTx(multisigWalletId)) return;
-
-    const lockupAccountId = calculateLockup(account, config.accounts.lockupFactory);
+    const lockupAccountId = calculateLockup(
+      account,
+      config.accounts.lockupFactory,
+    );
 
     if (
       terminationStatus === "VestingTerminatedWithDeficit" ||
       terminationStatus === "EverythingUnstaked"
     ) {
-      await signAndSendTransaction({
-        senderId: multisigWalletId,
-        receiverId: multisigWalletId,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: lockupAccountId,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: "termination_prepare_to_withdraw",
-                  args: btoa(JSON.stringify({})),
-                  deposit: "0",
-                  gas: "200000000000000",
-                },
-              ],
-            },
-          },
-          tGas: 300,
-        },
+      await terminationPrepareToWithdraw.mutateAsync({
+        lockupAccountId: lockupAccountId,
+        multisigAccId: multisigWalletId,
       });
 
       if (terminationStatus === "VestingTerminatedWithDeficit") {
@@ -210,28 +198,9 @@ const ManageLockup: NextPageWithLayout = () => {
         );
       }
     } else {
-      await signAndSendTransaction({
-        senderId: multisigWalletId,
-        receiverId: multisigWalletId,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: lockupAccountId,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: "termination_withdraw",
-                  args: btoa(JSON.stringify({ receiver_id: multisigWalletId })),
-                  deposit: "0",
-                  gas: "200000000000000",
-                },
-              ],
-            },
-          },
-          tGas: 300,
-        },
+      await terminationWithdraw.mutateAsync({
+        lockupAccountId: lockupAccountId,
+        multisigAccId: multisigWalletId,
       });
 
       alert(
@@ -247,7 +216,12 @@ const ManageLockup: NextPageWithLayout = () => {
     cliff: Date,
     end: Date,
   ) => {
-    if (!canSignTx(multisigWalletId)) return;
+    if (!multisigWalletId) return;
+    if (!lockupInformation) {
+      throw new Error("Lockup information not found");
+    }
+
+    const lockupId = lockupInformation.lockupAccountId;
 
     // No vesting hash -> not private schedule
     if (!lockupInformation?.lockupState.vestingInformation?.vestingHash) {
@@ -255,66 +229,24 @@ const ManageLockup: NextPageWithLayout = () => {
         throw new Error("Lockup information not found");
       }
 
-      await signAndSendTransaction({
-        senderId: multisigWalletId,
-        receiverId: multisigWalletId,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: lockupInformation?.lockupAccountId,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: "terminate_vesting",
-                  args: btoa(JSON.stringify({})),
-                  deposit: "0",
-                  gas: "200000000000000",
-                },
-              ],
-            },
-          },
-          tGas: 300,
-        },
+      await terminateVesting.mutateAsync({
+        lockupAccountId: lockupId,
+        multisigAccId: multisigWalletId,
       });
     } else {
-      await signAndSendTransaction({
-        senderId: multisigWalletId,
-        receiverId: multisigWalletId,
-        action: {
-          type: "FunctionCall",
-          method: "add_request",
-          args: {
-            request: {
-              receiver_id: lockupInformation?.lockupAccountId,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method_name: "terminate_vesting",
-                  args: btoa(
-                    JSON.stringify(
-                      findProperVestingSchedule(
-                        lockupInformation.lockupState.owner,
-                        authToken,
-                        new Date(start),
-                        new Date(cliff),
-                        new Date(end),
-                        Buffer.from(
-                          lockupInformation.lockupState.vestingInformation
-                            .vestingHash,
-                        ).toString("base64"),
-                      ),
-                    ),
-                  ),
-                  deposit: "0",
-                  gas: "200000000000000",
-                },
-              ],
-            },
-          },
-          tGas: 300,
-        },
+      // private vesting
+
+      await terminatePrivateVesting.mutateAsync({
+        lockupAccountId: lockupId,
+        lockupOwnerAccountId: lockupInformation.lockupState.owner,
+        authToken: authToken,
+        start: start,
+        cliff: cliff,
+        end: end,
+        hashValue: Buffer.from(
+          lockupInformation.lockupState.vestingInformation.vestingHash,
+        ).toString("base64"),
+        multisigAccId: multisigWalletId,
       });
     }
 

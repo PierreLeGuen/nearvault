@@ -41,8 +41,8 @@ export const formatVestingInfo = (
 ): string | null => {
   if (!info?.start) return null; // TODO
   const start = new Date(info.start.divn(1000000).toNumber());
-  const cliff = new Date(info.cliff!.divn(1000000).toNumber());
-  const end = new Date(info.end!.divn(1000000).toNumber());
+  const cliff = new Date(info.cliff.divn(1000000).toNumber());
+  const end = new Date(info.end.divn(1000000).toNumber());
   return `from ${start} until ${end} with cliff at ${cliff}`;
 };
 
@@ -227,14 +227,23 @@ function computeVestingSchedule(
   };
 }
 
-export function findProperVestingSchedule(
-  lockupOwnerAccountId: string,
-  authToken: string,
-  start: Date,
-  cliff: Date,
-  end: Date,
-  hashValue: string,
-) {
+type PrivateVestingScheduleParams = {
+  lockupOwnerAccountId: string;
+  authToken: string;
+  start: Date;
+  cliff: Date;
+  end: Date;
+  hashValue: string;
+};
+
+export function findProperVestingSchedule({
+  lockupOwnerAccountId,
+  authToken,
+  start,
+  cliff,
+  end,
+  hashValue,
+}: PrivateVestingScheduleParams) {
   // According to near-claims, user might have either specified the owner
   // account id (named or implicit) or a public key (a new implicit account
   // id was automatically created)
