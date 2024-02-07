@@ -221,7 +221,7 @@ export const createWalletTerminator: StateCreator<
     actions: Action[],
   ) => {
     const rpc = config.urls.rpc;
-    const accessKey: any = await getAccessKey({
+    const accessKey = await getAccessKey({
       rpcUrl: rpc,
       senderId,
       signerPublicKey: PublicKey.from(publicKey),

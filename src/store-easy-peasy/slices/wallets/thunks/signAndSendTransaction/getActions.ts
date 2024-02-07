@@ -1,6 +1,7 @@
 import { transactions, utils } from "near-api-js";
 import BN from "bn.js";
 import { toGas } from "src/store-easy-peasy/helpers/toGas";
+import { type Action } from "near-api-js/lib/transaction";
 
 type FunctionCallAction = {
   type: string;
@@ -21,10 +22,10 @@ const functionCall = (action: FunctionCallAction) => {
   return transactions.functionCall(action.method, action.args, gas, deposit);
 };
 
-export const getActions = (action: any, actions: any) => {
+export const getActions = (action: Action, actions: Action[]) => {
   const list = actions ? actions : [action];
   // check if action is of type Uint8Array
-  const l = list.map((action: any) => {
+  const l = list.map((action: Action) => {
     if (action.type === "FunctionCall") return functionCall(action);
     return action;
   });

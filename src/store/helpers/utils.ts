@@ -21,6 +21,12 @@ type KeysResponse = {
   keys: Key[];
 };
 
+type AccesKeyResponse = {
+  block_hash: string;
+  block_height: number;
+  nonce: number;
+};
+
 export const getAccessKey = async ({
   rpcUrl,
   senderId,
@@ -43,7 +49,7 @@ export const getAccessKey = async ({
   };
   console.log("args", args);
 
-  const ak = await provider.query(args);
+  const ak: AccesKeyResponse = await provider.query(args);
   console.log(ak);
 
   return ak;
