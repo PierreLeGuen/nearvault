@@ -6,10 +6,17 @@ import {
   createWalletSlice,
   type WalletActions,
 } from "./slices/wallet";
-import { type TeamsState, createTeamsSlice } from "./slices/teams";
+import {
+  type TeamsState,
+  createTeamsSlice,
+  type TeamsActions,
+} from "./slices/teams";
 import { type NearState, createNearSlice } from "./slices/near";
 
-export type IStore = (WalletState & WalletActions) & TeamsState & NearState;
+export type IStore = (WalletState & WalletActions) &
+  TeamsState &
+  TeamsActions &
+  NearState;
 
 const usePersistingStore = create<IStore>()(
   devtools(

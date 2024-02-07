@@ -4,7 +4,6 @@ import {
 } from "@heroicons/react/20/solid";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,7 +22,6 @@ import { Skeleton } from "../ui/skeleton";
 
 export function TeamsDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const { setCurrentTeam, currentTeam } = usePersistingStore();
 
   const { data: teams, isLoading } = useListTeams();
@@ -47,12 +45,12 @@ export function TeamsDropdownMenu() {
           <DropdownMenuLabel>My Teams</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {teams.map((team) => (
+            {teams.map((userTeamRelation) => (
               <DropdownMenuItem
-                key={team.teamId}
-                onClick={() => setCurrentTeam(team)}
+                key={userTeamRelation.teamId}
+                onClick={() => setCurrentTeam(userTeamRelation.team)}
               >
-                {team.team.name}
+                {userTeamRelation.team.name}
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
