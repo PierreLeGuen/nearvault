@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { type StateCreator } from "zustand";
 
 export interface TeamsState {
-  currentTeam: Team | null;
+  currentTeam?: Team;
 }
 
 export const createTeamsSlice: StateCreator<TeamsState> = (set) => ({

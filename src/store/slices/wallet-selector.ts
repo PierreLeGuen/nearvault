@@ -49,7 +49,7 @@ interface WsActions {
     actions: Action[],
   ) => Promise<Transaction>;
   connectWithLedger: (derivationPath?: string) => Promise<PublicKeyStr>;
-  connectWithMyNearWallet: () => void;
+  connectWithMyNearWallet: () => Promise<void>;
   handleMnwRedirect: (router: NextRouter) => Promise<void>;
   signAndSendTransaction: ({
     senderId,
@@ -271,7 +271,7 @@ export const createWalletTerminator: StateCreator<
       throw e;
     }
   },
-  signWithMnw: async (tx: Transaction) => {
+  signWithMnw: (tx: Transaction) => {
     const signUrl = new URL(config.urls.myNearWallet + "/sign");
 
     const encodedTx = tx.encode();

@@ -3,6 +3,7 @@ import { api } from "~/lib/api";
 import { initFungibleTokenContract } from "~/lib/ft/contract";
 import {
   dbDataToTransfersData,
+  getFormattedAmount,
   LikelyTokens,
   Token,
 } from "~/lib/transformations";
@@ -83,6 +84,25 @@ export function useGetTokensForWallet(walletId: string) {
       );
       console.log(data);
       return data;
+    },
+    enabled: !!walletId,
+  });
+}
+
+export function useGetNearBalanceForWallet(walletId: string) {
+  const { newNearConnection } = usePersistingStore();
+
+  return useQuery({
+    queryKey: ["nearBalance", walletId],
+    queryFn: async () => {
+      const near = await newNearConnection();
+      const account = await near.account(walletId);
+      const balance = await account.getAccountBalance();
+      return getFormattedAmount({
+        balance: balance.available,
+        decimals: 24,
+        symbol: "NEAR",
+      });
     },
     enabled: !!walletId,
   });

@@ -29,12 +29,12 @@ const addKeyAction = (
 };
 
 export const addMultisigRequestAction = (
-  multisigAccId: string,
-  actions: unknown[],
+  receiverId: string,
+  actions: unknown[], // TODO: type this
 ) => {
   return {
     request: {
-      receiver_id: multisigAccId,
+      receiver_id: receiverId,
       actions: actions,
     },
   };
