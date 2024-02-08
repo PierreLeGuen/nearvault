@@ -1,14 +1,10 @@
 import { type Wallet } from "@prisma/client";
-import { useStoreActions } from "easy-peasy";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
 import { useConfirmRequest, useDeleteRequest } from "~/hooks/manage";
-import { api } from "~/lib/api";
-import { explainAction, type RequestRow } from "~/lib/explain-transaction";
-import { MultiSigRequestActionType } from "~/lib/multisig/contract";
+import { useGetMultisigRequestRowsForTeam } from "~/hooks/multisig";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
@@ -21,94 +17,9 @@ const Pending: NextPageWithLayout = () => {
 
   const confirmRequest = useConfirmRequest();
   const deleteRequest = useDeleteRequest();
+  const query = useGetMultisigRequestRowsForTeam();
 
-  const getMultisigContract = useStoreActions(
-    (store: any) => store.multisig.getMultisigContract,
-  );
-
-  const { currentTeam, publicKey, newNearConnection } = usePersistingStore(); // TODO from where we take this publicKey?
-
-  const [requests, setRequests] = useState<Map<Wallet, Array<RequestRow>>>(
-    new Map(),
-  );
-  const [loading, setLoading] = useState(true);
-
-  // TODO Does it work and don't break the useEffect? Also, we need to show some error message instead of break the app
-  if (!currentTeam) {
-    throw new Error("No current team");
-  }
-
-  const wallets =
-    api.teams.getWalletsForTeam.useQuery({ teamId: currentTeam.id }).data ??
-    null;
-
-  const fetchWalletData = async (wallet: Wallet): Promise<RequestRow[]> => {
-    const multisig = getMultisigContract({ contractId: wallet.walletAddress });
-    try {
-      const requestIds = await multisig.listRequestIds();
-      const numConfirmations = await multisig.getNumConfirmations();
-
-      requestIds.sort((a, b) => Number(b) - Number(a));
-
-      const requestPromises = requestIds.map(async (requestId) => {
-        const request = await multisig.getRequest({ requestId });
-        const confirmations = await multisig.getConfirmations({ requestId });
-
-        return {
-          ...request,
-          request_id: Number(requestId),
-          confirmations: confirmations,
-          requiredConfirmations: numConfirmations,
-          actions: request.actions.map((action) => {
-            if (action.type === MultiSigRequestActionType.FunctionCall) {
-              let args = action.args;
-              try {
-                args = JSON.parse(
-                  Buffer.from(action.args, "base64").toString("utf8"),
-                ) as string;
-              } catch (e) {
-                console.log(e);
-              }
-              return {
-                ...action,
-                args,
-              };
-            }
-            return action;
-          }),
-        };
-      });
-
-      const list: RequestRow[] = [];
-      const requests = await Promise.all(requestPromises);
-
-      for (const request of requests) {
-        for (let index = 0; index < request.actions.length; index++) {
-          const action = request.actions[index];
-          const explanation = await explainAction(
-            action,
-            request.receiver_id,
-            wallet.walletAddress,
-            newNearConnection, // TODO replace
-          ).catch((e) => {
-            console.error(e);
-            return undefined;
-          });
-          list.push({
-            request: request,
-            actual_receiver:
-              explanation?.actual_receiver || request.receiver_id,
-            explanation: explanation,
-          });
-        }
-      }
-
-      return list;
-    } catch (e) {
-      console.log(e);
-      return [];
-    }
-  };
+  const { publicKey } = usePersistingStore(); // TODO from where we take this publicKey?
 
   const approveOrRejectRequest = async (
     multisigWallet: Wallet,
@@ -116,6 +27,7 @@ const Pending: NextPageWithLayout = () => {
     kind: ApproveOrReject,
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
+    console.log(multisigAccountId);
 
     if (!wsStore.canSignForAccount(multisigAccountId)) return;
 
@@ -137,49 +49,20 @@ const Pending: NextPageWithLayout = () => {
           requestId: requestId,
         });
       }
-      // If we store data in global store - we won't need to re-fetch this data cuz we have
-      // all info for update - it helps keep the app fast
-      const updatedRequests = new Map(requests);
-      const updatedWalletRequests = await fetchWalletData(multisigWallet);
-      updatedRequests.set(multisigWallet, updatedWalletRequests);
-      setRequests(updatedRequests);
     } catch (e) {
       console.log(e);
     }
   };
 
-  useEffect(() => {
-    const fetchPendingRequests = async () => {
-      setLoading(true);
-
-      if (!wallets) return;
-
-      const walletPromises = wallets.map(async (wallet) => {
-        const data = await fetchWalletData(wallet);
-        return [wallet, data] as [Wallet, RequestRow[]];
-      });
-
-      const results = await Promise.all(walletPromises);
-      const tempPendingRequests = new Map();
-
-      results.forEach(([wallet, requestRow]) => {
-        tempPendingRequests.set(wallet, requestRow);
-      });
-
-      setRequests(tempPendingRequests);
-      setLoading(false);
-    };
-
-    if (wallets) fetchPendingRequests().catch(console.error);
-  }, [wallets, newNearConnection]);
+  if (query.isLoading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="flex flex-col gap-10 px-12 py-10">
       <HeaderTitle level="h1" text="Pending requests" />
-      {loading && <p>Loading...</p>}
-      {!loading &&
-        requests.size > 0 &&
-        Array.from(requests).map(([wallet, _requests]) =>
+      {query.data.length > 0 &&
+        Array.from(query.data).map(([wallet, _requests]) =>
           _requests.length === 0 ? null : (
             <div key={wallet.id} className="mb-2 border-gray-200 ">
               <h2 className="text-md mb-1 font-bold">

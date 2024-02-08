@@ -1,6 +1,6 @@
-import TransportWebHID from '@ledgerhq/hw-transport-webhid';
-import { utils } from 'near-api-js';
-import { Buffer } from 'buffer';
+import TransportWebHID from "@ledgerhq/hw-transport-webhid";
+import { utils } from "near-api-js";
+import { Buffer } from "buffer";
 
 // Further reading regarding APDU Ledger API:
 // - https://gist.github.com/Wollac/49f0c4e318e42f463b8306298dfb4f4a
@@ -18,7 +18,7 @@ export const P2_IGNORE = 0x00;
 // Converts BIP32-compliant derivation path to a Buffer.
 // More info here: https://github.com/LedgerHQ/ledger-live-common/blob/master/docs/derivation.md
 const parseDerivationPath = (derivationPath: string = "44'/397'/0'/0'/1'") => {
-  const parts = derivationPath.split('/');
+  const parts = derivationPath.split("/");
 
   return Buffer.concat(
     parts
@@ -29,13 +29,18 @@ const parseDerivationPath = (derivationPath: string = "44'/397'/0'/0'/1'") => {
           : Math.abs(parseInt(part));
       })
       .map((i32) => {
-        return Buffer.from([(i32 >> 24) & 0xff, (i32 >> 16) & 0xff, (i32 >> 8) & 0xff, i32 & 0xff]);
+        return Buffer.from([
+          (i32 >> 24) & 0xff,
+          (i32 >> 16) & 0xff,
+          (i32 >> 8) & 0xff,
+          i32 & 0xff,
+        ]);
       }),
   );
 };
 
 // Understand what this is exactly. What's so special about 87?
-export const networkId = 'W'.charCodeAt(0);
+export const networkId = "W".charCodeAt(0);
 
 interface SignParams {
   data: Uint8Array;
@@ -60,22 +65,22 @@ export class LedgerClient {
 
   ifNotConnected = () => {
     if (!this.isConnected()) {
-      throw new Error('Device already connected');
+      throw new Error("Device already connected");
     }
-  }
+  };
 
   // @ts-ignore
   connect = async () => {
-    if (this.isConnected()) throw new Error('Device already connected');
+    if (this.isConnected()) throw new Error("Device already connected");
     // @ts-ignore
     this.transport = await TransportWebHID.create();
 
     const handleDisconnect = () => {
-      this.transport?.off('disconnect', handleDisconnect);
+      this.transport?.off("disconnect", handleDisconnect);
       this.transport = null;
     };
 
-    this.transport.on('disconnect', handleDisconnect);
+    this.transport.on("disconnect", handleDisconnect);
   };
 
   // @ts-ignore
@@ -103,9 +108,15 @@ export class LedgerClient {
 
   getVersion = async () => {
     this.ifNotConnected();
-    const res = await this.transport.send(CLA, INS_GET_APP_VERSION, P1_IGNORE, P2_IGNORE);
+    const res = await this.transport.send(
+      CLA,
+      INS_GET_APP_VERSION,
+      P1_IGNORE,
+      P2_IGNORE,
+    );
     //@ts-ignore
     const [major, minor, patch] = Array.from(res);
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-base-to-string
     return `${major}.${minor}.${patch}`;
   };
 
@@ -120,18 +131,23 @@ export class LedgerClient {
       parseDerivationPath(derivationPath),
     );
 
-    return utils.PublicKey.from(utils.serialize.base_encode(res.subarray(0, -2)));
+    return utils.PublicKey.from(
+      utils.serialize.base_encode(res.subarray(0, -2)),
+    );
   };
 
   sign = async ({ data, derivationPath }: SignParams) => {
-    console.log('sign', { data, derivationPath });
-    
+    console.log("sign", { data, derivationPath });
+
     this.ifNotConnected();
     // NOTE: getVersion call resets state to avoid starting from partially filled buffer
     await this.getVersion();
     // 128 - 5 service bytes
     const CHUNK_SIZE = 123;
-    const allData = Buffer.concat([parseDerivationPath(derivationPath), Buffer.from(data)]);
+    const allData = Buffer.concat([
+      parseDerivationPath(derivationPath),
+      Buffer.from(data),
+    ]);
 
     for (let offset = 0; offset < allData.length; offset += CHUNK_SIZE) {
       const isLastChunk = offset + CHUNK_SIZE >= allData.length;
@@ -149,6 +165,6 @@ export class LedgerClient {
       }
     }
 
-    throw new Error('Invalid data or derivation path');
+    throw new Error("Invalid data or derivation path");
   };
 }

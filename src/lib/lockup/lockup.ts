@@ -38,12 +38,12 @@ import { createHash } from "crypto";
 export const viewLockupState = async (
   contractId: string,
   provider: Provider,
-  blockReference: BlockReference = { finality: "final" }
+  blockReference: BlockReference = { finality: "final" },
 ): Promise<LockupState> => {
   const accountCalculationInfo = await viewAccountBalance(
     contractId,
     provider,
-    blockReference
+    blockReference,
   );
   const lockupAccountCodeHash = accountCalculationInfo.codeHash;
 
@@ -108,7 +108,7 @@ export const viewLockupState = async (
 export const getLockupAccountBalance = async (
   contractId: string,
   provider: Provider,
-  blockReference: BlockReference = { finality: "final" }
+  blockReference: BlockReference = { finality: "final" },
 ): Promise<BN> => {
   //   const near = await connect(nearConfig);
   const delegatedStakingPoolAccountIdResponse =
@@ -123,12 +123,12 @@ export const getLockupAccountBalance = async (
     } as any);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const delegatedStakingPoolAccountId = JSON.parse(
-    Buffer.from(delegatedStakingPoolAccountIdResponse.result).toString()
+    Buffer.from(delegatedStakingPoolAccountIdResponse.result).toString(),
   );
   const accountBalance = await viewAccountBalance(
     contractId,
     provider,
-    blockReference
+    blockReference,
   );
   if (delegatedStakingPoolAccountId) {
     const delegatedStakingBalanceResponse =
@@ -139,14 +139,16 @@ export const getLockupAccountBalance = async (
         account_id: delegatedStakingPoolAccountId,
         method_name: "get_account_total_balance",
         args_base64: Buffer.from(
-          JSON.stringify({ account_id: contractId })
+          JSON.stringify({ account_id: contractId }),
         ).toString("base64"),
         ...blockReference,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
     return new BN(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      JSON.parse(Buffer.from(delegatedStakingBalanceResponse.result).toString())
+      JSON.parse(
+        Buffer.from(delegatedStakingBalanceResponse.result).toString(),
+      ),
     ).add(accountBalance.amount);
   }
   return accountBalance.amount;
@@ -162,7 +164,7 @@ export const getLockupAccountBalance = async (
 export const viewAccountBalance = async (
   accountId: string,
   provider: Provider,
-  blockReference: BlockReference = { finality: "final" }
+  blockReference: BlockReference = { finality: "final" },
 ): Promise<ViewAccount> => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const viewAccount = await provider.query<ViewAccountQuery>({
@@ -188,7 +190,7 @@ export const viewAccountBalance = async (
 export const viewLockupAccount = async (
   lockupAccountId: string,
   provider: Provider,
-  blockReference?: BlockReference
+  blockReference?: BlockReference,
 ): Promise<AccountLockup | null> => {
   try {
     const [lockupAccountBalance, lockupState] = await Promise.all([
@@ -201,9 +203,8 @@ export const viewLockupAccount = async (
       const { releaseDuration, vestingInformation } = lockupState;
       const lockupReleaseStartTimestamp = getStartLockupTimestamp(
         lockupState.lockupDuration,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        lockupState.lockupTimestamp!,
-        lockupState.hasBrokenTimestamp
+        lockupState.lockupTimestamp,
+        lockupState.hasBrokenTimestamp,
       );
       const lockedAmount = getLockedTokenAmount(lockupState);
 
@@ -219,18 +220,16 @@ export const viewLockupAccount = async (
         lockedAmount,
         liquidAmount: new BN(lockupAccountBalance).sub(lockedAmount),
         totalAmount: new BN(ownerAccountBalance).add(
-          new BN(lockupAccountBalance)
+          new BN(lockupAccountBalance),
         ),
         lockupReleaseStartDate: new Date(
-          lockupReleaseStartTimestamp.divn(1000000).toNumber()
+          lockupReleaseStartTimestamp.divn(1000000).toNumber(),
         ),
         lockupState: {
           //   ...restLockupState,
           ...lockupState,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          releaseDuration: formatReleaseDuration(releaseDuration!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          vestedInfo: formatVestingInfo(vestingInformation!)!,
+          releaseDuration: formatReleaseDuration(releaseDuration),
+          vestedInfo: formatVestingInfo(vestingInformation)!,
         },
       };
     }
@@ -242,10 +241,10 @@ export const viewLockupAccount = async (
 
 export function calculateLockup(
   accountId: string,
-  topLevelAccId: string
+  topLevelAccId: string,
 ): string {
   const h = Buffer.from(
-    createHash("sha256").update(accountId).digest("hex")
+    createHash("sha256").update(accountId).digest("hex"),
   ).subarray(0, 40);
 
   return `${h.toString()}.${topLevelAccId}`;

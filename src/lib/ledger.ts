@@ -10,7 +10,7 @@ function bip32PathToBytes(path: string) {
       .map((part) =>
         part.endsWith(`'`)
           ? Math.abs(parseInt(part.slice(0, -1))) | 0x80000000
-          : Math.abs(parseInt(part))
+          : Math.abs(parseInt(part)),
       )
       .map((i32) =>
         Buffer.from([
@@ -18,8 +18,8 @@ function bip32PathToBytes(path: string) {
           (i32 >> 16) & 0xff,
           (i32 >> 8) & 0xff,
           i32 & 0xff,
-        ])
-      )
+        ]),
+      ),
   );
 }
 
@@ -37,6 +37,7 @@ export async function createClient() {
       if (!major || !minor || !patch) {
         throw new Error("App does not support getVersion");
       }
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-base-to-string
       return `${major}.${minor}.${patch}`;
     },
     async getPublicKey(path: string) {
@@ -46,13 +47,13 @@ export async function createClient() {
         4,
         0,
         networkId,
-        bip32PathToBytes(path)
+        bip32PathToBytes(path),
       );
       return PublicKey.from(Buffer.from(response.subarray(0, -2)).toString());
     },
     async sign(
       transactionData: Uint8Array,
-      path: string | null
+      path: string | null,
     ): Promise<Uint8Array> {
       // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
       const version = await this.getVersion();
@@ -66,7 +67,7 @@ export async function createClient() {
       const allData = Buffer.concat([bip32PathToBytes(path), transactionData]);
       for (let offset = 0; offset < allData.length; offset += CHUNK_SIZE) {
         const chunk = Buffer.from(
-          allData.subarray(offset, offset + CHUNK_SIZE)
+          allData.subarray(offset, offset + CHUNK_SIZE),
         );
         const isLastChunk = offset + CHUNK_SIZE >= allData.length;
         const response = await this.transport.send(
@@ -74,7 +75,7 @@ export async function createClient() {
           2,
           isLastChunk ? 0x80 : 0,
           networkId,
-          chunk
+          chunk,
         );
         if (isLastChunk) {
           return Buffer.from(response.subarray(0, -2));

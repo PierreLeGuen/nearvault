@@ -19,27 +19,19 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { config } from "~/config/config";
+import { useListAddressBook } from "~/hooks/teams";
 
 const Manage: NextPageWithLayout = () => {
   const { currentTeam } = usePersistingStore();
   const deleteMut = api.teams.deleteBeneficiaryForTeam.useMutation();
 
-  if (!currentTeam) {
-    throw new Error("No current team");
-  }
-
   const {
     data: benefs,
     isLoading,
     refetch: refetchBook,
-  } = api.teams.getBeneficiariesForTeam.useQuery({
-    teamId: currentTeam.id,
-  });
+  } = useListAddressBook();
 
   const deleteBeneficiary = (b: Beneficiary) => {
-    if (!currentTeam) {
-      throw new Error("No current team");
-    }
     deleteMut.mutate(
       {
         beneficiaryId: b.id,
@@ -85,7 +77,9 @@ const Manage: NextPageWithLayout = () => {
 
                     <Button variant={"ghost"} size={"icon"} asChild>
                       <Link
-                        href={config.urls.nearBlocks.accountDetails(benef.walletAddress)}
+                        href={config.urls.nearBlocks.accountDetails(
+                          benef.walletAddress,
+                        )}
                         target="_blank"
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />

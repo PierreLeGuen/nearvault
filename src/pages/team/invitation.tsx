@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
+import { useListTeams } from "~/hooks/teams";
 import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "../_app";
 
@@ -16,7 +17,7 @@ const TeamInvitationPage: NextPageWithLayout = () => {
   const { id } = router.query;
   const mut = api.teams.acceptOrRejectInvitation.useMutation();
 
-  const { refetch } = api.teams.getTeamsForUser.useQuery();
+  const { refetch } = useListTeams();
   const acceptOrRejectInvitation = async (accept: boolean) => {
     setError("");
     setSuccess("");

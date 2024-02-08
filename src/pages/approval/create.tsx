@@ -1,15 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { getSidebarLayout } from "~/components/Layout";
 import WalletsDropDown from "~/components/Staking/WalletsDropDown";
-import { api } from "~/lib/api";
-import { calculateLockup } from "~/lib/lockup/lockup";
-import usePersistingStore from "~/store/useStore";
+import { useTeamsWalletsWithLockups } from "~/hooks/teams";
 import { type NextPageWithLayout } from "../_app";
 import { type WalletPretty } from "../staking/stake";
-import { useStoreActions } from "easy-peasy";
-import { config } from "~/config/config";
 
 interface IFormInput {
   newMultisigWalletId: string;
@@ -24,64 +19,18 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<IFormInput>();
-  const { currentTeam, newNearConnection } = usePersistingStore();
   const [fromWallet, setFromWallet] = useState<WalletPretty>();
-  const createMultisig = useStoreActions(
-    (actions: any) => actions.pages.approval.create.createMultisig,
-  );
 
-  const { data, isLoading } = api.teams.getWalletsForTeam.useQuery(
-    { teamId: currentTeam?.id || "" },
-    { enabled: !!currentTeam },
-  );
+  const { data, isLoading } = useTeamsWalletsWithLockups();
 
-  const { data: teamsWallet, isLoading: walletsLoading } = useQuery(
-    ["currentTeamWallets", currentTeam],
-    async () => {
-      if (!data || data.length == 0 || data[0] === undefined) {
-        throw new Error("No wallets found");
-      }
-      const w: WalletPretty[] = [];
-      for (const wallet of data) {
-        w.push({
-          walletDetails: wallet,
-          prettyName: wallet.walletAddress,
-          isLockup: false,
-          ownerAccountId: undefined,
-        });
-        try {
-          const lockupValue = calculateLockup(
-            wallet.walletAddress,
-            config.accounts.lockupFactory,
-          );
-          const nearConn = await newNearConnection();
-          await (await nearConn.account(lockupValue)).state();
-
-          w.push({
-            prettyName: "Lockup of " + wallet.walletAddress,
-            walletDetails: {
-              walletAddress: lockupValue,
-              id: lockupValue,
-              teamId: "na", // TODO Why teamId is 'na' ????
-            },
-            isLockup: true,
-            ownerAccountId: wallet.walletAddress,
-          });
-        } catch (_) {}
-      }
-      return w;
-    },
-    {
-      enabled: !!currentTeam && !!data,
-    },
-  );
-
-  const onSubmit: SubmitHandler<IFormInput> = (values) =>
-    createMultisig({ values, creatorAccount: fromWallet });
+  const onSubmit: SubmitHandler<IFormInput> = (values) => {
+    // createMultisig({ values, creatorAccount: fromWallet });
+    // TODO: switch to new create multisig view
+  };
 
   const r = register("newMultisigWalletId");
 
-  if (isLoading || walletsLoading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -91,7 +40,7 @@ const CreateMultisigWallet: NextPageWithLayout = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
         <label htmlFor="fundingMultisigWalletId">Funding multisig wallet</label>
         <WalletsDropDown
-          wallets={teamsWallet || []}
+          wallets={data}
           selectedWallet={fromWallet}
           setSelectedWallet={setFromWallet}
           r={r}

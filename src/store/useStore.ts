@@ -13,7 +13,8 @@ import {
 } from "./slices/teams";
 import { type NearState, createNearSlice } from "./slices/near";
 
-export type IStore = (WalletState & WalletActions) &
+export type IStore = WalletState &
+  WalletActions &
   TeamsState &
   TeamsActions &
   NearState;

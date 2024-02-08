@@ -26,6 +26,7 @@ export const getActions = (action: Action, actions: Action[]) => {
   const list = actions ? actions : [action];
   // check if action is of type Uint8Array
   const l = list.map((action: Action) => {
+    //@ts-expect-error
     if (action.type === "FunctionCall") return functionCall(action);
     return action;
   });

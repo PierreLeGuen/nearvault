@@ -1,7 +1,0 @@
-.content {
-  grid-area: 2 / 2 / 4 / 5;
-  justify-self: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}

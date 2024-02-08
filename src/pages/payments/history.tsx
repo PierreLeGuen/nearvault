@@ -11,20 +11,11 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { config } from "~/config/config";
-import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
+import { useGetTeamsTransactionsHistory } from "~/hooks/teams";
 import { type NextPageWithLayout } from "../_app";
 
 const History: NextPageWithLayout = () => {
-  const { currentTeam } = usePersistingStore();
-  if (!currentTeam) {
-    throw new Error("No current team");
-  }
-
-  const { data: transactions, isLoading } =
-    api.teams.getTeamTransactionsHistory.useQuery({
-      teamId: currentTeam.id,
-    });
+  const { data: transactions, isLoading } = useGetTeamsTransactionsHistory();
 
   if (isLoading) {
     return (

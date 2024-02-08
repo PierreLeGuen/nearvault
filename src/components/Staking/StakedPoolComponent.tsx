@@ -73,7 +73,7 @@ const StakedPoolComponent = ({
             onClick={() => {
               void unstakeFn(
                 wallet.wallet.isLockup
-                  ? wallet.wallet.ownerAccountId!
+                  ? wallet.wallet.ownerAccountId
                   : wallet.wallet.walletDetails.walletAddress,
                 isLockup,
                 pool.validator_id,

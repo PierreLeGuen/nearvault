@@ -3,11 +3,14 @@ import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
-import { StakedPool, WalletData } from "~/components/Staking/AllStaked";
+import {
+  type StakedPool,
+  type WalletData,
+} from "~/components/Staking/AllStaked";
 import { config } from "~/config/config";
 import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
-import { WalletPretty } from "~/pages/staking/stake";
+import { type WalletPretty } from "~/pages/staking/stake";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
@@ -42,9 +45,7 @@ export function useIsPoolSelected(selectedWallet: WalletPretty | undefined) {
 
 export function useListAllStakingPools() {
   return useQuery(["allAvailablePools"], async () => {
-    const res: Promise<PoolId[]> = await fetchJson(
-      config.urls.kitWallet.stakingPools,
-    );
+    const res = await fetchJson<PoolId[]>(config.urls.kitWallet.stakingPools);
     return res;
   });
 }
@@ -149,7 +150,7 @@ export function useAddRequestStakeToPool() {
           console.log(selectedPoolId);
 
           // selectStakingPoolAction will be empty if the user already has a staking pool selected
-          let requestActions: any[];
+          let requestActions: unknown[];
           if (selectedPoolId) {
             const stakeArgs = {
               amount: parseNearAmount(amountDivisible.toString()),
@@ -396,7 +397,6 @@ export function useWithdrawTransaction() {
       wallet,
       poolId,
       amountNear,
-      maxAmountYocto,
     }: {
       wallet: WalletPretty;
       poolId: string;

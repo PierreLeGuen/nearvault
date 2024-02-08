@@ -92,7 +92,7 @@ export const WalletSelectorContextProvider: React.FC<{
         setAccounts(nextAccounts);
       });
 
-    const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {
+    const onHideSubscription = modal.on("onHide", ({ hideReason }) => {
       console.log(`The reason for hiding the modal ${hideReason}`);
     });
 
@@ -104,8 +104,8 @@ export const WalletSelectorContextProvider: React.FC<{
 
   const walletSelectorContextValue = useMemo<WalletSelectorContextValue>(
     () => ({
-      selector: selector!,
-      modal: modal!,
+      selector: selector,
+      modal: modal,
       accounts,
       account: accounts.find((account) => account.active),
     }),

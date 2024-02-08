@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { useListAddressBook } from "~/hooks/teams";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 
@@ -57,10 +58,6 @@ export const AddDialog = () => {
     identifier: string;
     accountId: string;
   }) => {
-    if (!currentTeam) {
-      throw new Error("No current team");
-    }
-
     await addMut.mutateAsync({
       firstName: identifier,
       lastName: "",
@@ -71,9 +68,7 @@ export const AddDialog = () => {
     await refetchBook();
   };
 
-  const { refetch: refetchBook } = api.teams.getBeneficiariesForTeam.useQuery({
-    teamId: currentTeam?.id || "",
-  });
+  const { refetch: refetchBook } = useListAddressBook();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {

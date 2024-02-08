@@ -4,18 +4,15 @@ import { initFungibleTokenContract } from "~/lib/ft/contract";
 import {
   dbDataToTransfersData,
   getFormattedAmount,
-  LikelyTokens,
-  Token,
+  type LikelyTokens,
+  type Token,
 } from "~/lib/transformations";
 import usePersistingStore from "~/store/useStore";
 import { config } from "~/config/config";
 import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
-import {
-  getDaysDateBetweenDates,
-  useGetBalanceBetweenDates,
-} from "./dashboard";
+import { getDaysDateBetweenDates } from "./dashboard";
 import { getFtBalanceAtDate } from "~/lib/client";
 
 export function useAddMember() {
@@ -36,22 +33,19 @@ export function useAddWallet() {
 
 export function useListWallets() {
   const { currentTeam } = usePersistingStore();
-  if (!currentTeam) {
-    throw new Error("Missing team ID");
-  }
 
-  return api.teams.getWalletsForTeam.useQuery({
-    teamId: currentTeam.id,
-  });
+  return api.teams.getWalletsForTeam.useQuery(
+    {
+      teamId: currentTeam?.id,
+    },
+    { enabled: !!currentTeam },
+  );
 }
 
 export function useTeamsWalletsWithLockups() {
   const { currentTeam, newNearConnection } = usePersistingStore();
-  if (!currentTeam) {
-    throw new Error("Missing team ID");
-  }
-
   const { data } = useListWallets();
+
   return useQuery({
     queryKey: ["wallets", currentTeam?.id],
     queryFn: async () => {
@@ -60,26 +54,41 @@ export function useTeamsWalletsWithLockups() {
         getNearConnection: newNearConnection,
       });
     },
-    enabled: !!data,
+    enabled: !!data && !!currentTeam,
   });
 }
 
 export function useListAddressBook() {
   const { currentTeam } = usePersistingStore();
-  if (!currentTeam) {
-    throw new Error("Missing team ID");
-  }
 
-  return api.teams.getBeneficiariesForTeam.useQuery({
-    teamId: currentTeam?.id || "",
-  });
+  return api.teams.getBeneficiariesForTeam.useQuery(
+    {
+      teamId: currentTeam?.id,
+    },
+    {
+      enabled: !!currentTeam,
+    },
+  );
+}
+
+export function useGetInvitationsForTeam() {
+  const { currentTeam } = usePersistingStore();
+
+  return api.teams.getInvitationsForTeam.useQuery(
+    {
+      teamId: currentTeam?.id,
+    },
+    {
+      enabled: !!currentTeam,
+    },
+  );
 }
 
 export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["tokens", walletId],
     queryFn: async () => {
-      const data: LikelyTokens = await fetchJson(
+      const data = await fetchJson<LikelyTokens>(
         config.urls.kitWallet.likelyTokens(walletId),
       );
       console.log(data);
@@ -224,7 +233,7 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
     queryKey: ["balances", from, to],
     queryFn: async () => {
       const balances = await Promise.all(
-        wallets.data?.flatMap(async (wallet) => {
+        wallets.data?.flatMap((wallet) => {
           return days.map(async (date) => {
             const balance = await getFtBalanceAtDate(
               date,
@@ -245,4 +254,16 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
     },
     enabled: !!wallets.data,
   });
+}
+
+export function useGetTeamsTransactionsHistory() {
+  const { currentTeam } = usePersistingStore();
+  return api.teams.getTeamTransactionsHistory.useQuery(
+    {
+      teamId: currentTeam?.id,
+    },
+    {
+      enabled: currentTeam !== null,
+    },
+  );
 }
