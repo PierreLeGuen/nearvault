@@ -18,7 +18,7 @@ const WithdrawPoolComponent = ({
     isLockup: boolean,
     poolId: string,
     amount: string,
-    maxAmount: string
+    maxAmount: string,
   ) => Promise<void>;
   isLockup: boolean;
 }) => {
@@ -73,12 +73,12 @@ const WithdrawPoolComponent = ({
             onClick={() => {
               void unstakeFn(
                 wallet.wallet.isLockup
-                  ? wallet.wallet.ownerAccountId!
+                  ? wallet.wallet.ownerAccountId
                   : wallet.wallet.walletDetails.walletAddress,
                 isLockup,
                 pool.validator_id,
                 amountToWithdraw,
-                maxAmount
+                maxAmount,
               );
             }}
           >

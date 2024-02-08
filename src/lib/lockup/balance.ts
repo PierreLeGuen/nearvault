@@ -16,13 +16,13 @@ const getUnreleasedAmount = (
   lockupTimestamp: BN,
   brokenTimestamp: boolean,
   blockTimestamp: BN,
-  lockupAmount: BN
+  lockupAmount: BN,
 ): BN => {
   if (releaseDuration) {
     const startTimestamp = getStartLockupTimestamp(
       releaseDuration,
       lockupTimestamp,
-      brokenTimestamp
+      brokenTimestamp,
     );
     const endTimestamp = startTimestamp.add(releaseDuration);
 
@@ -40,7 +40,7 @@ const getUnreleasedAmount = (
 const getUnvestedAmount = (
   vestingInformation: FromStateVestingInformation,
   blockTimestamp: BN,
-  lockupAmount: BN
+  lockupAmount: BN,
 ) => {
   if (vestingInformation) {
     if (vestingInformation.unvestedAmount) {
@@ -83,38 +83,38 @@ export const getLockedTokenAmount = (lockupState: LockupState) => {
   if (lockupState.blockTimestamp.lte(phase2Time)) {
     return saturatingSub(
       lockupState.lockupAmount,
-      lockupState.terminationWithdrawnTokens
+      lockupState.terminationWithdrawnTokens,
     );
   }
 
   const lockupTimestamp = BN.max(
     phase2Time.add(lockupState.lockupDuration),
-    lockupState.lockupTimestamp!
+    lockupState.lockupTimestamp,
   );
 
   if (lockupState.blockTimestamp.lt(lockupTimestamp)) {
     return saturatingSub(
       lockupState.lockupAmount,
-      lockupState.terminationWithdrawnTokens
+      lockupState.terminationWithdrawnTokens,
     );
   }
 
   const unreleasedAmount = getUnreleasedAmount(
-    lockupState.releaseDuration!,
-    lockupState.lockupTimestamp!,
+    lockupState.releaseDuration,
+    lockupState.lockupTimestamp,
     lockupState.hasBrokenTimestamp,
     lockupState.blockTimestamp,
-    lockupState.lockupAmount
+    lockupState.lockupAmount,
   );
 
   const unvestedAmount = getUnvestedAmount(
-    lockupState.vestingInformation!,
+    lockupState.vestingInformation,
     lockupState.blockTimestamp,
-    lockupState.lockupAmount
+    lockupState.lockupAmount,
   );
 
   return BN.max(
     saturatingSub(unreleasedAmount, lockupState.terminationWithdrawnTokens),
-    unvestedAmount
+    unvestedAmount,
   );
 };

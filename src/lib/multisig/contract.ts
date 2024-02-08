@@ -147,9 +147,8 @@ export interface MultiSigContract extends nearAPI.Contract {
 
 export function initMultiSigContract(
   account: nearAPI.Account,
-  contractName: string,
 ): MultiSigContract {
-  return new nearAPI.Contract(account, contractName, {
+  return new nearAPI.Contract(account, account.accountId, {
     viewMethods: [
       "get_request",
       "get_num_requests_per_member",

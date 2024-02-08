@@ -1,9 +1,9 @@
 import { Menu, Transition } from "@headlessui/react";
 import { ArrowsUpDownIcon, CheckIcon } from "@heroicons/react/20/solid";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
-import { api } from "~/lib/api";
+import { useListTeams } from "~/hooks/teams";
 import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "./CreateTeamDialog";
 import LetterProfilePicture from "./LetterProfilePicture"; // Import the LetterProfilePicture component
@@ -21,17 +21,17 @@ export default function TeamsMenu() {
   const { setCurrentTeam, currentTeam, resetTeams, resetWallet } =
     usePersistingStore();
 
-  const { data: teams } = api.teams.getTeamsForUser.useQuery();
+  const { data: teams } = useListTeams();
 
   useEffect(() => {
     if (!currentTeam && teams) {
-      setCurrentTeam(teams[0]);
+      setCurrentTeam(teams[0].team);
     }
   });
 
   const mail = data?.user.email;
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     resetTeams();
     resetWallet();
     // TODO remove all connected accounts from local storage
@@ -70,10 +70,10 @@ export default function TeamsMenu() {
                     <button
                       className={classNames(
                         active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                        "flex w-full items-center gap-2 px-4 py-2 text-sm"
+                        "flex w-full items-center gap-2 px-4 py-2 text-sm",
                       )}
                       onClick={() => {
-                        setCurrentTeam(userTeamMap);
+                        setCurrentTeam(userTeamMap.team);
                       }}
                     >
                       <LetterProfilePicture
@@ -97,7 +97,7 @@ export default function TeamsMenu() {
                     onClick={() => setIsDialogOpen(true)}
                     className={classNames(
                       active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                      "flex w-full items-center px-4 py-2 text-sm"
+                      "flex w-full items-center px-4 py-2 text-sm",
                     )}
                   >
                     Create team
@@ -110,7 +110,7 @@ export default function TeamsMenu() {
                     href={"/team/manage"}
                     className={classNames(
                       active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                      "flex w-full items-center px-4 py-2 text-sm"
+                      "flex w-full items-center px-4 py-2 text-sm",
                     )}
                   >
                     Manage team
@@ -126,7 +126,7 @@ export default function TeamsMenu() {
                       type="submit"
                       className={classNames(
                         active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                        "flex w-full items-center px-4 py-2 text-left text-sm"
+                        "flex w-full items-center px-4 py-2 text-left text-sm",
                       )}
                       onClick={() => void handleSignOut()}
                     >

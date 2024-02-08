@@ -12,21 +12,13 @@ import {
 } from "@heroicons/react/20/solid";
 import { DashboardIcon, PieChartIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { useStoreActions, useStoreState } from "~/store-easy-peasy/hooks";
-import { SelectAccountDropdown } from "./SelectAccount/SelectAccountDropdown";
 import { TeamsDropdownMenu } from "./TeamsDropdownMenu";
-import { WalletModal } from "./WalletModal/WalletModal";
 
 export function Sidebar() {
   const iconsClasses = "mr-2 h-4 w-4";
-
-  const selectedAccount = useStoreState((state) => state.accounts.selected);
-  const openWalletModal = useStoreActions(
-    (actions) => actions.wallets.modal.open,
-  );
 
   return (
     <>
@@ -110,18 +102,7 @@ export function Sidebar() {
             </SidebarSectionBody>
           </SidebarSection>
         </div>
-        {selectedAccount ? (
-          <SelectAccountDropdown
-            openWalletModal={openWalletModal}
-            className="m-4"
-          />
-        ) : (
-          <Button className="m-4" onClick={() => openWalletModal()}>
-            Connect wallet...
-          </Button>
-        )}
       </div>
-      <WalletModal />
     </>
   );
 }

@@ -30,15 +30,20 @@ const ManageTeamPage: NextPageWithLayout = () => {
 
   const { data: wallets, refetch: refetchWallets } =
     api.teams.getWalletsForTeam.useQuery({
-      teamId: currentTeam?.id || "",
+      teamId: currentTeam?.id,
     });
   const { data: members } = api.teams.getMembersForTeam.useQuery({
-    teamId: currentTeam?.id || "",
+    teamId: currentTeam?.id,
   });
   const { data: invitations, refetch: refetchInvites } =
-    api.teams.getInvitationsForTeam.useQuery({
-      teamId: currentTeam?.id || "",
-    });
+    api.teams.getInvitationsForTeam.useQuery(
+      {
+        teamId: currentTeam?.id,
+      },
+      {
+        enabled: !!currentTeam,
+      },
+    );
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -66,9 +71,6 @@ const ManageTeamPage: NextPageWithLayout = () => {
   };
 
   const deleteWallet = async (id: string) => {
-    if (!currentTeam) {
-      throw new Error("No current team");
-    }
     setLoadingStates((prev) => ({ ...prev, [id]: true }));
 
     try {

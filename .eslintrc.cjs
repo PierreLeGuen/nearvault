@@ -14,7 +14,7 @@ const config = {
       },
       rules: {
         "@typescript-eslint/ban-ts-comment": "warn",
-        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-explicit-any": "warn",
         "react/no-unescaped-entities": "warn",
         "@typescript-eslint/no-unused-vars": "warn",
         "@typescript-eslint/no-unsafe-member-access": "warn",

@@ -45,9 +45,7 @@ export function CreateTeamCard(params: Params) {
     query.mutate(values, {
       onSuccess: (data) => {
         store.setCurrentTeam({
-          team: data,
-          teamId: data.id,
-          userId: data.id,
+          ...data,
         });
 
         params.onTeamCreated(data);

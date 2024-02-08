@@ -51,7 +51,6 @@
     "cmdk": "^0.2.0",
     "date-fns": "^2.30.0",
     "deep-equal": "^2.2.3",
-    "easy-peasy": "^6.0.4",
     "eventemitter3": "^5.0.1",
     "js-sha256": "^0.10.1",
     "near-api-js": "^2.1.4",

@@ -1,8 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { BN } from "bn.js";
 import { transactions } from "near-api-js";
-import { PublicKey } from "near-api-js/lib/utils";
-import { toGas } from "~/store-easy-peasy/helpers/toGas";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { TGas } from "./staking";
 

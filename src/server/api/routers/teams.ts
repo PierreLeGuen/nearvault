@@ -659,7 +659,7 @@ export const teamsRouter = createTRPCRouter({
         });
       }
 
-      const creatorEmail = ctx.session.user.email as string;
+      const creatorEmail = ctx.session.user.email;
 
       // Insert new transaction
       const newTransaction = await ctx.prisma.transferHistory.create({

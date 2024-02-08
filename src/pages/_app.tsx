@@ -1,9 +1,7 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StoreProvider, useStoreRehydrated } from "easy-peasy";
 import { SessionProvider } from "next-auth/react";
 import { api } from "~/lib/api";
-import { store } from "~/store-easy-peasy/store";
 
 import { type NextPage } from "next";
 import { type Session } from "next-auth";
@@ -30,11 +28,6 @@ type AppPropsWithLayout = AppProps & {
 
 const queryClient = new QueryClient();
 
-const RehydrateWrapper = ({ children }) => {
-  const isRehydrated = useStoreRehydrated();
-  return !isRehydrated ? <div>Loading...</div> : children;
-};
-
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   const { getLayout } = Component;
 
@@ -44,13 +37,9 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   return (
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
-        <StoreProvider store={store}>
-          <RehydrateWrapper>
-            {layout}
-            <ToastContainer />
-            <WalletHome />
-          </RehydrateWrapper>
-        </StoreProvider>
+        {layout}
+        <ToastContainer />
+        <WalletHome />
       </QueryClientProvider>
     </SessionProvider>
   );

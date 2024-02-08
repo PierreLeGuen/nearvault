@@ -1,6 +1,7 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
 import { toast } from "react-toastify";
+import { useListTeams } from "~/hooks/teams";
 import { api } from "~/lib/api";
 
 export const CreateTeamDialog = ({
@@ -13,7 +14,7 @@ export const CreateTeamDialog = ({
   const [teamName, setTeamName] = useState<string>("");
 
   const mutation = api.teams.createTeam.useMutation();
-  const teamsQuery = api.teams.getTeamsForUser.useQuery();
+  const teamsQuery = useListTeams();
 
   return (
     <>
@@ -81,13 +82,13 @@ export const CreateTeamDialog = ({
                             },
                             onError: (error) => {
                               console.error(
-                                `Error creating team: ${error.message}`
+                                `Error creating team: ${error.message}`,
                               );
                               toast.error(
-                                `Error creating team: ${error.message}`
+                                `Error creating team: ${error.message}`,
                               );
                             },
-                          }
+                          },
                         );
 
                         setIsOpen(false);

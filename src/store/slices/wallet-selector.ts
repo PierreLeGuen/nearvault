@@ -79,6 +79,7 @@ export const createWalletTerminator: StateCreator<
   accounts: {},
   sources: {},
   selectedPublicKey: "",
+  
   addAccounts: (newAccounts: PkAndAccounts, newSources: PkAndSources) => {
     const accounts = get().accounts;
     console.log("addAccounts", {

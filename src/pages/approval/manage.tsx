@@ -1,18 +1,14 @@
-import { useStoreState } from "easy-peasy";
 import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { ManageMultisigAccounts } from "~/components/approval/manage/ManageMultisigAccounts/ManageMultisigAccounts";
 import HeaderTitle from "~/components/ui/header";
-import { useGetMultisigAccounts } from "~/store-easy-peasy/slices/pages/approval/manage/hooks/useGetMultisigAccounts";
+import { useListWallets } from "~/hooks/teams";
 import { type NextPageWithLayout } from "../_app";
 
 const Manage: NextPageWithLayout = () => {
-  const isLoading = useGetMultisigAccounts();
-  const multisigAccounts = useStoreState(
-    (store: any) => store.pages.approval.manage.multisigAccounts,
-  );
+  const query = useListWallets();
 
-  if (isLoading)
+  if (query.isLoading)
     return (
       <ContentCentered>
         <HeaderTitle level="h1" text="Manage wallets" />
@@ -20,14 +16,16 @@ const Manage: NextPageWithLayout = () => {
       </ContentCentered>
     );
 
-  return multisigAccounts.length > 0 ? (
-    <ManageMultisigAccounts multisigAccounts={multisigAccounts} />
-  ) : (
-    <ContentCentered>
-      <HeaderTitle level="h1" text="Manage wallets" />
-      <p>No accounts</p>
-    </ContentCentered>
-  );
+  if (query.data.length === 0) {
+    return (
+      <ContentCentered>
+        <HeaderTitle level="h1" text="Manage wallets" />
+        <p>No accounts</p>
+      </ContentCentered>
+    );
+  }
+
+  return <ManageMultisigAccounts multisigAccounts={query.data} />;
 };
 
 Manage.getLayout = getSidebarLayout;
