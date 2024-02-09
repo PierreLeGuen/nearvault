@@ -22,7 +22,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
     queryFn: async () => {
       const rows: Map<Wallet, RequestRow[]> = new Map();
 
-      for (const wallet of walletsQuery.data) {
+      const walletPromises = walletsQuery.data.map(async (wallet) => {
         console.log("useGetMultisigContract", { data: walletsQuery.data });
         const near = await newNearConnection();
         const multisig = initMultiSigContract(
@@ -34,7 +34,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
           requestIds = await multisig.list_request_ids();
         } catch (e) {
           console.error("must not be mutlsig wallet", e);
-          continue;
+          return;
         }
         const numConfirmations = await multisig.get_num_confirmations();
 
@@ -98,7 +98,10 @@ export const useGetMultisigRequestRowsForTeam = () => {
         console.log(rows);
 
         rows.set(wallet, list);
-      }
+      });
+
+      await Promise.all(walletPromises);
+
       return rows;
     },
   });
