@@ -59,9 +59,7 @@ const Pending: NextPageWithLayout = () => {
     <div className="flex flex-col gap-10 px-12 py-10">
       <HeaderTitle level="h1" text="Pending requests" />
       {Array.from(query.data).map(([wallet, _requests]) =>
-        _requests.length === 0 ? (
-          <p key={wallet.id}>No requests</p>
-        ) : (
+        _requests.length === 0 ? null : (
           <div key={wallet.id} className="mb-2 border-gray-200 ">
             <h2 className="text-md mb-1 font-bold">
               Wallet ID: {wallet.walletAddress}
