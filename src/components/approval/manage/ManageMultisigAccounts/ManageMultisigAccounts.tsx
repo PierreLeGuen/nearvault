@@ -11,9 +11,11 @@ export const ManageMultisigAccounts = ({
   return (
     <ContentCentered>
       <HeaderTitle level="h1" text="Manage wallets" />
-      {multisigWallets.map((wallet) => (
-        <MultisigAccount key={wallet.id} accountId={wallet.walletAddress} />
-      ))}
+      {multisigWallets
+        .sort((a, b) => a.walletAddress.localeCompare(b.walletAddress))
+        .map((wallet) => (
+          <MultisigAccount key={wallet.id} accountId={wallet.walletAddress} />
+        ))}
     </ContentCentered>
   );
 };

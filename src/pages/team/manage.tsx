@@ -184,23 +184,25 @@ const ManageTeamPage: NextPageWithLayout = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {wallets?.map((wallet) => (
-              <TableRow key={wallet.id}>
-                <TableCell className="font-medium">
-                  <p className="break-all">{wallet.walletAddress}</p>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      void deleteWallet(wallet.id);
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {wallets
+              ?.sort((a, b) => a.walletAddress.localeCompare(b.walletAddress))
+              .map((wallet) => (
+                <TableRow key={wallet.id}>
+                  <TableCell className="font-medium">
+                    <p className="break-all">{wallet.walletAddress}</p>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        void deleteWallet(wallet.id);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>

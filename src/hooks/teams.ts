@@ -34,12 +34,22 @@ export function useAddWallet() {
 export function useListWallets() {
   const { currentTeam } = usePersistingStore();
 
-  return api.teams.getWalletsForTeam.useQuery(
+  const query = api.teams.getWalletsForTeam.useQuery(
     {
       teamId: currentTeam?.id,
     },
     { enabled: !!currentTeam },
   );
+
+  return useQuery({
+    queryKey: ["walletsSorted", currentTeam?.id],
+    enabled: !!currentTeam && !!query.data,
+    queryFn: () => {
+      return query.data.toSorted((a, b) => {
+        return a.walletAddress.localeCompare(b.walletAddress);
+      });
+    },
+  });
 }
 
 export function useTeamsWalletsWithLockups() {
@@ -47,7 +57,7 @@ export function useTeamsWalletsWithLockups() {
   const { data } = useListWallets();
 
   return useQuery({
-    queryKey: ["wallets", currentTeam?.id],
+    queryKey: ["walletsWithLockups", currentTeam?.id],
     queryFn: async () => {
       return await dbDataToTransfersData({
         data: data || [],
@@ -86,7 +96,7 @@ export function useGetInvitationsForTeam() {
 
 export function useGetTokensForWallet(walletId: string) {
   return useQuery({
-    queryKey: ["tokens", walletId],
+    queryKey: ["likelyTokensForWallet", walletId],
     queryFn: async () => {
       const data = await fetchJson<LikelyTokens>(
         config.urls.kitWallet.likelyTokens(walletId),
@@ -102,7 +112,7 @@ export function useGetNearBalanceForWallet(walletId: string) {
   const { newNearConnection } = usePersistingStore();
 
   return useQuery({
-    queryKey: ["nearBalance", walletId],
+    queryKey: ["nearBalanceForWallet", walletId],
     queryFn: async () => {
       const near = await newNearConnection();
       const account = await near.account(walletId);
@@ -122,7 +132,7 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
   const { data: tokenAddresses } = useGetTokensForWallet(walletId);
 
   return useQuery({
-    queryKey: ["tokens", walletId, tokenAddresses?.list],
+    queryKey: ["tokensWithBalances", walletId, tokenAddresses?.list],
     queryFn: async () => {
       const tokAddrs = tokenAddresses?.list || [];
 

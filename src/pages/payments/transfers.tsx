@@ -289,7 +289,7 @@ const TransfersPage: NextPageWithLayout = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {JSON.stringify(wsStore.keysToAccounts)}
+          {/* {JSON.stringify(wsStore.keysToAccounts)}
           {wsStore.selectedPublicKey}
           <Button onClick={() => wsStore.connectWithLedger()}>
             Connect Ledger
@@ -297,7 +297,7 @@ const TransfersPage: NextPageWithLayout = () => {
           <Button onClick={() => wsStore.connectWithMyNearWallet()}>
             Connect MyNearWallet
           </Button>
-          <Button onClick={() => wsStore.openModal()}>Open Modal</Button>
+          <Button onClick={() => wsStore.openModal()}>Open Modal</Button> */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <SenderFormField
