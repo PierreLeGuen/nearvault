@@ -120,7 +120,7 @@ export async function explainAction(
       let desc = `The deposit for this function call is: ${formatNearAmount(
         action.deposit,
       )}Ⓝ and the gas limit is: ${Number(action.gas) / 10 ** 12} TGas.`;
-      let actual_receiver = undefined;
+      let actual_receiver = "";
 
       const methodDescription = methodDescriptions[action.method_name];
       if (!methodDescription) {
@@ -253,8 +253,7 @@ const methodDescriptions: {
     },
   },
   deposit_and_stake: {
-    getExplanation: async (args: MethodArgs) => {
-      const depositAndStakeParams = args as DepositAndStakeParams;
+    getExplanation: async () => {
       return {
         desc: `Stakes the attached deposit.`,
         fnReceiverId: undefined, // No specific receiver ID for this action

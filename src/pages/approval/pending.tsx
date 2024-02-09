@@ -22,7 +22,6 @@ const Pending: NextPageWithLayout = () => {
     kind: ApproveOrReject,
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
-    console.log(multisigAccountId);
 
     if (!wsStore.canSignForAccount(multisigAccountId)) return;
 
@@ -58,22 +57,24 @@ const Pending: NextPageWithLayout = () => {
   return (
     <div className="flex flex-col gap-10 px-12 py-10">
       <HeaderTitle level="h1" text="Pending requests" />
-      {Array.from(query.data).map(([wallet, _requests]) =>
-        _requests.length === 0 ? null : (
-          <div key={wallet.id} className="mb-2 border-gray-200 ">
-            <h2 className="text-md mb-1 font-bold">
-              Wallet ID: {wallet.walletAddress}
-            </h2>
-            <div>
-              <RequestsTable
-                data={_requests}
-                wallet={wallet}
-                approveRejectFn={approveOrRejectRequest}
-              />
+      {Array.from(query.data)
+        .sort((a, b) => a[0].walletAddress.localeCompare(b[0].walletAddress))
+        .map(([wallet, _requests]) =>
+          _requests.length === 0 ? null : (
+            <div key={wallet.id} className="mb-2 border-gray-200 ">
+              <h2 className="text-md mb-1 font-bold">
+                Wallet ID: {wallet.walletAddress}
+              </h2>
+              <div>
+                <RequestsTable
+                  data={_requests}
+                  wallet={wallet}
+                  approveRejectFn={approveOrRejectRequest}
+                />
+              </div>
             </div>
-          </div>
-        ),
-      )}
+          ),
+        )}
     </div>
   );
 };

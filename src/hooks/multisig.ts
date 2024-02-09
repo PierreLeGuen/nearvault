@@ -2,11 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
   type RequestRow,
   explainAction,
-  explanation,
+  type explanation,
 } from "~/lib/explain-transaction";
 import {
   MultiSigRequestActionType,
-  MultisigRequest,
   initMultiSigContract,
 } from "~/lib/multisig/contract";
 import usePersistingStore from "~/store/useStore";
@@ -19,7 +18,6 @@ export const useGetMultisigRequestRowsForTeam = () => {
   const { newNearConnection } = usePersistingStore();
   const walletsQuery = useListWallets();
 
-  console.log("reusing hook", { walletsQuery });
   return useQuery({
     queryKey: ["multisigRequestRowsForTeam", walletsQuery.data],
     enabled: !!walletsQuery.data,
@@ -27,7 +25,6 @@ export const useGetMultisigRequestRowsForTeam = () => {
       const rows: Map<Wallet, RequestRow[]> = new Map();
 
       const walletPromises = walletsQuery.data.map(async (wallet) => {
-        console.log("useGetMultisigContract", { data: walletsQuery.data });
         const near = await newNearConnection();
         const multisig = initMultiSigContract(
           await near.account(wallet.walletAddress),
@@ -102,11 +99,6 @@ export const useGetMultisigRequestRowsForTeam = () => {
             explanations: explanations,
           });
         }
-        console.log("rows", rows);
-
-        if (wallet.walletAddress === "registrar") {
-          console.log("registrar", list);
-        }
 
         rows.set(wallet, list);
       });
@@ -123,7 +115,6 @@ export function useGetAccountKeys(multisigAccountId: string) {
     queryKey: ["getAccountKeys", multisigAccountId],
     queryFn: async () => {
       const keys = await viewAccessKeyList(multisigAccountId);
-      console.log("useGetAccountKeys", { keys });
 
       return keys;
     },
@@ -134,8 +125,6 @@ export function useUsableKeysForSigning(
   multisigAccountId: string,
   requestId: number,
 ) {
-  console.log("useUsableKeysForSigning", { multisigAccountId, requestId });
-
   const keysQuery = useGetAccountKeys(multisigAccountId);
   const wsStore = useWalletTerminator();
   const { newNearConnection } = usePersistingStore();
@@ -161,27 +150,17 @@ export function useUsableKeysForSigning(
 
       const keysData = keysQuery.data;
 
-      console.log("request.confirmations", confirmations);
-
       const remainingKeys = keysData.keys.filter((key) => {
         return !confirmations.some(
           (confirmation) => confirmation === key.public_key,
         );
       });
 
-      console.log("remainingKeys", remainingKeys);
-      console.log(
-        "wsStore",
-        wsStore.getPublicKeysForAccount(multisigAccountId),
-      );
-
       const myUsableKeys = remainingKeys.filter((key) => {
         return wsStore
           .getPublicKeysForAccount(multisigAccountId)
           .some((importedPk) => importedPk === key.public_key);
       });
-
-      console.log("myUsableKeys", myUsableKeys);
 
       return myUsableKeys;
     },

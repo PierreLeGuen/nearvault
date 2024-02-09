@@ -80,7 +80,10 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                         <div>
                           <h3 className="text-lg font-bold">Actions</h3>
                           {row.original.request.actions.map((action, index) => (
-                            <div key={index} className="flex flex-col gap-1">
+                            <div
+                              key={row.id + "" + index}
+                              className="flex flex-col gap-1"
+                            >
                               <strong>Action {index + 1}</strong>
                               {row.original.explanations[index] && (
                                 <p>
