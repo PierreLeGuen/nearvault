@@ -289,7 +289,7 @@ const TransfersPage: NextPageWithLayout = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {JSON.stringify(wsStore.accounts)}
+          {JSON.stringify(wsStore.keysToAccounts)}
           {wsStore.selectedPublicKey}
           <Button onClick={() => wsStore.connectWithLedger()}>
             Connect Ledger

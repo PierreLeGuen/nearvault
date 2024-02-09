@@ -5,7 +5,7 @@ export type U64 = string; // Assuming it is a string representation of a 64-bit 
 export type Base58PublicKey = string; // Assuming it is a Base58 encoded string
 export type Base64VecU8 = string; // Assuming it is a Base64 encoded string
 export type AccountId = string; // Assuming it is a string
-export type RequestId = string; // Assuming it is a string
+export type RequestId = number; // Assuming it is a string
 
 export enum MultiSigRequestActionType {
   CreateAccount = "CreateAccount",

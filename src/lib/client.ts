@@ -3,11 +3,13 @@ import { initLockupContract } from "./lockup/contract";
 import { Provider } from "near-api-js/lib/providers";
 import { FungibleTokenMetadata } from "./ft/contract";
 import {
+  AccessKeyList,
   CodeResult,
   QueryResponseKind,
 } from "near-api-js/lib/providers/provider";
 import { providers } from "near-api-js";
 import { config } from "~/config/config";
+import { AccessKey } from "near-api-js/lib/transaction";
 
 export async function getSelectedPool(
   accountId: string,
@@ -142,3 +144,36 @@ export async function viewCall<T>(
 
   return JSON.parse(Buffer.from(result.result).toString()) as T;
 }
+
+type AccessKeyResult = {
+  block_hash: string;
+  block_height: number;
+  keys: Array<{
+    access_key: {
+      nonce: number;
+      permission: {
+        FunctionCall: {
+          allowance: null;
+          method_names: string[];
+          receiver_id: string;
+        };
+      };
+    };
+    public_key: string;
+  }>;
+};
+
+export const viewAccessKeyList = async (accountId: string) => {
+  const provider = getProvider();
+  console.log("viewAccessKeyList", { accountId });
+
+  const result = await provider.query<AccessKeyList>({
+    request_type: "view_access_key_list",
+    account_id: accountId,
+    finality: "optimistic",
+  });
+
+  console.log("viewAccessKeyList", { result });
+
+  return result;
+};

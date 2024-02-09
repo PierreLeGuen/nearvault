@@ -1,30 +1,36 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
+import { Wallet } from "@prisma/client";
 import {
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
 } from "@radix-ui/react-icons";
-import { PublicKey } from "near-api-js/lib/utils";
+import { Row } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
+import { useUsableKeysForSigning } from "~/hooks/multisig";
 import { RequestRow } from "~/lib/explain-transaction";
-
-const isPublicKeyInConfirmations = (
-  requestRow: RequestRow,
-  publicKey: PublicKey | undefined,
-) =>
-  publicKey && requestRow.request.confirmations.includes(publicKey.toString());
 
 export const RequestColumn = ({
   row,
   wallet,
   approveRejectFn,
-  publicKey,
-}: any) => {
-  const isConfirmed = isPublicKeyInConfirmations(row.original, publicKey);
+}: {
+  row: Row<RequestRow>;
+  wallet: Wallet;
+  approveRejectFn: (
+    multisigWallet: Wallet,
+    requestId: number,
+    kind: "approve" | "reject",
+  ) => Promise<void>;
+}) => {
+  const query = useUsableKeysForSigning(
+    wallet.walletAddress,
+    row.original.request.request_id,
+  );
 
   const approve = () => {
     approveRejectFn(wallet, row.original.request.request_id, "approve").catch(
-      (e: any) => {
+      (e) => {
         console.error(e);
       },
     );
@@ -32,7 +38,7 @@ export const RequestColumn = ({
 
   const reject = () => {
     approveRejectFn(wallet, row.original.request.request_id, "reject").catch(
-      (e: any) => {
+      (e) => {
         console.error(e);
       },
     );
@@ -45,7 +51,7 @@ export const RequestColumn = ({
       <Button
         className="bg-green-500 hover:bg-green-400"
         size="icon"
-        disabled={isConfirmed}
+        disabled={!query.data?.length}
         onClick={approve}
       >
         <CheckIcon className="h-5 w-5 text-white" />

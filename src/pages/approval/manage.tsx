@@ -25,7 +25,7 @@ const Manage: NextPageWithLayout = () => {
     );
   }
 
-  return <ManageMultisigAccounts multisigAccounts={query.data} />;
+  return <ManageMultisigAccounts multisigWallets={query.data} />;
 };
 
 Manage.getLayout = getSidebarLayout;

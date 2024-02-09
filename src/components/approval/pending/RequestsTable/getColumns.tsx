@@ -1,6 +1,5 @@
 import { type Wallet } from "@prisma/client";
 import { createColumnHelper } from "@tanstack/react-table";
-import { type PublicKey } from "near-api-js/lib/utils";
 import { RequestColumn } from "~/components/approval/pending/RequestsTable/RequestColumn";
 import { type RequestRow } from "~/lib/explain-transaction";
 import { type ApproveOrReject } from "~/pages/approval/pending";
@@ -14,7 +13,6 @@ type Props = {
     requestId: number,
     kind: ApproveOrReject,
   ) => Promise<void>;
-  publicKey: PublicKey | undefined;
 };
 
 const requestId = columnHelper.accessor("request.request_id", {
@@ -53,7 +51,7 @@ const confirmations = columnHelper.accessor("request", {
   minSize: 50,
 });
 
-const request = ({ wallet, approveRejectFn, publicKey }: Props) =>
+const request = ({ wallet, approveRejectFn }: Props) =>
   columnHelper.accessor("request", {
     id: "actions",
     header: "Actions",
@@ -62,7 +60,6 @@ const request = ({ wallet, approveRejectFn, publicKey }: Props) =>
         row={row}
         wallet={wallet}
         approveRejectFn={approveRejectFn}
-        publicKey={publicKey}
       />
     ),
     size: 50,

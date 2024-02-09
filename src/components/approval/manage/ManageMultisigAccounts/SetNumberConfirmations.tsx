@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../../ui/dialog";
-import { Form } from "../../../../ui/form";
+} from "../../../ui/dialog";
+import { Form } from "../../../ui/form";
 
 const formSchema = z.object({
   numConfirmations: z.string(),
