@@ -36,7 +36,7 @@ type PkAndAccounts = Record<PublicKeyStr, AccountId[]>;
 type PkAndSources = Record<PublicKeyStr, Source>;
 
 export interface WsState {
-  accounts: PkAndAccounts;
+  keysToAccounts: PkAndAccounts;
   sources: PkAndSources;
   selectedPublicKey: PublicKeyStr;
 }
@@ -68,6 +68,7 @@ interface WsActions {
   }) => Promise<void>;
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
   canSignForAccount: (accountId: AccountId) => boolean;
+  getPublicKeysForAccount: (accountId: AccountId) => PublicKeyStr[];
 }
 
 export const createWalletTerminator: StateCreator<
@@ -76,12 +77,18 @@ export const createWalletTerminator: StateCreator<
   [],
   WsState & WsActions
 > = (set, get) => ({
-  accounts: {},
+  keysToAccounts: {},
   sources: {},
   selectedPublicKey: "",
-  
+  getPublicKeysForAccount: (accountId: AccountId) => {
+    const pkAndAccounts = get().keysToAccounts;
+    const found = Object.keys(pkAndAccounts).filter((pk) =>
+      pkAndAccounts[pk].includes(accountId),
+    );
+    return found;
+  },
   addAccounts: (newAccounts: PkAndAccounts, newSources: PkAndSources) => {
-    const accounts = get().accounts;
+    const accounts = get().keysToAccounts;
     console.log("addAccounts", {
       currentAccounts: accounts,
       newAccounts,
@@ -112,10 +119,10 @@ export const createWalletTerminator: StateCreator<
       sources[key] = newSources[key];
     });
 
-    set({ accounts, sources });
+    set({ keysToAccounts: accounts, sources });
 
     console.log("addAccounts", {
-      accounts: get().accounts,
+      accounts: get().keysToAccounts,
       sources: get().sources,
     });
   },
@@ -205,7 +212,7 @@ export const createWalletTerminator: StateCreator<
       get().setSelectedPublicKey(publicKey);
 
       console.log("handleMnwRedirect", {
-        accounts: get().accounts,
+        accounts: get().keysToAccounts,
         sources: get().sources,
       });
 
@@ -247,8 +254,8 @@ export const createWalletTerminator: StateCreator<
     }
 
     let publicKeyForTxn = "";
-    for (const pk in get().accounts) {
-      if (get().accounts[pk].includes(params.senderId)) {
+    for (const pk in get().keysToAccounts) {
+      if (get().keysToAccounts[pk].includes(params.senderId)) {
         publicKeyForTxn = pk;
       }
     }
@@ -301,7 +308,7 @@ export const createWalletTerminator: StateCreator<
     window.location.assign(signUrl);
   },
   canSignForAccount: (accountId: AccountId) => {
-    const pkAndAccounts = get().accounts;
+    const pkAndAccounts = get().keysToAccounts;
 
     const can = Object.keys(pkAndAccounts).some((pk) =>
       pkAndAccounts[pk].includes(accountId),

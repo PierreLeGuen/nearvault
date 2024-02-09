@@ -4,7 +4,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { type PublicKey } from "near-api-js/lib/utils";
 import { getColumns } from "~/components/approval/pending/RequestsTable/getColumns";
 import {
   Table,
@@ -25,16 +24,10 @@ type Props = {
     requestId: number,
     kind: ApproveOrReject,
   ) => Promise<void>;
-  publicKey: PublicKey | undefined;
 };
 
-export const RequestsTable = ({
-  data,
-  wallet,
-  approveRejectFn,
-  publicKey,
-}: Props) => {
-  const columns = getColumns({ wallet, approveRejectFn, publicKey });
+export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
+  const columns = getColumns({ wallet, approveRejectFn });
 
   const table = useReactTable({
     data,

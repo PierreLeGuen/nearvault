@@ -10,7 +10,7 @@ type Params = {
 export const Key = ({ contractId, publicKey }: Params) => {
   const deleteKeyN = useDeleteKey();
 
-  const deleteKeyW = () => {
+  const deleteKey = () => {
     deleteKeyN.mutate({ accountId: contractId, publicKey });
   };
 
@@ -20,7 +20,7 @@ export const Key = ({ contractId, publicKey }: Params) => {
         <p className="break-all">{publicKey}</p>
       </TableCell>
       <TableCell className="text-right">
-        <Button variant="destructive" onClick={deleteKeyW}>
+        <Button variant="destructive" onClick={deleteKey}>
           Delete
         </Button>
       </TableCell>

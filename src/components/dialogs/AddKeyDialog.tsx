@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
 import { useAddKey } from "~/hooks/manage";
-import { TextInput } from "../../../../inputs/text";
+import { TextInput } from "../inputs/text";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../../ui/dialog";
-import { Form } from "../../../../ui/form";
+} from "../ui/dialog";
+import { Form } from "../ui/form";
 
 const formSchema = z.object({
   publicKey: z.string(),

@@ -58,7 +58,7 @@ export const createWalletNavigation: StateCreator<
     set({ modalState: ModalState.LedgerSharePublicKey });
   },
   goToLedgerSharePublicKeySuccess: (key: string) => {
-    const discoveredAccounts = get().accounts[key];
+    const discoveredAccounts = get().keysToAccounts[key];
     set({
       sharedPk: key,
       discoveredAccounts: discoveredAccounts.filter(Boolean),
