@@ -1,14 +1,14 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
-import { Wallet } from "@prisma/client";
+import { type Wallet } from "@prisma/client";
 import {
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
 } from "@radix-ui/react-icons";
-import { Row } from "@tanstack/react-table";
+import { type Row } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
 import { useUsableKeysForSigning } from "~/hooks/multisig";
-import { RequestRow } from "~/lib/explain-transaction";
+import { type RequestRow } from "~/lib/explain-transaction";
 
 export const RequestColumn = ({
   row,
