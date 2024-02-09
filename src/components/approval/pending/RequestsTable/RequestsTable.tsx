@@ -78,10 +78,18 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                           </div>
                         )}
                         <div>
-                          <p className="font-bold">Actions</p>
+                          <h3 className="text-lg font-bold">Actions</h3>
                           {row.original.request.actions.map((action, index) => (
                             <div key={index} className="flex flex-col gap-1">
-                              <p>Action {index + 1}</p>
+                              <strong>Action {index + 1}</strong>
+                              {row.original.explanations[index] && (
+                                <p>
+                                  {
+                                    row.original.explanations[index]
+                                      .full_description
+                                  }
+                                </p>
+                              )}
                               <pre className="rounded-xl bg-slate-800 p-2 text-white">
                                 {JSON.stringify(action, null, 2)}
                               </pre>

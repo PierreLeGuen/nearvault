@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { type RequestRow, explainAction } from "~/lib/explain-transaction";
+import {
+  type RequestRow,
+  explainAction,
+  explanation,
+} from "~/lib/explain-transaction";
 import {
   MultiSigRequestActionType,
   MultisigRequest,
@@ -75,6 +79,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
         const requests = await Promise.all(requestPromises);
 
         for (const request of requests) {
+          const explanations: explanation[] = [];
           for (let index = 0; index < request.actions.length; index++) {
             try {
               const action = request.actions[index];
@@ -84,18 +89,24 @@ export const useGetMultisigRequestRowsForTeam = () => {
                 wallet.walletAddress,
                 newNearConnection, // TODO replace
               );
-              list.push({
-                request: request,
-                actual_receiver:
-                  explanation?.actual_receiver || request.receiver_id,
-                explanation: explanation,
-              });
+              explanations.push(explanation);
             } catch (e) {
               console.error(e);
             }
           }
+          list.push({
+            request: request,
+            actual_receiver:
+              explanations.find((e) => e.actual_receiver)?.actual_receiver ||
+              request.receiver_id,
+            explanations: explanations,
+          });
         }
-        console.log(rows);
+        console.log("rows", rows);
+
+        if (wallet.walletAddress === "registrar") {
+          console.log("registrar", list);
+        }
 
         rows.set(wallet, list);
       });

@@ -28,13 +28,18 @@ const actualReceiver = columnHelper.accessor("actual_receiver", {
   cell: (row) => <p className="break-all">{row.getValue()}</p>,
 });
 
-const shortDescription = columnHelper.accessor(
-  "explanation.short_description",
-  {
-    header: "Description",
-    cell: (row) => <p className="break-all">{row.getValue()}</p>,
-  },
-);
+const shortDescription = columnHelper.accessor("explanations", {
+  header: "Description",
+  cell: (row) => (
+    <p className="break-all">
+      {row
+        .getValue()
+        .map((e) => e.short_description)
+        .filter(Boolean)
+        .join(", ")}
+    </p>
+  ),
+});
 
 const confirmations = columnHelper.accessor("request", {
   id: "confirmations",

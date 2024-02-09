@@ -21,7 +21,7 @@ export type explanation = {
 // new definitnon with multisig request and explanation Multisig & Explanation
 export type RequestRow = {
   request: MultisigRequest;
-  explanation: explanation;
+  explanations: explanation[];
   actual_receiver: string;
 };
 
@@ -39,31 +39,31 @@ export async function explainAction(
     case MultiSigRequestActionType.CreateAccount:
       return {
         full_description: `Creates a new account on behalf of the multisig contract.`,
-        short_description: `Create Account`,
+        short_description: `Creates Account ${to}`,
       };
 
     case MultiSigRequestActionType.DeployContract:
       return {
-        full_description: `Deploys a contract to ${from} with the provided code.`,
+        full_description: `Deploys a contract to ${to} with the provided code.`,
         short_description: `Deploy Contract`,
       };
 
     case MultiSigRequestActionType.AddMember:
       return {
-        full_description: `Adds a new member with the public key: ${action.member.public_key} to ${from} multisig contract.`,
+        full_description: `Adds a new member with the public key: ${action.member.public_key} to ${to}.`,
         short_description: `Add Member`,
       };
 
     case MultiSigRequestActionType.DeleteMember:
       return {
-        full_description: `Removes a member with the public key: ${action.member.public_key} from ${from}.`,
+        full_description: `Removes a member with the public key: ${action.member.public_key} from ${to}.`,
         short_description: `Delete Member`,
       };
 
     case MultiSigRequestActionType.AddKey:
       return {
-        full_description: `Adds a new key with the public key: ${action.public_key} to ${from} multisig contract.`,
-        short_description: `Add Key`,
+        full_description: `Adds a new key with the public key: ${action.public_key} to ${to}.`,
+        short_description: `Adds Key to ${to}`,
       };
 
     case MultiSigRequestActionType.SetNumConfirmations:
@@ -151,7 +151,7 @@ export async function explainAction(
     case MultiSigRequestActionType.DeleteKey:
       return {
         full_description: `Deletes a key with the public key: ${action.public_key} from ${from} multisig contract.`,
-        short_description: `Delete Key`,
+        short_description: `Delete Key: ${action.public_key}`,
       };
 
     default:
