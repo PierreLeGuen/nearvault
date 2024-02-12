@@ -10,14 +10,17 @@ import {
   PlusCircleIcon,
   QueueListIcon,
 } from "@heroicons/react/20/solid";
-import { DashboardIcon, PieChartIcon } from "@radix-ui/react-icons";
+import { PieChartIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { TeamsDropdownMenu } from "./TeamsDropdownMenu";
 
 export function Sidebar() {
+  const wsStore = useWalletTerminator();
+
   const iconsClasses = "mr-2 h-4 w-4";
 
   return (
@@ -25,12 +28,12 @@ export function Sidebar() {
       <div className="sticky top-0 flex h-screen w-[275px] flex-col justify-between gap-3 border-r-2">
         <div className="flex flex-col">
           <TeamsDropdownMenu />
-          <SidebarSection>
+          {/* <SidebarSection>
             <SidebarSectionItem href="/dashboard">
               <DashboardIcon className={iconsClasses} />
               Dashboard
             </SidebarSectionItem>
-          </SidebarSection>
+          </SidebarSection> */}
 
           <SidebarSection>
             <SidebarSectionHeader>Payments</SidebarSectionHeader>
@@ -101,6 +104,9 @@ export function Sidebar() {
               </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>
+        </div>
+        <div className="flex flex-col p-2">
+          <Button onClick={wsStore.openModal}>Wallet manager...</Button>
         </div>
       </div>
     </>

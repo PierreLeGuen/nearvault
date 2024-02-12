@@ -1,3 +1,4 @@
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
@@ -13,18 +14,21 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useRemoveInvitation } from "~/hooks/teams";
+import { useDeleteTeamMember, useRemoveInvitation } from "~/hooks/teams";
 import { api } from "~/lib/api";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageTeamPage: NextPageWithLayout = () => {
   const rmInvitationMut = useRemoveInvitation();
+  const deleteTeamMember = useDeleteTeamMember();
 
   const [loadingStates, setLoadingStates] = useState<{ [id: string]: boolean }>(
     {},
   );
   const { currentTeam } = usePersistingStore();
+
+  const connectedUser = useSession().data?.user.email;
 
   const deleteWalletMutation = api.teams.deleteWalletForTeam.useMutation();
 
@@ -56,6 +60,20 @@ const ManageTeamPage: NextPageWithLayout = () => {
 
   const getInvitationLink = (id: string) => {
     return window.location.origin + "/team/invitation?id=" + id;
+  };
+
+  const deleteTeamMemberFn = async (id: string) => {
+    try {
+      await deleteTeamMember.mutateAsync({
+        memberId: id,
+        teamId: currentTeam.id,
+      });
+      toast.success("Member deleted");
+    } catch (error) {
+      toast.error(
+        "Failed to delete member, error: " + (error as Error).message,
+      );
+    }
   };
 
   const deleteInvitation = async (id: string) => {
@@ -117,7 +135,11 @@ const ManageTeamPage: NextPageWithLayout = () => {
                   <p className="break-all">{member.name}</p>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="destructive" disabled={true}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteTeamMemberFn(member.id)}
+                    disabled={member.email === connectedUser}
+                  >
                     Delete
                   </Button>
                 </TableCell>

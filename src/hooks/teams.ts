@@ -31,6 +31,10 @@ export function useAddWallet() {
   return api.teams.addWalletsForTeam.useMutation();
 }
 
+export function useDeleteTeamMember() {
+  return api.teams.deleteTeamMember.useMutation();
+}
+
 export function useListWallets() {
   const { currentTeam } = usePersistingStore();
 

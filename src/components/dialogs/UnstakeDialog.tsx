@@ -56,7 +56,7 @@ export function UnstakeDialog(props: {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>Unstake</Button>
       </DialogTrigger>
 

@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { getProviders, signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import SignInButtons from "~/components/Welcome/SignInButtons";
 import { Button } from "~/components/ui/button";
 import {
@@ -20,8 +19,6 @@ const StartPage: NextPageWithLayout = ({
   providers,
   session,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  console.log("session", session);
-  const router = useRouter();
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: "/welcome/start" });
   };
@@ -95,12 +92,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   //   return { redirect: { destination: "/welcome/start" } };
   // }
 
-  console.log("session", session);
+  // console.log("session", session);
 
   const providers = await getProviders();
 
   return {
-    props: { providers: providers ?? [], session },
+    props: { providers: providers, session },
   };
 }
 

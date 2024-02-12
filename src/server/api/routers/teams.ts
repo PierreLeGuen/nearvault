@@ -403,7 +403,7 @@ export const teamsRouter = createTRPCRouter({
         },
       });
 
-      let invitedUserId = null;
+      let invitedUserId = "";
 
       if (invitedUser) {
         invitedUserId = invitedUser.id;
@@ -594,6 +594,62 @@ export const teamsRouter = createTRPCRouter({
           invitedUser: true,
         },
       });
+    }),
+
+  deleteTeamMember: protectedProcedure
+    .input(
+      z.object({
+        teamId: z.string(),
+        memberId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Fetch the member to be deleted
+      const initiatingMember = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!initiatingMember) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to update members of that team.",
+        });
+      }
+
+      const member = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: input.memberId,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Member not found.",
+        });
+      }
+
+      // Delete the member
+      await ctx.prisma.userTeam.delete({
+        where: {
+          userId_teamId: {
+            userId: input.memberId,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      return {
+        message: "Member successfully deleted",
+      };
     }),
 
   getTeamTransactionsHistory: protectedProcedure

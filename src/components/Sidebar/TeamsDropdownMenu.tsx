@@ -2,9 +2,12 @@ import {
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
 } from "@heroicons/react/20/solid";
+import { type Team, type UserTeam } from "@prisma/client";
+import { Cross1Icon } from "@radix-ui/react-icons";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -15,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useListTeams } from "~/hooks/teams";
+import { useDeleteTeamMember, useListTeams } from "~/hooks/teams";
 import usePersistingStore from "~/store/useStore";
 import { CreateTeamDialog } from "../dialogs/CreateTeamDialog";
 import { Skeleton } from "../ui/skeleton";
@@ -24,9 +27,19 @@ export function TeamsDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const { setCurrentTeam, currentTeam } = usePersistingStore();
 
-  const { data: teams, isLoading } = useListTeams();
+  const teamsQuery = useListTeams();
+  const deleteMemberQuery = useDeleteTeamMember();
 
-  if (isLoading) return <Skeleton className="h-8 rounded-none" />;
+  const handleDeleteMember = async (userTeamRel: UserTeam & { team: Team }) => {
+    await deleteMemberQuery.mutateAsync({
+      teamId: userTeamRel.teamId,
+      memberId: userTeamRel.userId,
+    });
+    await teamsQuery.refetch();
+    toast.success(`Team ${userTeamRel.team.name} left!`);
+  };
+
+  if (teamsQuery.isLoading) return <Skeleton className="h-8 rounded-none" />;
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: "/welcome/start" });
@@ -45,12 +58,25 @@ export function TeamsDropdownMenu() {
           <DropdownMenuLabel>My Teams</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {teams.map((userTeamRelation) => (
-              <DropdownMenuItem
-                key={userTeamRelation.teamId}
-                onClick={() => setCurrentTeam(userTeamRelation.team)}
-              >
-                {userTeamRelation.team.name}
+            {teamsQuery.data.map((userTeamRelation) => (
+              <DropdownMenuItem key={userTeamRelation.teamId}>
+                <div className="inline-flex w-full cursor-pointer items-center justify-between">
+                  <p
+                    className="w-[85%]"
+                    onClick={() => setCurrentTeam(userTeamRelation.team)}
+                  >
+                    {userTeamRelation.team.name}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="min-h-5 min-w-5 h-5 w-5"
+                    type="button"
+                    onClick={() => handleDeleteMember(userTeamRelation)}
+                  >
+                    <Cross1Icon className="h-3 w-3" />
+                  </Button>
+                </div>
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>

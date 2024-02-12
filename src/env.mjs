@@ -23,6 +23,8 @@ const server = z.object({
   DISCORD_CLIENT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
+  EMAIL_SERVER: z.string().startsWith("smtp://"),
+  EMAIL_FROM: z.string(),
 });
 
 /**
@@ -49,6 +51,8 @@ const processEnv = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   NEXT_PUBLIC_NETWORK_ID: process.env.NEXT_PUBLIC_NETWORK_ID,
+  EMAIL_FROM: process.env.EMAIL_FROM,
+  EMAIL_SERVER: process.env.EMAIL_SERVER,
 };
 
 // Don't touch the part below

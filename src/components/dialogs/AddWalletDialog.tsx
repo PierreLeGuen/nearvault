@@ -57,7 +57,7 @@ export function AddWalletDialog() {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>Add wallet to team</Button>
       </DialogTrigger>
 

@@ -42,7 +42,7 @@ export function AddMemberDialog() {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>Invite new member</Button>
       </DialogTrigger>
 
