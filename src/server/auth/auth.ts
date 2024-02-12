@@ -83,8 +83,9 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/welcome/start",
-    verifyRequest: "/welcome/verify",
+    signIn: "/auth/signin",
+    verifyRequest: "/auth/verify",
+    newUser: "/welcome/setup",
   },
   theme: {
     logo: "/logo.png",

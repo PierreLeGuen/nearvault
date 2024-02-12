@@ -42,7 +42,7 @@ export function TeamsDropdownMenu() {
   if (teamsQuery.isLoading) return <Skeleton className="h-8 rounded-none" />;
 
   const handleSignOut = async () => {
-    await signOut({ redirect: true, callbackUrl: "/welcome/start" });
+    await signOut({ redirect: true, callbackUrl: "/auth/signin" });
   };
 
   return (

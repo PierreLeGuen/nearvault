@@ -20,7 +20,7 @@ const StartPage: NextPageWithLayout = ({
   session,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const handleSignOut = async () => {
-    await signOut({ redirect: true, callbackUrl: "/welcome/start" });
+    await signOut({ redirect: true, callbackUrl: "/auth/signin" });
   };
 
   return (
@@ -89,7 +89,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // // Note: Make sure not to redirect to the same page
   // // To avoid an infinite loop!
   // if (session) {
-  //   return { redirect: { destination: "/welcome/start" } };
+  //   return { redirect: { destination: "/auth/signin" } };
   // }
 
   // console.log("session", session);

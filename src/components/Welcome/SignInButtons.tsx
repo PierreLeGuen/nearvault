@@ -16,14 +16,9 @@ export const SignInButtons = ({
   providers: Record<LiteralUnion<BuiltInProviderType>, ClientSafeProvider>;
 }) => {
   const sendEmail = async (email: string) => {
-    const res = await signIn("email", {
+    await signIn("email", {
       email: email,
-      callbackUrl: "/welcome/verify",
-      // redirect: true,
     });
-    console.log("hereeee");
-
-    console.log(res);
   };
 
   const EmailProvider = ({
@@ -33,8 +28,6 @@ export const SignInButtons = ({
   }) => {
     const emailForm = useZodForm(emailFormSchema);
 
-    const watchedEmail = emailForm.watch("email");
-
     const onSubmit = async (data: z.infer<typeof emailFormSchema>) => {
       await sendEmail(data.email);
     };
@@ -43,7 +36,6 @@ export const SignInButtons = ({
       <div className="flex w-full flex-col">
         <Form {...emailForm}>
           <form onSubmit={emailForm.handleSubmit(onSubmit)}>
-
             <EmailInput
               control={emailForm.control}
               name="email"
@@ -53,11 +45,7 @@ export const SignInButtons = ({
               disabled={false}
             />
 
-            <Button
-              onClick={() => sendEmail(watchedEmail)}
-              className="w-full"
-              type="submit"
-            >
+            <Button className="w-full" type="submit">
               Sign in with {emailProvider.name}
             </Button>
           </form>

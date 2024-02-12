@@ -47,7 +47,7 @@ const VerifyPage = () => {
             resending the magic link.
           </p>
           <Button
-            onClick={() => router.back()}
+            onClick={() => router.replace("/")}
             variant="outline"
             className="mt-4"
           >
