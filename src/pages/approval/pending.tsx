@@ -1,4 +1,5 @@
 import { type Wallet } from "@prisma/client";
+import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { RequestsTable } from "~/components/approval/pending/RequestsTable/RequestsTable";
 import HeaderTitle from "~/components/ui/header";
@@ -44,24 +45,29 @@ const Pending: NextPageWithLayout = () => {
         });
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
   if (query.isLoading) {
-    return <p>Loading...</p>;
+    return (
+      <ContentCentered className="px-12 py-10 lg:px-12">
+        <HeaderTitle level="h1" text="Pending requests" />
+        <p>Loading...</p>
+      </ContentCentered>
+    );
   }
 
   console.log("pending requests", query.data);
 
   return (
-    <div className="flex flex-col gap-10 px-12 py-10">
+    <ContentCentered className="px-12 py-10 lg:px-12">
       <HeaderTitle level="h1" text="Pending requests" />
       {Array.from(query.data)
         .sort((a, b) => a[0].walletAddress.localeCompare(b[0].walletAddress))
-        .map(([wallet, _requests]) =>
+        .map(([wallet, _requests], idx) =>
           _requests.length === 0 ? null : (
-            <div key={wallet.id} className="mb-2 border-gray-200 ">
+            <div key={wallet.id + idx} className="mb-2 border-gray-200 ">
               <h2 className="text-md mb-1 font-bold">
                 Wallet ID: {wallet.walletAddress}
               </h2>
@@ -75,7 +81,7 @@ const Pending: NextPageWithLayout = () => {
             </div>
           ),
         )}
-    </div>
+    </ContentCentered>
   );
 };
 
