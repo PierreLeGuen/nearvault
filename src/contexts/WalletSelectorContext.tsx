@@ -56,7 +56,13 @@ export const WalletSelectorContextProvider: React.FC<{
         indexerUrl: "https://testnet-api.kitwallet.app",
       },
       debug: true,
-      modules: [setupLedger(), setupMyNearWallet({})],
+      modules: [
+        setupLedger(),
+        setupMyNearWallet({
+          successUrl: "http://localhost:3000/welcome/setup",
+          failureUrl: "http://localhost:3000/welcome/setup",
+        }),
+      ],
     });
     const _modal = setupModal(_selector, {
       contractId: CONTRACT_ID,
