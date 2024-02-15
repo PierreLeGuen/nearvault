@@ -18,7 +18,7 @@ type CreateLockup = {
   cliff?: Date;
 };
 
-const functionCallAction = (
+export const functionCallAction = (
   methodName: string,
   args: Record<string, unknown>,
   yoctoDeposit: string,

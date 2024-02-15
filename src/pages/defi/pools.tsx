@@ -11,6 +11,7 @@ import { Form } from "~/components/ui/form";
 import HeaderTitle from "~/components/ui/header";
 import {
   EXCHANGES,
+  useDepositToLiquidityPool,
   useGetLiquidityPoolById,
   useGetLiquidityPools,
   useGetTokenPrices,
@@ -27,8 +28,8 @@ import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
   poolId: z.string(),
-  tokenLeft: z.string(),
-  tokenRight: z.string(),
+  tokenLeftAmount: z.string(),
+  tokenRightAmount: z.string(),
   exchangeId: z.enum(EXCHANGES),
   enableEmptyPools: z.boolean(),
   funding: z.string(),
@@ -74,14 +75,15 @@ const LiquidityPools: NextPageWithLayout = () => {
     form.watch("poolId"),
   );
   const tokenPricesQuery = useGetTokenPrices();
+  const depositMutation = useDepositToLiquidityPool();
 
   const userTokensForPool = getUserBalanceForPool(
     liquidityPoolDetailsQuery.data,
     tokensQuery.data,
   );
 
-  const watchedLeft = form.watch("tokenLeft");
-  const watchedRight = form.watch("tokenRight");
+  const watchedLeft = form.watch("tokenLeftAmount");
+  const watchedRight = form.watch("tokenRightAmount");
 
   const [expectedLeft, setExpectedLeft] = useState("");
   const [expectedRight, setExpectedRight] = useState("");
@@ -105,7 +107,7 @@ const LiquidityPools: NextPageWithLayout = () => {
           parseFloat(prices[tokenRight].price);
 
         // update right
-        form.setValue("tokenRight", right.toString());
+        form.setValue("tokenRightAmount", right.toString());
         setExpectedRight(right.toString());
 
         setExpectedLeft(watchedLeft);
@@ -117,7 +119,7 @@ const LiquidityPools: NextPageWithLayout = () => {
         const left =
           (rightVal * parseFloat(prices[tokenRight].price)) /
           parseFloat(prices[tokenLeft].price);
-        form.setValue("tokenLeft", left.toString());
+        form.setValue("tokenLeftAmount", left.toString());
         setExpectedLeft(left.toString());
 
         setExpectedRight(watchedRight);
@@ -127,8 +129,20 @@ const LiquidityPools: NextPageWithLayout = () => {
     updateAmounts();
   }, [watchedLeft, watchedRight]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
+    const tokenLeftAccId = liquidityPoolDetailsQuery.data?.token_account_ids[0];
+    const tokenRightAccId =
+      liquidityPoolDetailsQuery.data?.token_account_ids[1];
+
+    await depositMutation.mutateAsync({
+      fundingAccId: values.funding,
+      tokenLeftAccId: tokenLeftAccId,
+      tokenRightAccId: tokenRightAccId,
+      tokenLeftAmount: values.tokenLeftAmount,
+      tokenRightAmount: values.tokenRightAmount,
+      poolId: values.poolId,
+    });
   };
 
   return (
@@ -183,7 +197,7 @@ const LiquidityPools: NextPageWithLayout = () => {
 
           <TokenWithMaxInput
             control={form.control}
-            name="tokenLeft"
+            name="tokenLeftAmount"
             label={`Amount of ${liquidityPoolDetailsQuery.data?.token_symbols[0]} to deposit in the pool`}
             placeholder="10"
             rules={{ required: true }}
@@ -194,7 +208,7 @@ const LiquidityPools: NextPageWithLayout = () => {
 
           <TokenWithMaxInput
             control={form.control}
-            name="tokenRight"
+            name="tokenRightAmount"
             label={`Amount of ${liquidityPoolDetailsQuery.data?.token_symbols[1]} to deposit in the pool`}
             placeholder="10"
             rules={{ required: true }}

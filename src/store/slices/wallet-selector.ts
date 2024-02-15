@@ -30,7 +30,7 @@ import { toast } from "react-toastify";
 
 type PublicKeyStr = string;
 type AccountId = string;
-type Source = "ledger" | "mynearwallet";
+type Source = { type: "ledger" | "mynearwallet"; derivationPath?: string };
 
 type PkAndAccounts = Record<PublicKeyStr, AccountId[]>;
 type PkAndSources = Record<PublicKeyStr, Source>;
@@ -43,7 +43,10 @@ export interface WsState {
 
 interface WsActions {
   addAccounts: (accounts: PkAndAccounts, sources: PkAndSources) => void;
-  signWithLedger: (tx: Transaction) => Promise<SignedTransaction>;
+  signWithLedger: (
+    tx: Transaction,
+    derivationPath: string,
+  ) => Promise<SignedTransaction>;
   signWithMnw: (tx: Transaction) => void;
   createTx: (
     publicKey: PublicKeyStr,
@@ -161,7 +164,9 @@ export const createWalletTerminator: StateCreator<
 
     // Using plain objects instead of Map
     const newAccounts = { [pkStr]: filteredAccounts };
-    const newSources: Record<PublicKeyStr, Source> = { [pkStr]: "ledger" };
+    const newSources: Record<PublicKeyStr, Source> = {
+      [pkStr]: { type: "ledger", derivationPath: derivationPath },
+    };
 
     get().addAccounts(newAccounts, newSources);
 
@@ -204,7 +209,7 @@ export const createWalletTerminator: StateCreator<
 
       const newAccounts = { [publicKey]: [accountId] };
       const newSources: Record<PublicKeyStr, Source> = {
-        [publicKey]: "mynearwallet",
+        [publicKey]: { type: "mynearwallet" },
       };
 
       get().addAccounts(newAccounts, newSources);
@@ -259,6 +264,7 @@ export const createWalletTerminator: StateCreator<
         publicKeyForTxn = pk;
       }
     }
+    console.log(publicKeyForTxn);
 
     const tx = await get().createTx(
       publicKeyForTxn,
@@ -270,22 +276,22 @@ export const createWalletTerminator: StateCreator<
     console.log("signAndSendTransaction", { tx });
 
     const source = get().sources[publicKeyForTxn];
-    if (source === "ledger") {
-      const signedTx = await get().signWithLedger(tx);
+    if (source.type === "ledger") {
+      const signedTx = await get().signWithLedger(tx, source.derivationPath);
       const provider = new JsonRpcProvider({ url: config.urls.rpc });
       get().goToWaitForTransaction();
       const txn = await provider.sendTransaction(signedTx);
       get().goToWaitForTransaction(txn.transaction_outcome.id);
-    } else if (source === "mynearwallet") {
+    } else if (source.type === "mynearwallet") {
       get().signWithMnw(tx);
     }
   },
-  signWithLedger: async (tx: Transaction) => {
+  signWithLedger: async (tx: Transaction, derivationPath: string) => {
     try {
       get().goToLedgerSignTransaction();
       const [, signedTransaction] = await transactions.signTransaction(
         tx,
-        new LedgerSigner(),
+        new LedgerSigner(derivationPath),
       );
       return signedTransaction;
     } catch (e) {

@@ -1,9 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { fetchJson, viewCall } from "~/lib/client";
 import { Token } from "~/lib/transformations";
 import { useGetAllTokensWithBalanceForWallet } from "./teams";
 import { FungibleTokenMetadata } from "~/lib/ft/contract";
+import { transactions } from "near-api-js";
+import { addMultisigRequestAction } from "./manage";
+import { functionCallAction } from "./lockup";
+import { config } from "~/config/config";
+import { TGas } from "./staking";
+import BN from "bn.js";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 
 export const EXCHANGES = ["REF"] as const;
 
@@ -135,5 +142,65 @@ export const useGetTokenPrices = () => {
       "https://indexer.ref.finance/list-token-price",
     );
     return res;
+  });
+};
+
+type DepositParams = {
+  fundingAccId: string;
+  tokenLeftAccId: string;
+  tokenLeftAmount: string;
+  tokenRightAccId: string;
+  tokenRightAmount: string;
+  poolId: string;
+};
+
+export const useDepositToLiquidityPool = () => {
+  const wsStore = useWalletTerminator();
+  return useMutation({
+    mutationFn: async (params: DepositParams) => {
+      const refAccountId = "v2.ref-finance.near";
+      const storageDepositRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "storage_deposit",
+            {
+              account_id: refAccountId,
+              registration_only: false,
+            },
+            "0",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      const ftTransferCallRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(params.tokenLeftAccId, [
+          functionCallAction(
+            "ft_transfer_call",
+            {
+              receiver_id: refAccountId,
+              amount: params.tokenLeftAmount,
+              msg: "",
+            },
+            "0",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      console.log("useCreateLockup", { actions: storageDepositRequest });
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [storageDepositRequest],
+      });
+    },
   });
 };

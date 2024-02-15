@@ -1,15 +1,17 @@
 import { Signer } from "near-api-js";
-import { Signature, PublicKey } from "@near-js/crypto";
+import { type Signature, PublicKey } from "@near-js/crypto";
 import { LedgerClient } from "./LedgerClient";
 
 const randomPublicKey = "ed25519:EU3JT4N2ahWEzVPfcjEutG89ZDfX1vcqeYz9N1DDest6";
 
 export class LedgerSigner extends Signer {
   private ledger: LedgerClient;
+  private derivationPath: string;
 
-  constructor() {
+  constructor(derivationPath: string) {
     super();
     this.ledger = new LedgerClient();
+    this.derivationPath = derivationPath;
   }
 
   // We don't use this method - it exists only for type matching
@@ -29,7 +31,10 @@ export class LedgerSigner extends Signer {
   ): Promise<Signature> {
     try {
       await this.ledger.connect();
-      const signature = await this.ledger.sign({ data: message });
+      const signature = await this.ledger.sign({
+        data: message,
+        derivationPath: this.derivationPath,
+      });
 
       return {
         signature,
