@@ -165,18 +165,18 @@ export const useDepositToLiquidityPool = () => {
           functionCallAction(
             "storage_deposit",
             {
-              account_id: refAccountId,
+              account_id: params.fundingAccId,
               registration_only: false,
             },
             "0",
             (50 * TGas).toString(),
           ),
         ]),
-        new BN(300 * TGas),
+        new BN(100 * TGas),
         new BN("0"),
       );
 
-      const ftTransferCallRequest = transactions.functionCall(
+      const ftTransferCallLeftRequest = transactions.functionCall(
         "add_request",
         addMultisigRequestAction(params.tokenLeftAccId, [
           functionCallAction(
@@ -194,12 +194,60 @@ export const useDepositToLiquidityPool = () => {
         new BN("0"),
       );
 
-      console.log("useCreateLockup", { actions: storageDepositRequest });
+      const ftTransferCallRightRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(params.tokenRightAccId, [
+          functionCallAction(
+            "ft_transfer_call",
+            {
+              receiver_id: refAccountId,
+              amount: params.tokenRightAccId,
+              msg: "",
+            },
+            "0",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      const addLiquidityRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "add_liquidity",
+            {
+              pool_id: params.poolId,
+              amounts: [params.tokenLeftAmount, params.tokenRightAmount],
+            },
+            "0",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
 
       await wsStore.signAndSendTransaction({
         senderId: params.fundingAccId,
         receiverId: params.fundingAccId,
         actions: [storageDepositRequest],
+      });
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [ftTransferCallLeftRequest],
+      });
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [ftTransferCallRightRequest],
+      });
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [addLiquidityRequest],
       });
     },
   });

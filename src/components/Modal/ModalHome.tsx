@@ -11,6 +11,7 @@ import { useZodForm } from "~/hooks/form";
 import { ModalState } from "~/store/slices/navigation";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { DerivationPathInput } from "../inputs/derivation";
+import { TextInput } from "../inputs/text";
 import { Button } from "../ui/button";
 import { Form } from "../ui/form";
 
@@ -27,6 +28,9 @@ const Default = () => {
       <Button onClick={() => wsStore.connectWithMyNearWallet()} disabled={true}>
         MyNearWallet connect
       </Button>
+      <Button onClick={() => wsStore.goToPrivateKeyShare()}>
+        Private key connect
+      </Button>
       <Button onClick={() => wsStore.closeModal()} variant={"outline"}>
         Close
       </Button>
@@ -34,13 +38,13 @@ const Default = () => {
   );
 };
 
-const formSchema = z.object({
+const derivationPathFormSchema = z.object({
   derivationNumber: z.string(),
 });
 
 const DerivationPath = () => {
   const wsStore = useWalletTerminator();
-  const form = useZodForm(formSchema, {
+  const form = useZodForm(derivationPathFormSchema, {
     defaultValues: {
       derivationNumber: "0",
     },
@@ -50,7 +54,7 @@ const DerivationPath = () => {
     return "44'/397'/0'/0'/" + path + "'";
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof derivationPathFormSchema>) => {
     console.log(values);
 
     await wsStore.connectWithLedger(
@@ -72,6 +76,59 @@ const DerivationPath = () => {
               name="derivationNumber"
               placeholder="Derivation number"
               generateDerivationPath={generateDerivationPath}
+            />
+            <Button className="w-full" type="submit">
+              Connect
+            </Button>
+          </form>
+        </Form>
+      </div>
+      {wsStore.ledgerError && (
+        <div className="text-red-400">{wsStore.ledgerError}</div>
+      )}
+      <Button type="button" onClick={() => backToHome()} variant={"outline"}>
+        Back
+      </Button>
+      <Button
+        type="button"
+        onClick={() => wsStore.closeModal()}
+        variant={"outline"}
+      >
+        Close
+      </Button>
+    </>
+  );
+};
+
+const privateKeyFormSchema = z.object({
+  privateKey: z.string(),
+});
+
+const PrivateKey = () => {
+  const wsStore = useWalletTerminator();
+  const form = useZodForm(privateKeyFormSchema);
+
+  const onSubmit = async (values: z.infer<typeof privateKeyFormSchema>) => {
+    console.log(values);
+
+    wsStore.connectWithPrivateKey(values.privateKey);
+  };
+
+  const backToHome = () => {
+    wsStore.goHome();
+  };
+
+  return (
+    <>
+      <div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <TextInput
+              control={form.control}
+              name="privateKey"
+              label="Private Key"
+              placeholder="ed25519:2v4YqugbGpUmAJVn5kCWETaYYBanAmsYoyK5wpxZygnzSrCsr6PHkTWGES553cr6xsNah6rqTyPGYuyC2WWRjDYd"
+              rules={{ required: true }}
             />
             <Button className="w-full" type="submit">
               Connect
@@ -213,6 +270,8 @@ const GetGoodModal = () => {
       return <LedgerSignTransaction />;
     case ModalState.WaitForTransaction:
       return <WaitForTransaction />;
+    case ModalState.PrivateKeyShare:
+      return <PrivateKey />;
     default:
       return "Not implemented yet: " + JSON.stringify(wsStore.modalState);
   }

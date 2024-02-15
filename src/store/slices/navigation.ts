@@ -8,6 +8,7 @@ export enum ModalState {
   LedgerSharePublicKeySuccess,
   LedgerSignTransaction,
   WaitForTransaction,
+  PrivateKeyShare,
 }
 
 export interface NavState {
@@ -28,6 +29,7 @@ export interface NavActions {
   goToLedgerSharePublicKeySuccess: (key: string) => void;
   goToLedgerSignTransaction: (error?: string) => void;
   goToWaitForTransaction: (transactionId?: string) => void;
+  goToPrivateKeyShare: () => void;
 }
 
 export const createWalletNavigation: StateCreator<
@@ -74,8 +76,12 @@ export const createWalletNavigation: StateCreator<
   },
   goToWaitForTransaction: (transactionId?: string) => {
     set({
+      isModalOpen: true,
       modalState: ModalState.WaitForTransaction,
       transactionId: transactionId,
     });
+  },
+  goToPrivateKeyShare: () => {
+    set({ modalState: ModalState.PrivateKeyShare });
   },
 });

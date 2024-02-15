@@ -93,9 +93,6 @@ const LiquidityPools: NextPageWithLayout = () => {
         return;
       }
       const prices = tokenPricesQuery.data;
-      console.log(prices);
-      // debugger;
-
       const tokenRight = liquidityPoolDetailsQuery.data?.token_account_ids[1];
       const tokenLeft = liquidityPoolDetailsQuery.data?.token_account_ids[0];
 
@@ -119,6 +116,7 @@ const LiquidityPools: NextPageWithLayout = () => {
         const left =
           (rightVal * parseFloat(prices[tokenRight].price)) /
           parseFloat(prices[tokenLeft].price);
+
         form.setValue("tokenLeftAmount", left.toString());
         setExpectedLeft(left.toString());
 

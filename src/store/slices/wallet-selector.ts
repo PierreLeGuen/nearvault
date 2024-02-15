@@ -12,8 +12,8 @@ import {
   getAccountsForPublicKey,
   getLatestBlockHash,
 } from "../helpers/utils";
-import { PublicKey } from "near-api-js/lib/utils";
-import { transactions, utils } from "near-api-js";
+import { KeyPair, PublicKey } from "near-api-js/lib/utils";
+import { connect, keyStores, transactions, utils } from "near-api-js";
 import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
 import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
 import { devtools, persist } from "zustand/middleware";
@@ -30,7 +30,11 @@ import { toast } from "react-toastify";
 
 type PublicKeyStr = string;
 type AccountId = string;
-type Source = { type: "ledger" | "mynearwallet"; derivationPath?: string };
+type Source = {
+  type: "ledger" | "mynearwallet" | "privatekey";
+  derivationPath?: string;
+  privateKey?: string;
+};
 
 type PkAndAccounts = Record<PublicKeyStr, AccountId[]>;
 type PkAndSources = Record<PublicKeyStr, Source>;
@@ -39,9 +43,13 @@ export interface WsState {
   keysToAccounts: PkAndAccounts;
   sources: PkAndSources;
   selectedPublicKey: PublicKeyStr;
+
+  // unique nonce for each transaction, even before it reaches the chain
+  uniqueNonce: number;
 }
 
 interface WsActions {
+  getAndIncreaseUniqueNonce: () => number;
   addAccounts: (accounts: PkAndAccounts, sources: PkAndSources) => void;
   signWithLedger: (
     tx: Transaction,
@@ -56,6 +64,7 @@ interface WsActions {
     actions: Action[],
   ) => Promise<Transaction>;
   connectWithLedger: (derivationPath?: string) => Promise<PublicKeyStr>;
+  connectWithPrivateKey: (privateKey: string) => Promise<void>;
   connectWithMyNearWallet: () => void;
   handleMnwRedirect: (router: NextRouter) => Promise<void>;
   signAndSendTransaction: ({
@@ -83,6 +92,12 @@ export const createWalletTerminator: StateCreator<
   keysToAccounts: {},
   sources: {},
   selectedPublicKey: "",
+  uniqueNonce: 0,
+  getAndIncreaseUniqueNonce: () => {
+    const nonce = get().uniqueNonce;
+    set({ uniqueNonce: nonce + 1 });
+    return nonce;
+  },
   getPublicKeysForAccount: (accountId: AccountId) => {
     const pkAndAccounts = get().keysToAccounts;
     const found = Object.keys(pkAndAccounts).filter((pk) =>
@@ -176,6 +191,22 @@ export const createWalletTerminator: StateCreator<
 
     return pkStr;
   },
+  connectWithPrivateKey: async (privateKey: string) => {
+    const kp = KeyPair.fromString(privateKey);
+    console.log("connectWithPrivateKey", { kp });
+    const pubK = kp.getPublicKey().toString();
+    const accounts = await getAccountsForPublicKey(pubK);
+    const filteredAccounts = await filterMultisig(accounts);
+
+    const newAccounts = { [pubK]: filteredAccounts };
+    const newSources: Record<PublicKeyStr, Source> = {
+      [pubK]: { type: "privatekey", privateKey: privateKey },
+    };
+
+    get().addAccounts(newAccounts, newSources);
+    get().goToLedgerSharePublicKeySuccess(pubK);
+    get().setSelectedPublicKey(pubK);
+  },
   connectWithMyNearWallet: () => {
     const loginUrl = new URL(config.urls.myNearWallet + "/login");
     loginUrl.searchParams.set(
@@ -240,7 +271,7 @@ export const createWalletTerminator: StateCreator<
       signerPublicKey: PublicKey.from(publicKey),
     });
     const block = await getLatestBlockHash(rpc);
-    const nonce = accessKey.nonce + 1_000;
+    const nonce = accessKey.nonce + get().getAndIncreaseUniqueNonce();
     const tx = createTransaction(
       senderId,
       PublicKey.from(publicKey),
@@ -284,6 +315,27 @@ export const createWalletTerminator: StateCreator<
       get().goToWaitForTransaction(txn.transaction_outcome.id);
     } else if (source.type === "mynearwallet") {
       get().signWithMnw(tx);
+    } else if (source.type === "privatekey") {
+      get().goToWaitForTransaction();
+
+      const network = config.networkId;
+      const keyStore = new keyStores.InMemoryKeyStore();
+      const keyPair = KeyPair.fromString(source.privateKey);
+      await keyStore.setKey(network, params.senderId, keyPair);
+
+      const nearconfig = {
+        networkId: network,
+        keyStore,
+        nodeUrl: config.urls.rpc,
+      };
+
+      const near = await connect(nearconfig);
+      const account = await near.account(params.senderId);
+
+      const res = await account.signAndSendTransaction(tx);
+      get().goToWaitForTransaction(res.transaction_outcome.id);
+    } else {
+      throw new Error("Unknown source type");
     }
   },
   signWithLedger: async (tx: Transaction, derivationPath: string) => {
