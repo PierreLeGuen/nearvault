@@ -1,4 +1,3 @@
-import { formatNearAmount } from "near-api-js/lib/utils/format";
 import {
   type FieldPath,
   type FieldValues,
@@ -16,12 +15,16 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 
-export function NearWithMaxInput<
+export function TokenWithMaxInput<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >(
   props: UseControllerProps<TFieldValues, TName> &
-    InputProps & { yoctoMax: string },
+    InputProps & {
+      maxIndivisible: string;
+      decimals: number;
+      symbol: string;
+    },
 ) {
   return (
     <FormField
@@ -45,7 +48,10 @@ export function NearWithMaxInput<
                 className="rounded-l-none"
                 onClick={() => {
                   field.onChange(
-                    formatNearAmount(props.yoctoMax).replaceAll(",", ""),
+                    (
+                      parseInt(props.maxIndivisible) /
+                      10 ** props.decimals
+                    ).toString(),
                   );
                 }}
               >
@@ -53,7 +59,14 @@ export function NearWithMaxInput<
               </Button>
             </div>
           </FormControl>
-          <FormDescription>{props.description}</FormDescription>
+          <FormDescription>
+            {props.description
+              ? props.description
+              : `You can transfer up to: ${(
+                  parseInt(props.maxIndivisible) /
+                  10 ** props.decimals
+                ).toString()} ${props.symbol}`}
+          </FormDescription>
           <FormMessage />
         </FormItem>
       )}

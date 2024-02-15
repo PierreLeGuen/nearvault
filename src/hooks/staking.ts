@@ -8,10 +8,9 @@ import {
   type WalletData,
 } from "~/components/Staking/AllStaked";
 import { config } from "~/config/config";
-import { getSelectedPool } from "~/lib/client";
+import { fetchJson, getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
 import { type WalletPretty } from "~/pages/staking/stake";
-import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { addMultisigRequestAction } from "./manage";

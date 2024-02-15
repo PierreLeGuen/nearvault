@@ -9,11 +9,10 @@ import {
 } from "~/lib/transformations";
 import usePersistingStore from "~/store/useStore";
 import { config } from "~/config/config";
-import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
 import { getDaysDateBetweenDates } from "./dashboard";
-import { getFtBalanceAtDate } from "~/lib/client";
+import { fetchJson, getFtBalanceAtDate } from "~/lib/client";
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();

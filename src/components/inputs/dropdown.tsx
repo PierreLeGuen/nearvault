@@ -82,7 +82,7 @@ export function DropdownFormField<
             <PopoverContent className="w-[500px] p-0">
               <ScrollArea className="h-[550px]">
                 <Command>
-                  <CommandInput placeholder="Search wallet..." />
+                  <CommandInput placeholder="Search..." />
                   <CommandEmpty>No wallet found.</CommandEmpty>
                   <CommandGroup>
                     {items?.map((item) => (

@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { PublicKey } from "near-api-js/lib/utils";
 import { config } from "~/config/config";
-import { fetchJson } from "~/store-easy-peasy/helpers/fetchJson";
+import { fetchJson } from "~/lib/client";
 
 type Key = {
   public_key: string;

@@ -8,7 +8,7 @@ import {
 } from "~/hooks/staking";
 import { WalletPretty } from "~/pages/staking/stake";
 import { StakedPool } from "../Staking/AllStaked";
-import { NearWithMaxInput } from "../inputs/near";
+import { TokenWithMaxInput } from "../inputs/near";
 import {
   Dialog,
   DialogContent,
@@ -71,7 +71,7 @@ export function WithdrawDialog(props: {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <NearWithMaxInput
+            <TokenWithMaxInput
               control={form.control}
               name="amountNear"
               label="Amount to withdraw in NEAR"
@@ -81,7 +81,9 @@ export function WithdrawDialog(props: {
               placeholder="10"
               rules={{ required: true }}
               disabled={false}
-              yoctoMax={props.pool.withdraw_available}
+              maxIndivisible={props.pool.withdraw_available}
+              decimals={24}
+              symbol="NEAR"
             />
 
             <span className="inline-flex gap-2">
