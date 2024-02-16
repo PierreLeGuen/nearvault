@@ -58,19 +58,19 @@ export function TeamsDropdownMenu() {
           <DropdownMenuLabel>My Teams</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {teamsQuery.data.map((userTeamRelation) => (
+            {teamsQuery.data?.map((userTeamRelation) => (
               <DropdownMenuItem key={userTeamRelation.teamId}>
-                <div className="inline-flex w-full cursor-pointer items-center justify-between">
-                  <p
-                    className="w-[85%]"
+                <div className="inline-flex w-full cursor-pointer items-center justify-between py-0">
+                  <div
+                    className="w-[85%] py-1"
                     onClick={() => setCurrentTeam(userTeamRelation.team)}
                   >
                     {userTeamRelation.team.name}
-                  </p>
+                  </div>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="min-h-5 min-w-5 h-5 w-5"
+                    className="min-h-5 min-w-5 h-5 w-5 hover:bg-slate-300"
                     type="button"
                     onClick={() => handleDeleteMember(userTeamRelation)}
                   >
@@ -82,10 +82,15 @@ export function TeamsDropdownMenu() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <Link href={"/team/manage"}>
-              <DropdownMenuItem>Manage team</DropdownMenuItem>
-            </Link>
-            <DropdownMenuItem onClick={() => setIsOpen(true)}>
+            <DropdownMenuItem>
+              <Link href={"/team/manage"} className="cursor-pointer">
+                Manage team
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsOpen(true)}
+              className="cursor-pointer"
+            >
               Create team
             </DropdownMenuItem>
           </DropdownMenuGroup>
@@ -94,14 +99,16 @@ export function TeamsDropdownMenu() {
             <Link
               href="https://github.com/PierreLeGuen/near-finance"
               target="_blank"
-              className="inline-flex w-full items-center gap-2"
+              className="inline-flex w-full cursor-pointer items-center gap-2"
             >
               GitHub
               <ArrowTopRightOnSquareIcon className="h-4 w-4" />
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut}>Log out</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
+            Log out
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

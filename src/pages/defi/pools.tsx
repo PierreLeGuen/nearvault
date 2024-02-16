@@ -1,3 +1,4 @@
+import BN from "bn.js";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import ContentCentered from "~/components/ContentCentered";
@@ -50,10 +51,6 @@ const getUserBalanceForPool = (pool?: LiquidityPool, userTokens?: Token[]) => {
   );
 
   return [tokenLeft, tokenRight];
-};
-
-const getUSDValue = (tokenId: string, otherAmount: string) => {
-  return parseInt(otherAmount) / 2;
 };
 
 const LiquidityPools: NextPageWithLayout = () => {
@@ -132,13 +129,32 @@ const LiquidityPools: NextPageWithLayout = () => {
     const tokenLeftAccId = liquidityPoolDetailsQuery.data?.token_account_ids[0];
     const tokenRightAccId =
       liquidityPoolDetailsQuery.data?.token_account_ids[1];
+    const decimalsLeft = userTokensForPool[0]?.decimals;
+    const decimalsRight = userTokensForPool[1]?.decimals;
+    const l = new BN(10)
+      .pow(new BN(decimalsLeft))
+      .mul(new BN(values.tokenLeftAmount))
+      .toString();
+    console.log(l);
+
+    const r = new BN(values.tokenRightAmount)
+      .mul(new BN(10).pow(new BN(decimalsRight)))
+      .toString();
+    console.log(
+      l,
+      r,
+      values.poolId,
+      tokenLeftAccId,
+      tokenRightAccId,
+      values.funding,
+    );
 
     await depositMutation.mutateAsync({
       fundingAccId: values.funding,
       tokenLeftAccId: tokenLeftAccId,
       tokenRightAccId: tokenRightAccId,
-      tokenLeftAmount: values.tokenLeftAmount,
-      tokenRightAmount: values.tokenRightAmount,
+      tokenLeftAmount: l,
+      tokenRightAmount: r,
       poolId: values.poolId,
     });
   };

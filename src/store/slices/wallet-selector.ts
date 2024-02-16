@@ -64,7 +64,9 @@ interface WsActions {
     actions: Action[],
   ) => Promise<Transaction>;
   connectWithLedger: (derivationPath?: string) => Promise<PublicKeyStr>;
-  connectWithPrivateKey: (privateKey: string) => Promise<void>;
+  connectWithPrivateKey: (
+    privateKey: string,
+  ) => Promise<{ pubK: PublicKeyStr; accounts: string[] }>;
   connectWithMyNearWallet: () => void;
   handleMnwRedirect: (router: NextRouter) => Promise<void>;
   signAndSendTransaction: ({
@@ -196,7 +198,7 @@ export const createWalletTerminator: StateCreator<
     console.log("connectWithPrivateKey", { kp });
     const pubK = kp.getPublicKey().toString();
     const accounts = await getAccountsForPublicKey(pubK);
-    const filteredAccounts = await filterMultisig(accounts);
+    const filteredAccounts = (await filterMultisig(accounts)).filter(Boolean);
 
     const newAccounts = { [pubK]: filteredAccounts };
     const newSources: Record<PublicKeyStr, Source> = {
@@ -204,8 +206,10 @@ export const createWalletTerminator: StateCreator<
     };
 
     get().addAccounts(newAccounts, newSources);
-    get().goToLedgerSharePublicKeySuccess(pubK);
     get().setSelectedPublicKey(pubK);
+    console.log("HERE");
+
+    return { pubK: pubK, accounts: filteredAccounts };
   },
   connectWithMyNearWallet: () => {
     const loginUrl = new URL(config.urls.myNearWallet + "/login");
@@ -284,58 +288,60 @@ export const createWalletTerminator: StateCreator<
   },
   signAndSendTransaction: async (params) => {
     console.log("signAndSendTransaction", params);
-    // find a pk that can be used to sign for the senderId
-    if (!get().canSignForAccount(params.senderId)) {
-      throw new Error(`No public key found for ${params.senderId}`);
-    }
+    try {
+      // find a pk that can be used to sign for the senderId
+      get().canSignForAccount(params.senderId);
 
-    let publicKeyForTxn = "";
-    for (const pk in get().keysToAccounts) {
-      if (get().keysToAccounts[pk].includes(params.senderId)) {
-        publicKeyForTxn = pk;
+      let publicKeyForTxn = "";
+      for (const pk in get().keysToAccounts) {
+        if (get().keysToAccounts[pk].includes(params.senderId)) {
+          publicKeyForTxn = pk;
+        }
       }
-    }
-    console.log(publicKeyForTxn);
+      console.log(publicKeyForTxn);
 
-    const tx = await get().createTx(
-      publicKeyForTxn,
-      params.receiverId,
-      params.senderId,
-      params.action,
-      params.actions,
-    );
-    console.log("signAndSendTransaction", { tx });
+      const tx = await get().createTx(
+        publicKeyForTxn,
+        params.receiverId,
+        params.senderId,
+        params.action,
+        params.actions,
+      );
+      console.log("signAndSendTransaction", { tx });
 
-    const source = get().sources[publicKeyForTxn];
-    if (source.type === "ledger") {
-      const signedTx = await get().signWithLedger(tx, source.derivationPath);
-      const provider = new JsonRpcProvider({ url: config.urls.rpc });
-      get().goToWaitForTransaction();
-      const txn = await provider.sendTransaction(signedTx);
-      get().goToWaitForTransaction(txn.transaction_outcome.id);
-    } else if (source.type === "mynearwallet") {
-      get().signWithMnw(tx);
-    } else if (source.type === "privatekey") {
-      get().goToWaitForTransaction();
+      const source = get().sources[publicKeyForTxn];
+      if (source.type === "ledger") {
+        const signedTx = await get().signWithLedger(tx, source.derivationPath);
+        const provider = new JsonRpcProvider({ url: config.urls.rpc });
+        get().goToWaitForTransaction();
+        const txn = await provider.sendTransaction(signedTx);
+        get().goToWaitForTransaction(txn.transaction_outcome.id);
+      } else if (source.type === "mynearwallet") {
+        get().signWithMnw(tx);
+      } else if (source.type === "privatekey") {
+        get().goToWaitForTransaction();
 
-      const network = config.networkId;
-      const keyStore = new keyStores.InMemoryKeyStore();
-      const keyPair = KeyPair.fromString(source.privateKey);
-      await keyStore.setKey(network, params.senderId, keyPair);
+        const network = config.networkId;
+        const keyStore = new keyStores.InMemoryKeyStore();
+        const keyPair = KeyPair.fromString(source.privateKey);
+        await keyStore.setKey(network, params.senderId, keyPair);
 
-      const nearconfig = {
-        networkId: network,
-        keyStore,
-        nodeUrl: config.urls.rpc,
-      };
+        const nearconfig = {
+          networkId: network,
+          keyStore,
+          nodeUrl: config.urls.rpc,
+        };
 
-      const near = await connect(nearconfig);
-      const account = await near.account(params.senderId);
+        const near = await connect(nearconfig);
+        const account = await near.account(params.senderId);
 
-      const res = await account.signAndSendTransaction(tx);
-      get().goToWaitForTransaction(res.transaction_outcome.id);
-    } else {
-      throw new Error("Unknown source type");
+        const res = await account.signAndSendTransaction(tx);
+        get().goToWaitForTransaction(res.transaction_outcome.id);
+      } else {
+        throw new Error("Unknown source type");
+      }
+    } catch (e) {
+      get().goToFailedToSendTransaction((e as Error).message);
     }
   },
   signWithLedger: async (tx: Transaction, derivationPath: string) => {
@@ -373,6 +379,9 @@ export const createWalletTerminator: StateCreator<
     );
     if (!can) {
       toast.error(
+        `You need to connect ${accountId} before performing this action`,
+      );
+      throw new Error(
         `You need to connect ${accountId} before performing this action`,
       );
     }

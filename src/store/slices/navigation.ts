@@ -1,20 +1,21 @@
-import { StateCreator } from "zustand";
-import { WsState } from "./wallet-selector";
+import { type StateCreator } from "zustand";
+import { type WsState } from "./wallet-selector";
 
 export enum ModalState {
   Home,
   LedgerDerivationPath,
   LedgerSharePublicKey,
-  LedgerSharePublicKeySuccess,
+  SharePublicKeySuccess,
   LedgerSignTransaction,
   WaitForTransaction,
   PrivateKeyShare,
+  FailedTransaction,
 }
 
 export interface NavState {
   isModalOpen: boolean;
   modalState: ModalState;
-  ledgerError: string;
+  error: string;
   sharedPk: string;
   discoveredAccounts: string[];
   transactionId: string;
@@ -29,7 +30,9 @@ export interface NavActions {
   goToLedgerSharePublicKeySuccess: (key: string) => void;
   goToLedgerSignTransaction: (error?: string) => void;
   goToWaitForTransaction: (transactionId?: string) => void;
-  goToPrivateKeyShare: () => void;
+  goToPrivateKeyShare: (error?: string) => void;
+  goToPrivateKeyConnectSuccess: (key: string, accounts: string[]) => void;
+  goToFailedToSendTransaction: (error: string) => void;
 }
 
 export const createWalletNavigation: StateCreator<
@@ -40,7 +43,7 @@ export const createWalletNavigation: StateCreator<
 > = (set, get) => ({
   isModalOpen: false,
   modalState: ModalState.Home,
-  ledgerError: "",
+  error: "",
   sharedPk: "",
   discoveredAccounts: [],
   transactionId: "",
@@ -54,7 +57,7 @@ export const createWalletNavigation: StateCreator<
     set({ modalState: ModalState.Home });
   },
   goToLedgerDerivationPath: (error?: string) => {
-    set({ ledgerError: error, modalState: ModalState.LedgerDerivationPath });
+    set({ error: error, modalState: ModalState.LedgerDerivationPath });
   },
   goToLedgerSharePublicKey: () => {
     set({ modalState: ModalState.LedgerSharePublicKey });
@@ -64,14 +67,14 @@ export const createWalletNavigation: StateCreator<
     set({
       sharedPk: key,
       discoveredAccounts: discoveredAccounts.filter(Boolean),
-      modalState: ModalState.LedgerSharePublicKeySuccess,
+      modalState: ModalState.SharePublicKeySuccess,
     });
   },
   goToLedgerSignTransaction: (error?: string) => {
     set({
       isModalOpen: true,
       modalState: ModalState.LedgerSignTransaction,
-      ledgerError: error,
+      error: error,
     });
   },
   goToWaitForTransaction: (transactionId?: string) => {
@@ -81,7 +84,21 @@ export const createWalletNavigation: StateCreator<
       transactionId: transactionId,
     });
   },
-  goToPrivateKeyShare: () => {
-    set({ modalState: ModalState.PrivateKeyShare });
+  goToPrivateKeyShare: (error?: string) => {
+    set({ modalState: ModalState.PrivateKeyShare, error: error });
+  },
+  goToPrivateKeyConnectSuccess: (key: string, accounts: string[]) => {
+    set({
+      sharedPk: key,
+      discoveredAccounts: accounts.filter(Boolean),
+      modalState: ModalState.SharePublicKeySuccess,
+    });
+  },
+  goToFailedToSendTransaction: (error: string) => {
+    set({
+      isModalOpen: true,
+      modalState: ModalState.LedgerSignTransaction,
+      error: error,
+    });
   },
 });

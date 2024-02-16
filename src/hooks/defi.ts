@@ -1,13 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { fetchJson, viewCall } from "~/lib/client";
-import { Token } from "~/lib/transformations";
+import { type Token } from "~/lib/transformations";
 import { useGetAllTokensWithBalanceForWallet } from "./teams";
-import { FungibleTokenMetadata } from "~/lib/ft/contract";
+import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { transactions } from "near-api-js";
 import { addMultisigRequestAction } from "./manage";
 import { functionCallAction } from "./lockup";
-import { config } from "~/config/config";
 import { TGas } from "./staking";
 import BN from "bn.js";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";

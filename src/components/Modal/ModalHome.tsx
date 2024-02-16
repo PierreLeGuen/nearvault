@@ -83,9 +83,7 @@ const DerivationPath = () => {
           </form>
         </Form>
       </div>
-      {wsStore.ledgerError && (
-        <div className="text-red-400">{wsStore.ledgerError}</div>
-      )}
+      {wsStore.error && <div className="text-red-400">{wsStore.error}</div>}
       <Button type="button" onClick={() => backToHome()} variant={"outline"}>
         Back
       </Button>
@@ -111,7 +109,12 @@ const PrivateKey = () => {
   const onSubmit = async (values: z.infer<typeof privateKeyFormSchema>) => {
     console.log(values);
 
-    wsStore.connectWithPrivateKey(values.privateKey);
+    try {
+      const res = await wsStore.connectWithPrivateKey(values.privateKey);
+      wsStore.goToPrivateKeyConnectSuccess(res.pubK, res.accounts);
+    } catch (e) {
+      wsStore.goToPrivateKeyShare((e as Error).message);
+    }
   };
 
   const backToHome = () => {
@@ -136,9 +139,7 @@ const PrivateKey = () => {
           </form>
         </Form>
       </div>
-      {wsStore.ledgerError && (
-        <div className="text-red-400">{wsStore.ledgerError}</div>
-      )}
+      {wsStore.error && <div className="text-red-400">{wsStore.error}</div>}
       <Button type="button" onClick={() => backToHome()} variant={"outline"}>
         Back
       </Button>
@@ -174,7 +175,7 @@ const LedgerSharePublicKey = () => {
   );
 };
 
-const LedgerSharePublicKeySuccess = () => {
+const SharePublicKeySuccess = () => {
   const wsStore = useWalletTerminator();
 
   return (
@@ -192,7 +193,7 @@ const LedgerSharePublicKeySuccess = () => {
           No multisig accounts found for this public key.
         </p>
       )}
-      <Button onClick={() => wsStore.goToLedgerDerivationPath()}>Back</Button>
+      <Button onClick={() => wsStore.closeModal()}>Close</Button>
       <Button onClick={wsStore.goHome} variant={"outline"}>
         Back home
       </Button>
@@ -207,10 +208,8 @@ const LedgerSignTransaction = () => {
     <>
       <strong>Action required on Ledger device</strong>
       <p>Sign the transaction on your ledger device.</p>
-      {wsStore.ledgerError && (
-        <p className="text-red-500">{wsStore.ledgerError}</p>
-      )}
-      {!wsStore.ledgerError && (
+      {wsStore.error && <p className="text-red-500">{wsStore.error}</p>}
+      {!wsStore.error && (
         <Button disabled>
           <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
           Waiting for approval
@@ -254,6 +253,18 @@ const WaitForTransaction = () => {
   );
 };
 
+const FailedTransaction = () => {
+  const wsStore = useWalletTerminator();
+
+  return (
+    <>
+      <strong>Transaction failed!</strong>
+      <pre>{wsStore.error}</pre>
+      <Button onClick={wsStore.closeModal}>Close</Button>
+    </>
+  );
+};
+
 const GetGoodModal = () => {
   const wsStore = useWalletTerminator();
 
@@ -264,14 +275,16 @@ const GetGoodModal = () => {
       return <DerivationPath />;
     case ModalState.LedgerSharePublicKey:
       return <LedgerSharePublicKey />;
-    case ModalState.LedgerSharePublicKeySuccess:
-      return <LedgerSharePublicKeySuccess />;
     case ModalState.LedgerSignTransaction:
       return <LedgerSignTransaction />;
+    case ModalState.SharePublicKeySuccess:
+      return <SharePublicKeySuccess />;
     case ModalState.WaitForTransaction:
       return <WaitForTransaction />;
     case ModalState.PrivateKeyShare:
       return <PrivateKey />;
+    case ModalState.FailedTransaction:
+      return <FailedTransaction />;
     default:
       return "Not implemented yet: " + JSON.stringify(wsStore.modalState);
   }

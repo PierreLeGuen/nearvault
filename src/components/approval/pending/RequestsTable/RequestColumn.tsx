@@ -28,20 +28,14 @@ export const RequestColumn = ({
     row.original.request.request_id,
   );
 
-  const approve = () => {
-    approveRejectFn(wallet, row.original.request.request_id, "approve").catch(
-      (e) => {
-        console.error(e);
-      },
-    );
+  const approve = async () => {
+    await approveRejectFn(wallet, row.original.request.request_id, "approve");
+    await query.refetch();
   };
 
-  const reject = () => {
-    approveRejectFn(wallet, row.original.request.request_id, "reject").catch(
-      (e) => {
-        console.error(e);
-      },
-    );
+  const reject = async () => {
+    await approveRejectFn(wallet, row.original.request.request_id, "reject");
+    await query.refetch();
   };
 
   const toggleExpanded = () => row.toggleExpanded(!row.getIsExpanded());

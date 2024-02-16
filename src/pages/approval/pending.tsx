@@ -46,6 +46,8 @@ const Pending: NextPageWithLayout = () => {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      await query.refetch();
     }
   };
 
