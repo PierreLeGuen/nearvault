@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
 import { useAddKey } from "~/hooks/manage";
+import { SwitchSmallInput } from "../inputs/switch-small";
 import { TextInput } from "../inputs/text";
 import {
   Dialog,
@@ -14,16 +15,29 @@ import {
 } from "../ui/dialog";
 import { Form } from "../ui/form";
 
-const formSchema = z.object({
+const addKeyFormSchema = z.object({
   publicKey: z.string(),
+  methodNames: z.object({
+    add_request: z.boolean(),
+    add_request_and_confirm: z.boolean(),
+    confirm: z.boolean(),
+    delete_request: z.boolean(),
+  }),
 });
 
-export const AddKey = ({ accountId }: any) => {
-  const form = useZodForm(formSchema);
+export const AddKey = ({ accountId }: { accountId: string }) => {
+  const form = useZodForm(addKeyFormSchema);
   const addKey = useAddKey();
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    addKey.mutate({ accountId, publicKey: values.publicKey });
+  const onSubmit = (values: z.infer<typeof addKeyFormSchema>) => {
+    console.log(values);
+    const t = Object.keys(values.methodNames).filter(Boolean);
+
+    addKey.mutate({
+      accountId,
+      publicKey: values.publicKey,
+      methodNames: t,
+    });
   };
 
   return (
@@ -47,8 +61,30 @@ export const AddKey = ({ accountId }: any) => {
               label="Public Key"
               placeholder="ed25519:BQEFH2xFEp7hBsfGGLsrzB2DY2VTaADxh4KdpqdC123"
               rules={{ required: true }}
-              disabled={false}
             />
+            <div className="flex flex-col gap-4">
+              <SwitchSmallInput
+                control={form.control}
+                name="methodNames.add_request"
+                label="Add a request to the multisig"
+                title="Method names"
+              />
+              <SwitchSmallInput
+                control={form.control}
+                name="methodNames.delete_request"
+                label="Delete a request from the multisig"
+              />
+              <SwitchSmallInput
+                control={form.control}
+                name="methodNames.confirm"
+                label="Confirm pending requests"
+              />
+              <SwitchSmallInput
+                control={form.control}
+                name="methodNames.add_request_and_confirm"
+                label="Add a request and confirm it at the same time"
+              />
+            </div>
             <Button type="submit">
               <div className="inline-flex items-center">
                 <KeyIcon className="mr-2 w-5" />

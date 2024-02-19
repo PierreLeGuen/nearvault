@@ -7,6 +7,7 @@ import { TGas } from "./staking";
 type AddKey = {
   publicKey: string;
   accountId: string;
+  methodNames?: string[];
 };
 
 const addKeyAction = (
@@ -41,18 +42,24 @@ export const addMultisigRequestAction = (
 export const useAddKey = () => {
   const wsStore = useWalletTerminator();
   return useMutation({
-    mutationFn: async ({ publicKey, accountId }: AddKey) => {
-      console.log("useAddKey", { publicKey, accountId });
+    mutationFn: async ({ publicKey, accountId, methodNames }: AddKey) => {
+      console.log("useAddKey", { publicKey, accountId, methodNames });
 
       const action = transactions.functionCall(
         "add_request",
         addMultisigRequestAction(accountId, [
-          addKeyAction(publicKey, accountId, [
-            "add_request",
-            "add_request_and_confirm",
-            "confirm",
-            "delete_request",
-          ]),
+          addKeyAction(
+            publicKey,
+            accountId,
+            methodNames
+              ? methodNames
+              : [
+                  "add_request",
+                  "add_request_and_confirm",
+                  "confirm",
+                  "delete_request",
+                ],
+          ),
         ]),
         new BN(300 * TGas),
         new BN("0"),
