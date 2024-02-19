@@ -6,8 +6,8 @@ import {
   useWithdrawAllTransaction,
   useWithdrawTransaction,
 } from "~/hooks/staking";
-import { WalletPretty } from "~/pages/staking/stake";
-import { StakedPool } from "../Staking/AllStaked";
+import { type WalletPretty } from "~/pages/staking/stake";
+import { type StakedPool } from "../Staking/AllStaked";
 import { TokenWithMaxInput } from "../inputs/near";
 import {
   Dialog,
@@ -39,7 +39,7 @@ export function WithdrawDialog(props: {
   const withdrawTxn = useWithdrawTransaction();
   const withdrawAllTxn = useWithdrawAllTransaction();
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     withdrawTxn.mutate({
       wallet: props.wallet,
@@ -49,7 +49,7 @@ export function WithdrawDialog(props: {
     });
   }
 
-  async function onWithdrawAll() {
+  function onWithdrawAll() {
     withdrawAllTxn.mutate({
       wallet: props.wallet,
       poolId: props.pool.validator_id,

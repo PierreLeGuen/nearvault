@@ -1,4 +1,4 @@
-import { Config } from "./config";
+import { type Config } from "./config";
 import { createKitWalletUrls } from "~/config/kitWallet";
 import { createNearBlocksUrls } from "~/config/nearBlocks";
 import { createNearBlocksApiUrls } from "./nearBlocksApi";

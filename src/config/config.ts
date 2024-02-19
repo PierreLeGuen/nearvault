@@ -2,8 +2,8 @@ import * as process from "process";
 import { mainnet } from "~/config/mainnet";
 import { testnet } from "~/config/testnet";
 import type { KitWalletUrls } from "~/config/kitWallet";
-import { NearBlocksUrls } from "~/config/nearBlocks";
-import { NearBlocksApiUrls } from "./nearBlocksApi";
+import { type NearBlocksUrls } from "~/config/nearBlocks";
+import { type NearBlocksApiUrls } from "./nearBlocksApi";
 
 export type Config = {
   networkId: "mainnet" | "testnet";

@@ -1,5 +1,5 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
-import { PublicKey } from "near-api-js/lib/utils";
+import { type PublicKey } from "near-api-js/lib/utils";
 import { config } from "~/config/config";
 import { fetchJson } from "~/lib/client";
 
@@ -72,12 +72,12 @@ export const getAccountsForPublicKey = async (
     config.urls.nearBlocksApi.getAccountsUrl(publicKey),
   );
 
-  const accounts: string[] = await (
-    await fetch(config.urls.kitWallet.keyAccounts(publicKey))
-  ).json();
+  const accounts = await fetchJson<string[]>(
+    config.urls.kitWallet.keyAccounts(publicKey),
+  );
 
   // merge accounts from NEAR Blocks API and Kit Wallet API
-  const a: string[] = accountsWithSameKey.keys
+  const a = accountsWithSameKey.keys
     .filter((k) => k.deleted.block_timestamp == null)
     .map((a) => a.account_id);
 

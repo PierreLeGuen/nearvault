@@ -139,7 +139,7 @@ const TransfersPage: NextPageWithLayout = () => {
     console.log("senderAddress", senderAddress);
 
     try {
-      const transactions: any = [];
+      const transactions: any[] = [];
 
       if (token.account_id === "near") {
         const yoctoAmount = parseNearAmount(amount.toString());
@@ -289,15 +289,6 @@ const TransfersPage: NextPageWithLayout = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* {JSON.stringify(wsStore.keysToAccounts)}
-          {wsStore.selectedPublicKey}
-          <Button onClick={() => wsStore.connectWithLedger()}>
-            Connect Ledger
-          </Button>
-          <Button onClick={() => wsStore.connectWithMyNearWallet()}>
-            Connect MyNearWallet
-          </Button>
-          <Button onClick={() => wsStore.openModal()}>Open Modal</Button> */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <SenderFormField

@@ -38,7 +38,7 @@ export function UnstakeDialog(props: {
   const unstakeTxn = useUnstakeTransaction();
   const unstakeAllTxn = useUnstakeAllTransaction();
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     unstakeTxn.mutate({
       wallet: props.wallet,
@@ -47,7 +47,7 @@ export function UnstakeDialog(props: {
     });
   }
 
-  async function onUnstakeAll() {
+  function onUnstakeAll() {
     unstakeAllTxn.mutate({
       wallet: props.wallet,
       poolId: props.pool.validator_id,

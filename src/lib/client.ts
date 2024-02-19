@@ -1,15 +1,12 @@
-import * as nearAPI from "near-api-js";
+import type * as nearAPI from "near-api-js";
 import { initLockupContract } from "./lockup/contract";
-import { Provider } from "near-api-js/lib/providers";
-import { FungibleTokenMetadata } from "./ft/contract";
+import { type FungibleTokenMetadata } from "./ft/contract";
 import {
-  AccessKeyList,
-  CodeResult,
-  QueryResponseKind,
+  type AccessKeyList,
+  type CodeResult,
 } from "near-api-js/lib/providers/provider";
 import { providers } from "near-api-js";
 import { config } from "~/config/config";
-import { AccessKey } from "near-api-js/lib/transaction";
 
 export async function getSelectedPool(
   accountId: string,
