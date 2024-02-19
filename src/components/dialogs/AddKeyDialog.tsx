@@ -26,12 +26,23 @@ const addKeyFormSchema = z.object({
 });
 
 export const AddKey = ({ accountId }: { accountId: string }) => {
-  const form = useZodForm(addKeyFormSchema);
+  const form = useZodForm(addKeyFormSchema, {
+    defaultValues: {
+      methodNames: {
+        add_request: true,
+        add_request_and_confirm: false,
+        confirm: false,
+        delete_request: false,
+      },
+    },
+  });
   const addKey = useAddKey();
 
   const onSubmit = (values: z.infer<typeof addKeyFormSchema>) => {
     console.log(values);
-    const t = Object.keys(values.methodNames).filter(Boolean);
+    const t = Object.keys(values.methodNames).filter(
+      (v) => values.methodNames[v],
+    );
 
     addKey.mutate({
       accountId,
