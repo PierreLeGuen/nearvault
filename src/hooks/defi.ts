@@ -190,7 +190,7 @@ export const useDepositToLiquidityPool = () => {
             (50 * TGas).toString(),
           ),
         ]),
-        new BN(300 * TGas),
+        new BN(100 * TGas),
         new BN("0"),
       );
 
@@ -208,7 +208,7 @@ export const useDepositToLiquidityPool = () => {
             (50 * TGas).toString(),
           ),
         ]),
-        new BN(300 * TGas),
+        new BN(100 * TGas),
         new BN("0"),
       );
 
