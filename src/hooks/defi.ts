@@ -9,6 +9,7 @@ import { functionCallAction } from "./lockup";
 import { TGas } from "./staking";
 import BN from "bn.js";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import { parseNearAmount } from "near-api-js/lib/utils/format";
 
 export const EXCHANGES = ["REF"] as const;
 
@@ -154,6 +155,7 @@ type DepositParams = {
 
 export const useDepositToLiquidityPool = () => {
   const wsStore = useWalletTerminator();
+
   return useMutation({
     mutationFn: async (params: DepositParams) => {
       const refAccountId = "v2.ref-finance.near";
@@ -166,7 +168,7 @@ export const useDepositToLiquidityPool = () => {
               account_id: params.fundingAccId,
               registration_only: false,
             },
-            "0",
+            parseNearAmount("0.125"),
             (50 * TGas).toString(),
           ),
         ]),
@@ -184,7 +186,7 @@ export const useDepositToLiquidityPool = () => {
               amount: params.tokenLeftAmount,
               msg: "",
             },
-            "0",
+            "1",
             (50 * TGas).toString(),
           ),
         ]),
@@ -199,10 +201,10 @@ export const useDepositToLiquidityPool = () => {
             "ft_transfer_call",
             {
               receiver_id: refAccountId,
-              amount: params.tokenRightAccId,
+              amount: params.tokenRightAmount,
               msg: "",
             },
-            "0",
+            "1",
             (50 * TGas).toString(),
           ),
         ]),
@@ -216,10 +218,10 @@ export const useDepositToLiquidityPool = () => {
           functionCallAction(
             "add_liquidity",
             {
-              pool_id: params.poolId,
+              pool_id: parseInt(params.poolId),
               amounts: [params.tokenLeftAmount, params.tokenRightAmount],
             },
-            "0",
+            parseNearAmount("0.01"),
             (50 * TGas).toString(),
           ),
         ]),

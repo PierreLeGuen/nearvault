@@ -1,4 +1,3 @@
-import BN from "bn.js";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import ContentCentered from "~/components/ContentCentered";
@@ -25,6 +24,7 @@ import {
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
 import { type Token } from "~/lib/transformations";
+import { convertToIndivisibleFormat } from "~/lib/utils";
 import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
@@ -131,15 +131,16 @@ const LiquidityPools: NextPageWithLayout = () => {
       liquidityPoolDetailsQuery.data?.token_account_ids[1];
     const decimalsLeft = userTokensForPool[0]?.decimals;
     const decimalsRight = userTokensForPool[1]?.decimals;
-    const l = new BN(10)
-      .pow(new BN(decimalsLeft))
-      .mul(new BN(values.tokenLeftAmount))
-      .toString();
-    console.log(l);
 
-    const r = new BN(values.tokenRightAmount)
-      .mul(new BN(10).pow(new BN(decimalsRight)))
-      .toString();
+    const l = convertToIndivisibleFormat(values.tokenLeftAmount, decimalsLeft);
+    console.log(l.toString());
+
+    const r = convertToIndivisibleFormat(
+      values.tokenRightAmount,
+      decimalsRight,
+    );
+    console.log(r.toString());
+    debugger;
     console.log(
       l,
       r,
@@ -153,8 +154,8 @@ const LiquidityPools: NextPageWithLayout = () => {
       fundingAccId: values.funding,
       tokenLeftAccId: tokenLeftAccId,
       tokenRightAccId: tokenRightAccId,
-      tokenLeftAmount: l,
-      tokenRightAmount: r,
+      tokenLeftAmount: l.toString(),
+      tokenRightAmount: r.toString(),
       poolId: values.poolId,
     });
   };
@@ -212,7 +213,11 @@ const LiquidityPools: NextPageWithLayout = () => {
           <TokenWithMaxInput
             control={form.control}
             name="tokenLeftAmount"
-            label={`Amount of ${liquidityPoolDetailsQuery.data?.token_symbols[0]} to deposit in the pool`}
+            label={`Amount of ${
+              liquidityPoolDetailsQuery.data
+                ? liquidityPoolDetailsQuery.data?.token_symbols[0]
+                : "first token"
+            } to deposit in the pool`}
             placeholder="10"
             rules={{ required: true }}
             decimals={userTokensForPool[0]?.decimals || 0}
@@ -223,7 +228,11 @@ const LiquidityPools: NextPageWithLayout = () => {
           <TokenWithMaxInput
             control={form.control}
             name="tokenRightAmount"
-            label={`Amount of ${liquidityPoolDetailsQuery.data?.token_symbols[1]} to deposit in the pool`}
+            label={`Amount of ${
+              liquidityPoolDetailsQuery.data
+                ? liquidityPoolDetailsQuery.data?.token_symbols[1]
+                : "second token"
+            } to deposit in the pool`}
             placeholder="10"
             rules={{ required: true }}
             decimals={userTokensForPool[1]?.decimals || 0}
