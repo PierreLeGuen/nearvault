@@ -31,6 +31,11 @@ const Default = () => {
       <Button onClick={() => wsStore.goToPrivateKeyShare()}>
         Private key connect
       </Button>
+      <hr />
+      <Button onClick={() => wsStore.goToCurrentlyImportedKeys()}>
+        View imported keys
+      </Button>
+      <hr />
       <Button onClick={() => wsStore.closeModal()} variant={"outline"}>
         Close
       </Button>
@@ -265,6 +270,34 @@ const FailedTransaction = () => {
   );
 };
 
+const CurrentlyImportedKeys = () => {
+  const wsStore = useWalletTerminator();
+
+  return (
+    <>
+      <strong>Currently imported keys:</strong>
+      {Object.keys(wsStore.keysToAccounts).map((pubK) => {
+        return (
+          <div key={pubK} className="flex flex-col gap-2">
+            <p>
+              <strong>{pubK}</strong>
+            </p>
+            <ul className="flex list-inside list-disc flex-col gap-2">
+              {wsStore.keysToAccounts[pubK].map((account) => (
+                <li key={account}>{account}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+      <Button onClick={wsStore.goHome} variant="outline">
+        Go back
+      </Button>
+      <Button onClick={wsStore.closeModal}>Close</Button>
+    </>
+  );
+};
+
 const GetGoodModal = () => {
   const wsStore = useWalletTerminator();
 
@@ -285,6 +318,8 @@ const GetGoodModal = () => {
       return <PrivateKey />;
     case ModalState.FailedTransaction:
       return <FailedTransaction />;
+    case ModalState.CurrentlyImporterKeys:
+      return <CurrentlyImportedKeys />;
     default:
       return "Not implemented yet: " + JSON.stringify(wsStore.modalState);
   }

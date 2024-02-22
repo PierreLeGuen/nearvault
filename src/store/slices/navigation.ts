@@ -10,6 +10,7 @@ export enum ModalState {
   WaitForTransaction,
   PrivateKeyShare,
   FailedTransaction,
+  CurrentlyImporterKeys,
 }
 
 export interface NavState {
@@ -33,6 +34,7 @@ export interface NavActions {
   goToPrivateKeyShare: (error?: string) => void;
   goToPrivateKeyConnectSuccess: (key: string, accounts: string[]) => void;
   goToFailedToSendTransaction: (error: string) => void;
+  goToCurrentlyImportedKeys: () => void;
 }
 
 export const createWalletNavigation: StateCreator<
@@ -100,5 +102,8 @@ export const createWalletNavigation: StateCreator<
       modalState: ModalState.LedgerSignTransaction,
       error: error,
     });
+  },
+  goToCurrentlyImportedKeys: () => {
+    set({ modalState: ModalState.CurrentlyImporterKeys });
   },
 });
