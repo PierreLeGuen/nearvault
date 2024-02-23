@@ -1,10 +1,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import BN from "bn.js";
+import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { useState } from "react";
 import { z } from "zod";
 import { config } from "~/config/config";
 import { useWalletSelector } from "~/contexts/WalletSelectorContext";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
+import { functionCallAction } from "./lockup";
+import { addMultisigRequestAction } from "./manage";
+import { TGas } from "./staking";
 
 export const multisigFactoryFormSchema = z.object({
   fundingAccountId: z.string(),
@@ -47,8 +53,40 @@ export function useCreateMultisigWithFactory() {
       });
       return data.accountId + "." + config.accounts.multisigFactory;
     },
-    onError: () => {
-      throw new Error("Multisig wallet not created");
+  });
+}
+
+export function useCreateMultisigWithFactoryViaMultisig() {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async (data: z.infer<typeof multisigFactoryFormSchema>) => {
+      const factory = config.accounts.multisigFactory;
+
+      const action = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(factory, [
+          functionCallAction(
+            "create",
+            {
+              name: data.accountId,
+              members: data.owners,
+              num_confirmations: new Number(data.threshold),
+            },
+            parseNearAmount("5"),
+            (200 * TGas).toString(),
+          ),
+        ]),
+        new BN("30000000000000"),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        receiverId: data.fundingAccountId,
+        senderId: data.fundingAccountId,
+        actions: [action],
+      });
+      return data.accountId + "." + config.accounts.multisigFactory;
     },
   });
 }

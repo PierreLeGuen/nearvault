@@ -264,7 +264,7 @@ const FailedTransaction = () => {
   return (
     <>
       <strong>Transaction failed!</strong>
-      <pre>{wsStore.error}</pre>
+      <p className="text-red-500">{wsStore.error}</p>
       <Button onClick={wsStore.closeModal}>Close</Button>
     </>
   );

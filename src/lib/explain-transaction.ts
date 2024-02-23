@@ -261,10 +261,10 @@ const methodDescriptions: {
     },
   },
   select_staking_pool: {
-    getExplanation: async (args: MethodArgs) => {
+    getExplanation: async (args: MethodArgs, from: string) => {
       const selectStakingPoolParams = args as SelectStakingPoolParams;
       return {
-        desc: `Selects staking pool with account ID: ${selectStakingPoolParams.staking_pool_account_id}.`,
+        desc: `Selects staking pool ${selectStakingPoolParams.staking_pool_account_id} for lockup: ${from}.`,
         fnReceiverId: selectStakingPoolParams.staking_pool_account_id,
       };
     },

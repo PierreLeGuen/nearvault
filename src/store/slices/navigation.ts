@@ -99,7 +99,7 @@ export const createWalletNavigation: StateCreator<
   goToFailedToSendTransaction: (error: string) => {
     set({
       isModalOpen: true,
-      modalState: ModalState.LedgerSignTransaction,
+      modalState: ModalState.FailedTransaction,
       error: error,
     });
   },

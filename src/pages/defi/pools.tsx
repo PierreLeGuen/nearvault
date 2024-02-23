@@ -140,7 +140,6 @@ const LiquidityPools: NextPageWithLayout = () => {
       decimalsRight,
     );
     console.log(r.toString());
-    debugger;
     console.log(
       l,
       r,

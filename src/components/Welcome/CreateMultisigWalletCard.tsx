@@ -19,11 +19,15 @@ import { useZodForm } from "~/hooks/form";
 import {
   multisigFactoryFormSchema,
   useCreateMultisigWithFactory,
+  useCreateMultisigWithFactoryViaMultisig,
   useIsMultisigWalletSuccessfullyCreated,
 } from "~/hooks/multisigFactory";
+import { useTeamsWalletsWithLockups } from "~/hooks/teams";
+import { SenderFormField } from "../inputs/sender";
 
 type Params = {
   onMultisigCreateSuccess: (multisigAccId: string) => void;
+  viaMultisig?: boolean;
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export function CreateMultisigWalletCard(params: Params) {
@@ -37,7 +41,10 @@ export function CreateMultisigWalletCard(params: Params) {
   });
   const watched = form.watch();
   const createMultisigWithFactory = useCreateMultisigWithFactory();
+  const createMultisigWithFactoryViaMultisig =
+    useCreateMultisigWithFactoryViaMultisig();
   const { selector, modal, account: fundingAccount } = useWalletSelector();
+  const multisigWalletsQuery = useTeamsWalletsWithLockups();
 
   const { setTransactionHashes, query } =
     useIsMultisigWalletSuccessfullyCreated();
@@ -71,37 +78,63 @@ export function CreateMultisigWalletCard(params: Params) {
   const onSubmit = async (
     values: z.infer<typeof multisigFactoryFormSchema>,
   ) => {
-    // we can't use the promise because the wallet selector overrides the
-    // current window
-    await createMultisigWithFactory.mutateAsync(values);
+    if (params.viaMultisig) {
+      await createMultisigWithFactoryViaMultisig.mutateAsync(values);
+    } else {
+      await createMultisigWithFactory.mutateAsync(values);
+    }
   };
 
   return (
     <Card className={params.className}>
       <CardHeader>
         <CardTitle>Create multisig wallet</CardTitle>
-        <CardDescription>Create your multisig wallet</CardDescription>
+        <CardDescription>
+          Create a new multisig wallet with given keys
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="flex flex-col gap-3">
-              <Label>Funding account *</Label>
-              <div className="flex flex-row">
-                <Button onClick={handleSignIn} variant="outline">
-                  {fundingAccount ? fundingAccount.accountId : "Connect wallet"}
-                </Button>
-                {fundingAccount && (
+            {!params.viaMultisig ? (
+              <div className="flex flex-col gap-3">
+                <Label>Funding account *</Label>
+                <div className="flex flex-row">
                   <Button
-                    onClick={handleSignOut}
-                    variant="link"
-                    className="ml-2"
+                    onClick={handleSignIn}
+                    variant="outline"
+                    type="button"
                   >
-                    Switch account...
+                    {fundingAccount
+                      ? fundingAccount.accountId
+                      : "Connect wallet"}
                   </Button>
-                )}
+                  {fundingAccount && (
+                    <Button
+                      onClick={handleSignOut}
+                      variant="link"
+                      className="ml-2"
+                      type="button"
+                    >
+                      Switch account...
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <SenderFormField
+                isLoading={multisigWalletsQuery.isLoading}
+                wallets={multisigWalletsQuery.data?.filter((w) => !w.isLockup)}
+                name="fundingAccountId"
+                control={form.control}
+                rules={{
+                  required: "Please select a wallet.",
+                }}
+                description="Funding wallet."
+                placeholder="Select a wallet"
+                label="Sender"
+              />
+            )}
             <TextInput
               control={form.control}
               name="accountId"
