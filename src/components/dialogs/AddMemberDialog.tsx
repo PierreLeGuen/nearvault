@@ -2,8 +2,11 @@ import { PaperPlaneIcon } from "@radix-ui/react-icons";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
-import { useAddMember, useListInvitations } from "~/hooks/teams";
-import usePersistingStore from "~/store/useStore";
+import {
+  useAddMember,
+  useGetCurrentTeam,
+  useListInvitations,
+} from "~/hooks/teams";
 import { EmailInput } from "../inputs/email";
 import {
   Dialog,
@@ -21,18 +24,18 @@ const formSchema = z.object({
 
 export function AddMemberDialog() {
   const form = useZodForm(formSchema);
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
 
   const addMemberMut = useAddMember();
   const invitationsQuery = useListInvitations();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!currentTeam) return;
+    if (!currentTeamQuery.data) return;
 
     try {
       await addMemberMut.mutateAsync({
         invitedEmail: values.email,
-        teamId: currentTeam.id,
+        teamId: currentTeamQuery.data.id,
       });
       await invitationsQuery.refetch();
     } catch (err) {

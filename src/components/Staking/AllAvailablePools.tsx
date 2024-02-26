@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { classNames } from "../Sidebar/TeamsMenu";
+import { cn } from "~/lib/utils";
 
 type PoolId = string;
 type Percentage = number;
@@ -28,7 +28,7 @@ const AllAvailablePools = ({
   const filteredPools = [...pools.values()]
     .filter((pool) => pool.id.toLowerCase().includes(searchInput.toLowerCase()))
     .filter((pool) =>
-      poolsAllowList.length > 0 ? poolsAllowList.includes(pool.id) : true
+      poolsAllowList.length > 0 ? poolsAllowList.includes(pool.id) : true,
     );
 
   return (
@@ -75,11 +75,11 @@ const AllAvailablePools = ({
             </div>
             {pool.status === "active" && (
               <button
-                className={classNames(
+                className={cn(
                   "rounded-md bg-blue-600 px-4 py-2 text-white",
                   stakingInProgress[pool.id]
                     ? "cursor-not-allowed opacity-50"
-                    : ""
+                    : "",
                 )}
                 disabled={stakingInProgress[pool.id]}
                 onClick={() => {

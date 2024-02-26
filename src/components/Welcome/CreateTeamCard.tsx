@@ -16,7 +16,6 @@ import {
   createTeamAndInviteUsers,
   useCreateTeamAndInviteUsers,
 } from "~/hooks/teams";
-import usePersistingStore from "~/store/useStore";
 import { MembersInput } from "../inputs/members";
 
 type Params = {
@@ -33,7 +32,6 @@ export function CreateTeamCard(params: Params) {
       ...params.defaultValues,
     },
   });
-  const store = usePersistingStore();
 
   useEffect(() => {
     form.reset(params.defaultValues);
@@ -44,10 +42,6 @@ export function CreateTeamCard(params: Params) {
   const onSubmit = async (values: z.infer<typeof createTeamAndInviteUsers>) => {
     query.mutate(values, {
       onSuccess: (data) => {
-        store.setCurrentTeam({
-          ...data,
-        });
-
         params.onTeamCreated(data);
       },
     });

@@ -13,6 +13,7 @@ import { z } from "zod";
 import { useSession } from "next-auth/react";
 import { getDaysDateBetweenDates } from "./dashboard";
 import { fetchJson, getFtBalanceAtDate } from "~/lib/client";
+import { toast } from "react-toastify";
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
@@ -35,18 +36,18 @@ export function useDeleteTeamMember() {
 }
 
 export function useListWallets() {
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
 
   const query = api.teams.getWalletsForTeam.useQuery(
     {
-      teamId: currentTeam?.id,
+      teamId: currentTeamQuery.data?.id,
     },
-    { enabled: !!currentTeam },
+    { enabled: !!currentTeamQuery.data },
   );
 
   return useQuery({
-    queryKey: ["walletsSorted", currentTeam?.id],
-    enabled: !!currentTeam && !!query.data,
+    queryKey: ["walletsSorted", currentTeamQuery.data?.id],
+    enabled: !!currentTeamQuery.data && !!query.data,
     queryFn: () => {
       return query.data.toSorted((a, b) => {
         return a.walletAddress.localeCompare(b.walletAddress);
@@ -56,43 +57,44 @@ export function useListWallets() {
 }
 
 export function useTeamsWalletsWithLockups() {
-  const { currentTeam, newNearConnection } = usePersistingStore();
+  const { newNearConnection } = usePersistingStore();
   const { data } = useListWallets();
+  const currentTeamQuery = useGetCurrentTeam();
 
   return useQuery({
-    queryKey: ["walletsWithLockups", currentTeam?.id],
+    queryKey: ["walletsWithLockups", currentTeamQuery.data?.id],
     queryFn: async () => {
       return await dbDataToTransfersData({
         data: data || [],
         getNearConnection: newNearConnection,
       });
     },
-    enabled: !!data && !!currentTeam,
+    enabled: !!data && !!currentTeamQuery.data,
   });
 }
 
 export function useListAddressBook() {
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
 
   return api.teams.getBeneficiariesForTeam.useQuery(
     {
-      teamId: currentTeam?.id,
+      teamId: currentTeamQuery.data?.id,
     },
     {
-      enabled: !!currentTeam,
+      enabled: !!currentTeamQuery.data,
     },
   );
 }
 
 export function useGetInvitationsForTeam() {
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
 
   return api.teams.getInvitationsForTeam.useQuery(
     {
-      teamId: currentTeam?.id,
+      teamId: currentTeamQuery.data?.id,
     },
     {
-      enabled: !!currentTeam,
+      enabled: !!currentTeamQuery.data,
     },
   );
 }
@@ -270,13 +272,28 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
 }
 
 export function useGetTeamsTransactionsHistory() {
-  const { currentTeam } = usePersistingStore();
+  const query = useGetCurrentTeam();
   return api.teams.getTeamTransactionsHistory.useQuery(
     {
-      teamId: currentTeam?.id,
+      teamId: query.data?.id,
     },
     {
-      enabled: currentTeam !== null,
+      enabled: !!query.data,
     },
   );
+}
+
+export function useGetCurrentTeam() {
+  return api.teams.assertCurrentTeam.useQuery();
+}
+
+export function useSwictTeam() {
+  const currentTeamQuery = useGetCurrentTeam();
+
+  return api.teams.switchTeam.useMutation({
+    onSuccess: async () => {
+      toast.success("Team switched");
+      await currentTeamQuery.refetch();
+    },
+  });
 }

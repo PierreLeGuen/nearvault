@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import { getSidebarLayout } from "~/components/Layout";
 import HeaderTitle from "~/components/ui/header";
 import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
@@ -19,10 +18,10 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { config } from "~/config/config";
-import { useListAddressBook } from "~/hooks/teams";
+import { useGetCurrentTeam, useListAddressBook } from "~/hooks/teams";
 
 const Manage: NextPageWithLayout = () => {
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
   const deleteMut = api.teams.deleteBeneficiaryForTeam.useMutation();
 
   const {
@@ -35,7 +34,7 @@ const Manage: NextPageWithLayout = () => {
     deleteMut.mutate(
       {
         beneficiaryId: b.id,
-        teamId: currentTeam.id,
+        teamId: currentTeamQuery.data.id,
       },
       {
         onSettled: () => {

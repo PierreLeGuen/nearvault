@@ -29,9 +29,8 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useListAddressBook } from "~/hooks/teams";
+import { useGetCurrentTeam, useListAddressBook } from "~/hooks/teams";
 import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
 
 const formSchema = z.object({
   identifier: z.string().min(2).max(50),
@@ -40,7 +39,7 @@ const formSchema = z.object({
 
 export const AddDialog = () => {
   const [submitMessage, setSubmitMessage] = useState("");
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
   const addMut = api.teams.addBeneficiaryForTeam.useMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -62,7 +61,7 @@ export const AddDialog = () => {
       firstName: identifier,
       lastName: "",
       walletAddress: accountId,
-      teamId: currentTeam.id,
+      teamId: currentTeamQuery.data.id,
     });
 
     await refetchBook();

@@ -4,7 +4,6 @@ import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
 import { useCreateTeam, useListTeams } from "~/hooks/teams";
-import usePersistingStore from "~/store/useStore";
 import { TextInput } from "../inputs/text";
 import {
   Dialog,
@@ -26,15 +25,12 @@ export function CreateTeamDialog({
   open: boolean;
   onOpenChange: () => void;
 }) {
-  const { currentTeam } = usePersistingStore();
   const form = useZodForm(formSchema);
 
   const mutation = useCreateTeam();
   const listTeams = useListTeams();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!currentTeam) return;
-
     try {
       await mutation.mutateAsync({
         teamName: values.name,

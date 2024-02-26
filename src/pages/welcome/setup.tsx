@@ -6,7 +6,7 @@ import { CreateMultisigWalletCard } from "~/components/Welcome/CreateMultisigWal
 import { CreateTeamCard } from "~/components/Welcome/CreateTeamCard";
 import { Button } from "~/components/ui/button";
 import { WalletSelectorContextProvider } from "~/contexts/WalletSelectorContext";
-import { NextPageWithLayout } from "../_app";
+import { type NextPageWithLayout } from "../_app";
 
 export const SetupMultisigWallet: NextPageWithLayout = () => {
   const [multisigWalletCreated, setMultisigWalletCreated] = useState(undefined);

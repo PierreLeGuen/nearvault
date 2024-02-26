@@ -18,14 +18,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useDeleteTeamMember, useListTeams } from "~/hooks/teams";
-import usePersistingStore from "~/store/useStore";
+import {
+  useDeleteTeamMember,
+  useGetCurrentTeam,
+  useListTeams,
+  useSwictTeam,
+} from "~/hooks/teams";
 import { CreateTeamDialog } from "../dialogs/CreateTeamDialog";
 import { Skeleton } from "../ui/skeleton";
 
 export function TeamsDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { setCurrentTeam, currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
+  const setCurrentTeam = useSwictTeam();
 
   const teamsQuery = useListTeams();
   const deleteMemberQuery = useDeleteTeamMember();
@@ -45,12 +50,20 @@ export function TeamsDropdownMenu() {
     await signOut({ redirect: true, callbackUrl: "/auth/signin" });
   };
 
+  const handleSwitchTeam = (teamId: string) => {
+    setCurrentTeam.mutate({
+      teamId,
+    });
+  };
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="justify-between rounded-none px-7">
-            {currentTeam?.name}
+            {currentTeamQuery.isLoading
+              ? "Loading..."
+              : currentTeamQuery.data.name}
             <ChevronDownIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -63,7 +76,7 @@ export function TeamsDropdownMenu() {
                 <div className="inline-flex w-full cursor-pointer items-center justify-between py-0">
                   <div
                     className="w-[85%] py-1"
-                    onClick={() => setCurrentTeam(userTeamRelation.team)}
+                    onClick={() => handleSwitchTeam(userTeamRelation.teamId)}
                   >
                     {userTeamRelation.team.name}
                   </div>

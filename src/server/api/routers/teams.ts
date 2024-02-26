@@ -16,10 +16,6 @@ export const teamsRouter = createTRPCRouter({
       };
     }),
 
-  getAll: publicProcedure.query(({ ctx }) => {
-    return ctx.prisma.example.findMany();
-  }),
-
   getTeamsForUser: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.userTeam.findMany({
       where: {
@@ -30,6 +26,98 @@ export const teamsRouter = createTRPCRouter({
       },
     });
   }),
+
+  assertCurrentTeam: protectedProcedure.query(async ({ ctx }) => {
+    const userWithTeam = await ctx.prisma.user.findUnique({
+      where: {
+        id: ctx.session.user.id,
+      },
+      include: {
+        currentTeam: true,
+      },
+    });
+
+    if (!userWithTeam) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Current user not found.",
+      });
+    }
+
+    let team = userWithTeam.currentTeam;
+
+    if (!team) {
+      const userTeam = await ctx.prisma.userTeam.findFirst({
+        where: {
+          userId: ctx.session.user.id,
+        },
+        include: {
+          team: true,
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User is not part of any team.",
+        });
+      }
+
+      await ctx.prisma.user.update({
+        where: {
+          id: ctx.session.user.id,
+        },
+        data: {
+          currentTeam: {
+            connect: {
+              id: userTeam.teamId,
+            },
+          },
+        },
+      });
+      team = userTeam.team;
+    }
+
+    return team;
+  }),
+
+  switchTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team they want to switch to
+      const isMember = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      // If not a member, throw an error
+      if (!isMember) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a member of this team.",
+        });
+      }
+
+      // If the user is a member, update their currentTeamId
+      const updatedUser = await ctx.prisma.user.update({
+        where: {
+          id: ctx.session.user.id,
+        },
+        data: {
+          currentTeamId: input.teamId,
+        },
+      });
+
+      // Return some kind of success message or the updated user object
+      return {
+        message: "Team switched successfully",
+        teamId: updatedUser.currentTeamId,
+      };
+    }),
 
   createTeam: protectedProcedure
     .input(z.object({ teamName: z.string() }))

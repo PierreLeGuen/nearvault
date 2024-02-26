@@ -14,9 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useDeleteTeamMember, useRemoveInvitation } from "~/hooks/teams";
+import {
+  useDeleteTeamMember,
+  useGetCurrentTeam,
+  useRemoveInvitation,
+} from "~/hooks/teams";
 import { api } from "~/lib/api";
-import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const ManageTeamPage: NextPageWithLayout = () => {
@@ -26,7 +29,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
   const [loadingStates, setLoadingStates] = useState<{ [id: string]: boolean }>(
     {},
   );
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
 
   const connectedUser = useSession().data?.user.email;
 
@@ -34,18 +37,18 @@ const ManageTeamPage: NextPageWithLayout = () => {
 
   const { data: wallets, refetch: refetchWallets } =
     api.teams.getWalletsForTeam.useQuery({
-      teamId: currentTeam?.id,
+      teamId: currentTeamQuery.data?.id,
     });
   const { data: members } = api.teams.getMembersForTeam.useQuery({
-    teamId: currentTeam?.id,
+    teamId: currentTeamQuery.data?.id,
   });
   const { data: invitations, refetch: refetchInvites } =
     api.teams.getInvitationsForTeam.useQuery(
       {
-        teamId: currentTeam?.id,
+        teamId: currentTeamQuery.data?.id,
       },
       {
-        enabled: !!currentTeam,
+        enabled: !!currentTeamQuery.data,
       },
     );
 
@@ -66,7 +69,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     try {
       await deleteTeamMember.mutateAsync({
         memberId: id,
-        teamId: currentTeam.id,
+        teamId: currentTeamQuery.data.id,
       });
       toast.success("Member deleted");
     } catch (error) {
@@ -94,7 +97,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     try {
       await deleteWalletMutation.mutateAsync({
         walletId: id,
-        teamId: currentTeam.id,
+        teamId: currentTeamQuery.data.id,
       });
       toast.success("Wallet deleted");
     } catch (error) {

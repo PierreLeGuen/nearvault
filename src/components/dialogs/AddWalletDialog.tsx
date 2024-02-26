@@ -2,8 +2,7 @@ import { WalletIcon } from "@heroicons/react/20/solid";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";
-import { useAddWallet, useListWallets } from "~/hooks/teams";
-import usePersistingStore from "~/store/useStore";
+import { useAddWallet, useGetCurrentTeam, useListWallets } from "~/hooks/teams";
 import { TextAreaInput } from "../inputs/text-area";
 import {
   Dialog,
@@ -35,18 +34,18 @@ const formSchema = z.object({
 });
 
 export function AddWalletDialog() {
-  const { currentTeam } = usePersistingStore();
+  const currentTeamQuery = useGetCurrentTeam();
   const form = useZodForm(formSchema);
 
   const addWalletMut = useAddWallet();
   const listWallets = useListWallets();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!currentTeam) return;
+    if (!currentTeamQuery.data.id) return;
 
     try {
       await addWalletMut.mutateAsync({
-        teamId: currentTeam.id,
+        teamId: currentTeamQuery.data.id,
         walletAddresses: values.ids,
       });
       await listWallets.refetch();
