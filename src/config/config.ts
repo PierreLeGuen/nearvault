@@ -1,4 +1,3 @@
-import * as process from "process";
 import { mainnet } from "~/config/mainnet";
 import { testnet } from "~/config/testnet";
 import type { KitWalletUrls } from "~/config/kitWallet";
@@ -21,7 +20,12 @@ export type Config = {
   };
 };
 
-const getConfig = () =>
-  process.env.NEXT_PUBLIC_NETWORK_ID === "mainnet" ? mainnet : testnet;
+export const getConfig = () => {
+  if (typeof window !== "undefined") {
+    const domain = window.location.hostname;
+    return domain.includes("testnet") ? testnet : mainnet;
+  }
+  return process.env.NEXT_PUBLIC_NETWORK_ID === "mainnet" ? mainnet : testnet; // default to mainnet if window is not defined (e.g., server-side rendering)
+};
 
 export const config: Config = getConfig();
