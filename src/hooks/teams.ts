@@ -4,7 +4,6 @@ import { initFungibleTokenContract } from "~/lib/ft/contract";
 import {
   dbDataToTransfersData,
   getFormattedAmount,
-  type LikelyTokens,
   type Token,
 } from "~/lib/transformations";
 import usePersistingStore from "~/store/useStore";
@@ -12,7 +11,7 @@ import { config } from "~/config/config";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
 import { getDaysDateBetweenDates } from "./dashboard";
-import { fetchJson, getFtBalanceAtDate } from "~/lib/client";
+import { getFtBalanceAtDate } from "~/lib/client";
 import { toast } from "react-toastify";
 
 export function useAddMember() {
@@ -103,9 +102,11 @@ export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["likelyTokensForWallet", walletId],
     queryFn: async () => {
-      const data = await fetchJson<LikelyTokens>(
-        config.urls.kitWallet.likelyTokens(walletId),
-      );
+      // const data = await fetchJson<LikelyTokens>(
+      //   config.urls.kitWallet.likelyTokens(walletId),
+      // );
+      const data =
+        await config.urls.nearBlocksApiNew.getTokensForAccount(walletId);
       console.log(data);
       return data;
     },
@@ -134,12 +135,12 @@ export function useGetNearBalanceForWallet(walletId: string) {
 
 export function useGetAllTokensWithBalanceForWallet(walletId: string) {
   const { newNearConnection } = usePersistingStore();
-  const { data: tokenAddresses } = useGetTokensForWallet(walletId);
+  const { data } = useGetTokensForWallet(walletId);
 
   return useQuery({
-    queryKey: ["tokensWithBalances", walletId, tokenAddresses?.list],
+    queryKey: ["tokensWithBalances", walletId, data?.tokens],
     queryFn: async () => {
-      const tokAddrs = tokenAddresses?.list || [];
+      const tokAddrs = data.tokens.fts || [];
 
       const promises = tokAddrs.map(async (token) => {
         const near = await newNearConnection();
@@ -185,7 +186,7 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
         (t) => !!t,
       );
     },
-    enabled: !!tokenAddresses,
+    enabled: !!data,
   });
 }
 

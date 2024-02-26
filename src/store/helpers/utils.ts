@@ -72,9 +72,8 @@ export const getAccountsForPublicKey = async (
     config.urls.nearBlocksApi.getAccountsUrl(publicKey),
   );
 
-  const accounts = await fetchJson<string[]>(
-    config.urls.kitWallet.keyAccounts(publicKey),
-  );
+  const accounts =
+    await config.urls.nearBlocksApiNew.getAccountsForPublicKey(publicKey);
 
   // merge accounts from NEAR Blocks API and Kit Wallet API
   const a = accountsWithSameKey.keys
@@ -82,7 +81,12 @@ export const getAccountsForPublicKey = async (
     .map((a) => a.account_id);
 
   const accountsWithSameKeyAndKitWallet = Array.from(
-    new Set([...a, ...accounts]),
+    new Set([
+      ...a,
+      ...accounts.keys
+        .filter((k) => k.deleted.block_timestamp == null)
+        .map((a) => a.account_id),
+    ]),
   );
 
   return accountsWithSameKeyAndKitWallet;

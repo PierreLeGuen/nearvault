@@ -44,7 +44,8 @@ export function useIsPoolSelected(selectedWallet: WalletPretty | undefined) {
 
 export function useListAllStakingPools() {
   return useQuery(["allAvailablePools"], async () => {
-    const res = await fetchJson<PoolId[]>(config.urls.kitWallet.stakingPools);
+    const res = await config.urls.nearBlocksApiNew.getStakingPools();
+
     return res;
   });
 }
@@ -236,10 +237,8 @@ export function useGetStakingDetailsForWallets() {
     async (): Promise<WalletData[]> => {
       const promises = listWallets.data.map(async (wallet) => {
         try {
-          const data: StakedPool[] = await fetchJson(
-            config.urls.kitWallet.stakingDeposits(
-              wallet.walletDetails.walletAddress,
-            ),
+          const data = await config.urls.nearBlocksApiNew.getStakingDeposits(
+            wallet.walletDetails.walletAddress,
           );
           const n = await newNearConnection();
           const stakedPools = [];
