@@ -1,6 +1,6 @@
 import { type Wallet } from "@prisma/client";
 import type * as naj from "near-api-js";
-import { FungibleTokenMetadata } from "~/lib/ft/contract";
+import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
 import { type WalletPretty } from "~/pages/staking/stake";
 import { config } from "~/config/config";

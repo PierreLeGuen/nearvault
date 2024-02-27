@@ -1,6 +1,7 @@
+import Bottleneck from "bottleneck";
 import { fetchJson } from "~/lib/client";
 
-export const baseUrl = "https://api3.nearblocks.io";
+export const baseUrl = "https://api.nearblocks.io";
 
 type PublicKeyEntry = {
   public_key: string;
@@ -35,18 +36,31 @@ type ValidatorDeposits = ValidatorDeposit[];
 
 export type NearBlocksApiNewType = ReturnType<typeof newNearNearBlocksApiNew>;
 
+// Create a new limiter with a maximum of 5 requests per second
+const limiter = new Bottleneck({
+  minTime: 200, // 5 requests per second
+});
+
 export const newNearNearBlocksApiNew = (baseUrl: string) => ({
   getAccountsForPublicKey: (publicKey: string) =>
-    fetchJson<KeysObject>(`${baseUrl}/v1/keys/${publicKey}`),
+    limiter.schedule(() =>
+      fetchJson<KeysObject>(`${baseUrl}/v1/keys/${publicKey}`),
+    ),
 
   getTokensForAccount: (accountId: string) =>
-    fetchJson<TokensObject>(`${baseUrl}/v1/account/${accountId}/tokens`),
+    limiter.schedule(() =>
+      fetchJson<TokensObject>(`${baseUrl}/v1/account/${accountId}/tokens`),
+    ),
 
   getStakingDeposits: (accountId: string) =>
-    fetchJson<ValidatorDeposits>(
-      `${baseUrl}/v1/kitwallet/staking-deposits/${accountId}`,
+    limiter.schedule(() =>
+      fetchJson<ValidatorDeposits>(
+        `${baseUrl}/v1/kitwallet/staking-deposits/${accountId}`,
+      ),
     ),
 
   getStakingPools: () =>
-    fetchJson<string[]>(`${baseUrl}/v1/kitwallet/stakingPools`),
+    limiter.schedule(() =>
+      fetchJson<string[]>(`${baseUrl}/v1/kitwallet/stakingPools`),
+    ),
 });

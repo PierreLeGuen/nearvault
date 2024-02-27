@@ -46,6 +46,7 @@
     "@trpc/react-query": "^10.43.1",
     "@trpc/server": "^10.43.1",
     "bn.js": "^5.2.1",
+    "bottleneck": "^2.19.5",
     "bs58": "^5.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
