@@ -96,8 +96,8 @@ export const createWalletTerminator: StateCreator<
   selectedPublicKey: "",
   uniqueNonce: 0,
   getAndIncreaseUniqueNonce: () => {
-    const nonce = get().uniqueNonce;
-    set({ uniqueNonce: nonce + 1 });
+    const nonce = get().uniqueNonce + 1;
+    set({ uniqueNonce: nonce });
     return nonce;
   },
   getPublicKeysForAccount: (accountId: AccountId) => {
