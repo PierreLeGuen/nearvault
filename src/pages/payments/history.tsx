@@ -45,39 +45,45 @@ const History: NextPageWithLayout = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className="font-medium">
-                  {transaction.wallet.walletAddress}
-                </TableCell>
-                <TableCell>
-                  <a
-                    href={config.urls.nearBlocks.txDetails(
-                      transaction.createRequestTxnId,
-                    )}
-                    target="_blank"
-                    className="font-bold underline"
-                  >
-                    {transaction.createRequestTxnId.slice(0, 8) + "..."}
-                  </a>
-                </TableCell>
-                <TableCell>
-                  {new Date(transaction.creationDate).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  {transaction.approvedDate &&
-                    new Date(transaction.approvedDate).toLocaleString()}
-                </TableCell>
-                <TableCell>{transaction.memo || "N/A"}</TableCell>
-                <TableCell>{transaction.creatorMail}</TableCell>
-                <TableCell className="text-right">
-                  {transaction.amount.toString()}
-                </TableCell>
-                <TableCell className="max-w-[100px] truncate ">
-                  {transaction.token}
-                </TableCell>
-              </TableRow>
-            ))}
+            {transactions
+              .sort(
+                (a, b) =>
+                  new Date(b.creationDate).getTime() -
+                  new Date(a.creationDate).getTime(),
+              )
+              .map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">
+                    {transaction.wallet.walletAddress}
+                  </TableCell>
+                  <TableCell>
+                    <a
+                      href={config.urls.nearBlocks.txDetails(
+                        transaction.createRequestTxnId,
+                      )}
+                      target="_blank"
+                      className="font-bold underline"
+                    >
+                      {transaction.createRequestTxnId.slice(0, 8) + "..."}
+                    </a>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(transaction.creationDate).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.approvedDate &&
+                      new Date(transaction.approvedDate).toLocaleString()}
+                  </TableCell>
+                  <TableCell>{transaction.memo || "N/A"}</TableCell>
+                  <TableCell>{transaction.creatorMail}</TableCell>
+                  <TableCell className="text-right">
+                    {transaction.amount.toString()}
+                  </TableCell>
+                  <TableCell className="max-w-[100px] truncate ">
+                    {transaction.token}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       ) : (
