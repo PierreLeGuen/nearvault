@@ -19,7 +19,7 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
 
   const nextStep = async () => {
     if (isLastStep()) {
-      await router.push("/dashboard"); // Redirect the user to the dashboard page.
+      await router.push("/payments/transfers"); // Redirect the user to the dashboard page.
     } else {
       setStep(step + 1);
     }
