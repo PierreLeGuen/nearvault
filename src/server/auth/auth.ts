@@ -50,7 +50,9 @@ export const authOptions: NextAuthOptions = {
               create: {
                 team: {
                   create: {
-                    name: user?.name ? `${user?.name}'s Team` : "My Team",
+                    name: user?.name
+                      ? `${user?.name}'s Default Team`
+                      : "My Default Team",
                   },
                 },
               },

@@ -31,7 +31,7 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
   };
 
   const stepDone = (step) => {
-    return step === 0 ? !!multisigWalletCreated : !!teamCreated;
+    return step === 0 ? !!teamCreated : true;
   };
 
   const isLastStep = () => {
@@ -44,16 +44,16 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
     <div className="flex h-screen flex-1 flex-col items-center justify-center">
       <div className="flex w-[700px] flex-col gap-3">
         <CreateMultisigWalletCard
-          className={step !== 0 ? "hidden" : ""}
+          className={step !== 1 ? "hidden" : ""}
           onMultisigCreateSuccess={setMultisigWalletCreated}
         />
         <CreateTeamCard
-          className={step !== 1 ? "hidden" : ""}
+          className={step !== 0 ? "hidden" : ""}
           onTeamCreated={setTeamCreated}
           defaultValues={{
-            name: `${data.user.name}'s team`,
+            name: `My Awesome Team`,
             members: [email],
-            wallets: [multisigWalletCreated],
+            wallets: [""],
           }}
         />
 
