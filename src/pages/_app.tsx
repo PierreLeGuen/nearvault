@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { api } from "~/lib/api";
 
+import { Analytics } from "@vercel/analytics/react";
 import { type NextPage } from "next";
 import { type Session } from "next-auth";
 import { type AppProps } from "next/app";
@@ -40,6 +41,7 @@ function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
         {layout}
         <ToastContainer />
         <WalletHome />
+        <Analytics />
       </QueryClientProvider>
     </SessionProvider>
   );

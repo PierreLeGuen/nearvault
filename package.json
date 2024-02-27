@@ -45,6 +45,7 @@
     "@trpc/next": "^10.43.1",
     "@trpc/react-query": "^10.43.1",
     "@trpc/server": "^10.43.1",
+    "@vercel/analytics": "^1.2.2",
     "bn.js": "^5.2.1",
     "bottleneck": "^2.19.5",
     "bs58": "^5.0.0",
