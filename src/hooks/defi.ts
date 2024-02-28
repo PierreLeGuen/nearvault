@@ -10,6 +10,7 @@ import { TGas } from "./staking";
 import BN from "bn.js";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { z } from "zod";
 
 export const EXCHANGES = ["REF"] as const;
 
@@ -44,74 +45,63 @@ export interface LiquidityPool {
 export const useGetLiquidityPools = (
   exchange: string,
   includeEmptyPools: boolean,
-  fundingAccountId: string,
 ) => {
-  const tokensQuery = useGetAllTokensWithBalanceForWallet(fundingAccountId);
-  return useQuery(
-    ["liquidityPools", exchange, includeEmptyPools, fundingAccountId],
-    async () => {
-      const pools = await fetchJson<LiquidityPool[]>(
-        "https://indexer.ref.finance/list-pools",
-      );
+  return useQuery(["liquidityPools", exchange, includeEmptyPools], async () => {
+    const pools = await fetchJson<LiquidityPool[]>(
+      "https://indexer.ref.finance/list-pools",
+    );
 
-      const tokenAccountIds = [
-        ...new Set(
-          pools.flatMap((pool) => {
-            return pool.token_account_ids;
-          }),
-        ),
-      ];
+    const tokenAccountIds = [
+      ...new Set(
+        pools.flatMap((pool) => {
+          return pool.token_account_ids;
+        }),
+      ),
+    ];
 
-      const promises = tokenAccountIds.map(async (accountId) => {
-        try {
-          const res = await viewCall<
-            FungibleTokenMetadata & { accountId: string }
-          >(accountId, "ft_metadata", {});
-          res.accountId = accountId;
-          return res;
-        } catch (e) {
-          console.log(e);
-        }
-      });
-      const ftMetadatas = (await Promise.all(promises)).filter(Boolean);
+    const promises = tokenAccountIds.map(async (accountId) => {
+      try {
+        const res = await viewCall<
+          FungibleTokenMetadata & { accountId: string }
+        >(accountId, "ft_metadata", {});
+        res.accountId = accountId;
+        return res;
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    const ftMetadatas = (await Promise.all(promises)).filter(Boolean);
 
-      console.log(ftMetadatas);
+    console.log(ftMetadatas);
 
-      return (
-        pools
-          .filter((pool) => {
-            return includeEmptyPools || pool.tvl !== "0";
-          })
-          // .filter((pool) => {
-          //   if (includeNotOwningTokens) {
-          //     return true;
-          //   }
-          //   pool.token_account_ids.every((id) =>
-          //     tokensQuery.data.find((t) => t.account_id === id),
-          //   );
-          // })
-          .map((pool) => {
-            const amounts = pool.amounts.map((amount, i) => {
-              const accId = pool.token_account_ids[i];
-              const ftMetadata = ftMetadatas.find(
-                (ft) => ft.accountId === accId,
-              );
-              if (!ftMetadata) {
-                return "0";
-              }
-              const formattedAmount =
-                Number(amount) / 10 ** ftMetadata.decimals;
-              return formattedAmount.toString();
-            });
-            pool.amounts = amounts;
-            return pool;
-          })
-      );
-    },
-    {
-      enabled: !!tokensQuery.data,
-    },
-  );
+    return (
+      pools
+        .filter((pool) => {
+          return includeEmptyPools || pool.tvl !== "0";
+        })
+        // .filter((pool) => {
+        //   if (includeNotOwningTokens) {
+        //     return true;
+        //   }
+        //   pool.token_account_ids.every((id) =>
+        //     tokensQuery.data.find((t) => t.account_id === id),
+        //   );
+        // })
+        .map((pool) => {
+          const amounts = pool.amounts.map((amount, i) => {
+            const accId = pool.token_account_ids[i];
+            const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+            if (!ftMetadata) {
+              return "0";
+            }
+            const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
+            return formattedAmount.toString();
+          });
+          pool.amounts = amounts;
+          return pool;
+        })
+    );
+  });
 };
 
 export const useGetLiquidityPoolById = (poolId?: string) => {
@@ -153,7 +143,7 @@ type DepositParams = {
   poolId: string;
 };
 
-export const useDepositToLiquidityPool = () => {
+export const useDepositToRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
 
   return useMutation({
@@ -248,6 +238,122 @@ export const useDepositToLiquidityPool = () => {
         senderId: params.fundingAccId,
         receiverId: params.fundingAccId,
         actions: [addLiquidityRequest],
+      });
+    },
+  });
+};
+
+interface BurrowAssetConfig {
+  borrow_apr: string;
+  borrowed: BalanceAndShares;
+  config: Config;
+  farms: unknown[]; // Assuming 'any' type here as there's no provided structure for farms
+  last_update_timestamp: string;
+  prot_fee: string;
+  reserved: string;
+  supplied: BalanceAndShares;
+  supply_apr: string;
+  token_id: string;
+}
+
+interface BalanceAndShares {
+  balance: string;
+  shares: string;
+}
+
+interface Config {
+  can_borrow: boolean;
+  can_deposit: boolean;
+  can_use_as_collateral: boolean;
+  can_withdraw: boolean;
+  extra_decimals: number;
+  max_utilization_rate: string;
+  net_tvl_multiplier: number;
+  prot_ratio: number;
+  reserve_ratio: number;
+  target_utilization: number;
+  target_utilization_rate: string;
+  volatility_ratio: number;
+}
+
+export const burrowSupplyFormSchema = z.object({
+  token: z.string(),
+  tokenAmount: z.number(),
+  funding: z.string(),
+});
+
+export const useSupplyToBurrow = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async (params: z.infer<typeof burrowSupplyFormSchema>) => {
+      const burrowAccountId = "contract.main.burrow.near";
+
+      const storageDepositRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(burrowAccountId, [
+          functionCallAction(
+            "storage_deposit",
+            {
+              account_id: params.funding,
+              registration_only: false,
+            },
+            parseNearAmount("0.25"),
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
+
+      const config = await viewCall<BurrowAssetConfig>(
+        burrowAccountId,
+        "get_asset",
+        { token_id: "usdt.tether-token.near" },
+      );
+
+      const ftMetadata = await viewCall<FungibleTokenMetadata>(
+        params.token,
+        "ft_metadata",
+        {},
+      );
+
+      const indivisibleAmount = `${params.tokenAmount}${"0".repeat(
+        ftMetadata.decimals,
+      )}`;
+
+      const ftTransferCall = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(params.token, [
+          functionCallAction(
+            "ft_transfer_call",
+            {
+              receiver_id: burrowAccountId,
+              amount: indivisibleAmount,
+              msg: `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${
+                params.token
+              }\",\"max_amount\":\"${indivisibleAmount}${"0".repeat(
+                config.config.extra_decimals,
+              )}\"}}]}}`,
+            },
+            "1",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.funding,
+        receiverId: params.funding,
+        actions: [storageDepositRequest],
+      });
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.funding,
+        receiverId: params.funding,
+        actions: [ftTransferCall],
       });
     },
   });
