@@ -14,7 +14,9 @@ import { TGas } from "./staking";
 
 export const multisigFactoryFormSchema = z.object({
   fundingAccountId: z.string(),
-  accountId: z.string(),
+  accountId: z.string().refine((value) => {
+    return !/[.\s]/.test(value);
+  }),
   threshold: z.string().refine((value) => {
     const threshold = Number(value);
     return threshold > 0; // TODO: && threshold <= maxThreshold
