@@ -50,7 +50,7 @@ const StartPage: NextPageWithLayout = ({
                 <Link href={"/lockup/manage"} className="w-full">
                   <Button variant="outline" className="inline-flex h-12 w-full">
                     <Image
-                      src={session.user.image}
+                      src={session?.user?.image || "/account.png"}
                       width={32}
                       height={32}
                       alt="profile picture"
@@ -58,7 +58,8 @@ const StartPage: NextPageWithLayout = ({
                     />
                     <div className="my-20 flex flex-col">
                       <span className="text-sm">
-                        Continue as {session.user.name}
+                        Continue
+                        {session.user.name ? ` as ${session.user.name}` : ""}
                       </span>
                       <span className="text-xs">{session.user.email}</span>
                     </div>
