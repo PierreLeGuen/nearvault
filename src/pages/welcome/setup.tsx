@@ -3,6 +3,7 @@ import { Team, TeamInvitation } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { CreateMultisigWalletCard } from "~/components/Welcome/CreateMultisigWalletCard";
 import { CreateTeamCard } from "~/components/Welcome/CreateTeamCard";
 import { PendingInvitations } from "~/components/Welcome/PendingInvitations";
@@ -48,6 +49,9 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
     console.log("Invitation callback", invitation, status);
     if (status === "ACCEPTED") {
       setTeamCreated(invitation.team.name);
+      toast.success(
+        `You have joined the team ${invitation.team.name}, you may now go to the next step.`,
+      );
     }
   };
   if (loading) return null;
