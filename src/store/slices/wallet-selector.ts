@@ -18,7 +18,10 @@ import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/he
 import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
 import { devtools, persist } from "zustand/middleware";
 import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
-import { JsonRpcProvider } from "near-api-js/lib/providers";
+import {
+  type FinalExecutionStatus,
+  JsonRpcProvider,
+} from "near-api-js/lib/providers";
 import { type StateCreator } from "zustand";
 import { type NextRouter } from "next/router";
 import {
@@ -315,6 +318,9 @@ export const createWalletTerminator: StateCreator<
         const provider = new JsonRpcProvider({ url: config.urls.rpc });
         get().goToWaitForTransaction();
         const txn = await provider.sendTransaction(signedTx);
+        if ((txn.status as FinalExecutionStatus).Failure) {
+          throw new Error(JSON.stringify(txn.status));
+        }
         get().goToWaitForTransaction(txn.transaction_outcome.id);
       } else if (source.type === "mynearwallet") {
         get().signWithMnw(tx);
