@@ -1,11 +1,14 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
+import { Team, TeamInvitation } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { CreateMultisigWalletCard } from "~/components/Welcome/CreateMultisigWalletCard";
 import { CreateTeamCard } from "~/components/Welcome/CreateTeamCard";
+import { PendingInvitations } from "~/components/Welcome/PendingInvitations";
 import { Button } from "~/components/ui/button";
 import { WalletSelectorContextProvider } from "~/contexts/WalletSelectorContext";
+import { cn } from "~/lib/utils";
 import { type NextPageWithLayout } from "../_app";
 
 export const SetupMultisigWallet: NextPageWithLayout = () => {
@@ -38,6 +41,15 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
     return step === 1;
   };
 
+  const teamInvitationCallback = (
+    invitation: TeamInvitation & { team: Team },
+    status: string,
+  ) => {
+    console.log("Invitation callback", invitation, status);
+    if (status === "ACCEPTED") {
+      setTeamCreated(invitation.team.name);
+    }
+  };
   if (loading) return null;
 
   return (
@@ -47,15 +59,17 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
           className={step !== 1 ? "hidden" : ""}
           onMultisigCreateSuccess={setMultisigWalletCreated}
         />
-        <CreateTeamCard
-          className={step !== 0 ? "hidden" : ""}
-          onTeamCreated={setTeamCreated}
-          defaultValues={{
-            name: `My Awesome Team`,
-            members: [email],
-            wallets: [""],
-          }}
-        />
+        <div className={cn("flex flex-col gap-2", step !== 0 ? "hidden" : "")}>
+          <PendingInvitations callback={teamInvitationCallback} />
+          <CreateTeamCard
+            onTeamCreated={setTeamCreated}
+            defaultValues={{
+              name: `My Awesome Team`,
+              members: [email],
+              wallets: [""],
+            }}
+          />
+        </div>
 
         <div className="inline-flex w-full justify-between">
           <Button variant="outline" disabled={step === 0} onClick={prevStep}>

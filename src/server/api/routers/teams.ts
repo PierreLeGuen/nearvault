@@ -449,11 +449,12 @@ export const teamsRouter = createTRPCRouter({
       };
     }),
 
-  getInvitationsForUser: protectedProcedure.query(async ({ ctx }) => {
+  getPendingInvitationsForUser: protectedProcedure.query(async ({ ctx }) => {
     // Fetch all team invitations for the logged-in user
     return ctx.prisma.teamInvitation.findMany({
       where: {
-        invitedUserId: ctx.session.user.id,
+        invitedEmail: ctx.session.user.email,
+        status: "PENDING",
       },
       include: {
         team: true,
@@ -557,8 +558,16 @@ export const teamsRouter = createTRPCRouter({
         });
       }
 
-      // Check if the logged-in user is the one who created the invitation
-      if (invitation.invitedById !== ctx.session.user.id) {
+      const member = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: invitation.teamId,
+          },
+        },
+      });
+
+      if (!member) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You are not authorized to delete this invitation.",
@@ -626,6 +635,12 @@ export const teamsRouter = createTRPCRouter({
           status: input.status,
           ...(input.status === "ACCEPTED" && { acceptedAt: new Date() }),
           ...(input.status === "REJECTED" && { rejectedAt: new Date() }),
+        },
+      });
+
+      await ctx.prisma.teamInvitation.delete({
+        where: {
+          id: input.invitationId,
         },
       });
 

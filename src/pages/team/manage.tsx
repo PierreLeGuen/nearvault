@@ -39,7 +39,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     api.teams.getWalletsForTeam.useQuery({
       teamId: currentTeamQuery.data?.id,
     });
-  const { data: members } = api.teams.getMembersForTeam.useQuery({
+  const { data: members, refetch } = api.teams.getMembersForTeam.useQuery({
     teamId: currentTeamQuery.data?.id,
   });
   const { data: invitations, refetch: refetchInvites } =
@@ -71,6 +71,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
         memberId: id,
         teamId: currentTeamQuery.data.id,
       });
+      await refetch();
       toast.success("Member deleted");
     } catch (error) {
       toast.error(

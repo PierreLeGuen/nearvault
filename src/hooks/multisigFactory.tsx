@@ -129,7 +129,7 @@ export const useIsMultisigWalletSuccessfullyCreated = () => {
 
   const query = useQuery({
     queryKey: ["isMultisigWalletSuccessfullyCreated", transactionStatusQuery],
-    queryFn: async () => {
+    queryFn: () => {
       for (const tx of transactionStatusQuery.data) {
         const matchingReceipt = tx.receipts_outcome.find((receipt) =>
           receipt.outcome.executor_id.includes(

@@ -19,7 +19,11 @@ export function useAddMember() {
 }
 
 export function useListInvitations() {
-  return api.teams.getInvitationsForUser.useQuery();
+  return api.teams.getPendingInvitationsForUser.useQuery();
+}
+
+export function useAcceptOrRejectInvitation() {
+  return api.teams.acceptOrRejectInvitation.useMutation();
 }
 
 export function useRemoveInvitation() {

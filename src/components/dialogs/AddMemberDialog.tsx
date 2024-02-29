@@ -5,7 +5,7 @@ import { useZodForm } from "~/hooks/form";
 import {
   useAddMember,
   useGetCurrentTeam,
-  useListInvitations,
+  useGetInvitationsForTeam,
 } from "~/hooks/teams";
 import { EmailInput } from "../inputs/email";
 import {
@@ -27,7 +27,7 @@ export function AddMemberDialog() {
   const currentTeamQuery = useGetCurrentTeam();
 
   const addMemberMut = useAddMember();
-  const invitationsQuery = useListInvitations();
+  const listPendingInvitation = useGetInvitationsForTeam();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentTeamQuery.data) return;
@@ -37,7 +37,7 @@ export function AddMemberDialog() {
         invitedEmail: values.email,
         teamId: currentTeamQuery.data.id,
       });
-      await invitationsQuery.refetch();
+      await listPendingInvitation.refetch();
     } catch (err) {
       console.error(err);
     }
