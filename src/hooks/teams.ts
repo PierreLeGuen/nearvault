@@ -292,6 +292,18 @@ export function useGetCurrentTeam() {
   return api.teams.assertCurrentTeam.useQuery();
 }
 
+export function useGetTeamMembers() {
+  const currentTeamQuery = useGetCurrentTeam();
+  return api.teams.getMembersForTeam.useQuery(
+    {
+      teamId: currentTeamQuery.data?.id,
+    },
+    {
+      enabled: !!currentTeamQuery.data,
+    },
+  );
+}
+
 export function useSwictTeam() {
   const currentTeamQuery = useGetCurrentTeam();
 

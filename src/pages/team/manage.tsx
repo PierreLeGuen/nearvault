@@ -17,6 +17,9 @@ import {
 import {
   useDeleteTeamMember,
   useGetCurrentTeam,
+  useGetInvitationsForTeam,
+  useGetTeamMembers,
+  useListWallets,
   useRemoveInvitation,
 } from "~/hooks/teams";
 import { api } from "~/lib/api";
@@ -30,27 +33,15 @@ const ManageTeamPage: NextPageWithLayout = () => {
     {},
   );
   const currentTeamQuery = useGetCurrentTeam();
+  const { data: members, refetch: refetchTeamMembers } = useGetTeamMembers();
+  const { data: wallets, refetch: refetchWallets } = useListWallets();
 
   const connectedUser = useSession().data?.user.email;
 
   const deleteWalletMutation = api.teams.deleteWalletForTeam.useMutation();
 
-  const { data: wallets, refetch: refetchWallets } =
-    api.teams.getWalletsForTeam.useQuery({
-      teamId: currentTeamQuery.data?.id,
-    });
-  const { data: members, refetch } = api.teams.getMembersForTeam.useQuery({
-    teamId: currentTeamQuery.data?.id,
-  });
   const { data: invitations, refetch: refetchInvites } =
-    api.teams.getInvitationsForTeam.useQuery(
-      {
-        teamId: currentTeamQuery.data?.id,
-      },
-      {
-        enabled: !!currentTeamQuery.data,
-      },
-    );
+    useGetInvitationsForTeam();
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -71,7 +62,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
         memberId: id,
         teamId: currentTeamQuery.data.id,
       });
-      await refetch();
+      await refetchTeamMembers();
       toast.success("Member deleted");
     } catch (error) {
       toast.error(
