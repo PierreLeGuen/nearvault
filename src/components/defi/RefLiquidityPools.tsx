@@ -18,6 +18,8 @@ import {
   useGetAllTokensWithBalanceForWallet,
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
+import { viewCall } from "~/lib/client";
+import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { type Token } from "~/lib/transformations";
 import { convertToIndivisibleFormat } from "~/lib/utils";
 
@@ -36,12 +38,16 @@ const getFormattedPoolBalance = (pool: LiquidityPool) => {
 };
 
 const getUserBalanceForPool = (pool?: LiquidityPool, userTokens?: Token[]) => {
+  console.log("THERE", pool, userTokens);
+
   const tokenLeft = userTokens?.find(
     (t) => t.account_id == pool?.token_account_ids[0],
   );
   const tokenRight = userTokens?.find(
     (t) => t.account_id == pool?.token_account_ids[1],
   );
+
+  console.log("HERE", tokenLeft, tokenRight);
 
   return [tokenLeft, tokenRight];
 };
@@ -124,15 +130,28 @@ const RefLiquidityPools = () => {
     const tokenLeftAccId = liquidityPoolDetailsQuery.data?.token_account_ids[0];
     const tokenRightAccId =
       liquidityPoolDetailsQuery.data?.token_account_ids[1];
-    const decimalsLeft = userTokensForPool[0]?.decimals;
-    const decimalsRight = userTokensForPool[1]?.decimals;
+    console.log(userTokensForPool);
 
-    const l = convertToIndivisibleFormat(values.tokenLeftAmount, decimalsLeft);
+    const leftMetadata = await viewCall<FungibleTokenMetadata>(
+      tokenLeftAccId,
+      "ft_metadata",
+      {},
+    );
+    const rightMetadata = await viewCall<FungibleTokenMetadata>(
+      tokenRightAccId,
+      "ft_metadata",
+      {},
+    );
+    console.log(leftMetadata, rightMetadata);
+    const l = convertToIndivisibleFormat(
+      values.tokenLeftAmount,
+      leftMetadata.decimals,
+    );
     console.log(l.toString());
 
     const r = convertToIndivisibleFormat(
       values.tokenRightAmount,
-      decimalsRight,
+      rightMetadata.decimals,
     );
     console.log(r.toString());
     console.log(
