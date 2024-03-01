@@ -34,7 +34,7 @@ const formSchema = z.object({
 const getFormattedPoolBalance = (pool: LiquidityPool) => {
   return `${pool.token_symbols.join("-")} (${pool.amounts[0]} ${
     pool.token_symbols[0]
-  } - ${pool.amounts[1]} ${pool.token_symbols[1]})`;
+  } - ${pool.amounts[1]} ${pool.token_symbols[1]}) ID: ${pool.id}`;
 };
 
 const getUserBalanceForPool = (pool?: LiquidityPool, userTokens?: Token[]) => {
