@@ -90,11 +90,11 @@ export const AddKey = ({ accountId }: { accountId: string }) => {
                 name="methodNames.confirm"
                 label="Confirm pending requests"
               />
-              <SwitchSmallInput
+              {/* <SwitchSmallInput
                 control={form.control}
                 name="methodNames.add_request_and_confirm"
                 label="Add a request and confirm it at the same time"
-              />
+              /> */}
             </div>
             <Button type="submit">
               <div className="inline-flex items-center">
