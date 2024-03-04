@@ -97,12 +97,12 @@ export const RefYourDeposits = () => {
           rules={{
             required: "Please select a pool.",
           }}
-          description="Select a liquidity pool."
+          description="Select a liquidity pool. Pools with very low balance can be ignored."
           placeholder="NEAR-BTC"
           label="Liquidity pool"
         />
 
-        <Button type="submit">Create liquidity deposit request</Button>
+        <Button type="submit">Create remove liquidity request</Button>
       </form>
     </Form>
   );
