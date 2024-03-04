@@ -1,6 +1,8 @@
 import BN from "bn.js";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { viewCall } from "./client";
+import { type FungibleTokenMetadata } from "./ft/contract";
 
 export const getNearTimestamp = (date: Date) => {
   return date.getTime() * 1_000_000;
@@ -46,4 +48,22 @@ export function convertToIndivisibleFormat(
   const indivisibleFormat = numberBN.mul(multiplier);
 
   return indivisibleFormat;
+}
+
+export async function getFtMetadataForAccounts(accountIds: string[]) {
+  const promises = accountIds.map(async (accountId) => {
+    try {
+      const res = await viewCall<FungibleTokenMetadata & { accountId: string }>(
+        accountId,
+        "ft_metadata",
+        {},
+      );
+      res.accountId = accountId;
+      return res;
+    } catch (e) {
+      console.log(e);
+    }
+  });
+  const ftMetadatas = (await Promise.all(promises)).filter(Boolean);
+  return ftMetadatas;
 }

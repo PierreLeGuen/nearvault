@@ -31,7 +31,11 @@ const formSchema = z.object({
   funding: z.string(),
 });
 
-const getFormattedPoolBalance = (pool: LiquidityPool) => {
+export const getFormattedPoolBalance = (pool: {
+  amounts: string[];
+  token_symbols: string[];
+  id: string;
+}) => {
   return `${pool.token_symbols.join("-")} (${pool.amounts[0]} ${
     pool.token_symbols[0]
   } - ${pool.amounts[1]} ${pool.token_symbols[1]}) ID: ${pool.id}`;
