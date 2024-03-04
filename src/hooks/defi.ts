@@ -282,11 +282,12 @@ export const withdrawRef = z.object({
 
 export const useWithdrawFromRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
+  const viewQuery = useGetRefLiquidityPoolsForAccount();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof withdrawRef>) => {
+      await viewQuery.refetch();
       const refAccountId = "v2.ref-finance.near";
-      debugger;
       const storageDepositRequest = transactions.functionCall(
         "add_request",
         addMultisigRequestAction(refAccountId, [
