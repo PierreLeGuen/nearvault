@@ -281,6 +281,14 @@ const CurrentlyImportedKeys = () => {
           <div key={pubK} className="flex flex-col gap-2">
             <p>
               <strong>{pubK}</strong>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  wsStore.removeKey(pubK);
+                }}
+              >
+                Forget key
+              </Button>
             </p>
             <ul className="flex list-inside list-disc flex-col gap-2">
               {wsStore.keysToAccounts[pubK].map((account) => (

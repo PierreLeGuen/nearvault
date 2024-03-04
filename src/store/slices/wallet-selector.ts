@@ -54,6 +54,7 @@ export interface WsState {
 interface WsActions {
   getAndIncreaseUniqueNonce: () => number;
   addAccounts: (accounts: PkAndAccounts, sources: PkAndSources) => void;
+  removeKey: (pk: PublicKeyStr) => void;
   signWithLedger: (
     tx: Transaction,
     derivationPath: string,
@@ -148,6 +149,11 @@ export const createWalletTerminator: StateCreator<
       accounts: get().keysToAccounts,
       sources: get().sources,
     });
+  },
+  removeKey: (pk: PublicKeyStr) => {
+    const accounts = get().keysToAccounts;
+    delete accounts[pk];
+    set({ keysToAccounts: accounts });
   },
   setSelectedPublicKey: (pk: PublicKeyStr) => {
     set({ selectedPublicKey: pk });

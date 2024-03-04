@@ -2,7 +2,7 @@ import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { RefYourDeposits } from "~/components/defi/RefYourDeposits";
 import HeaderTitle from "~/components/ui/header";
-import { NextPageWithLayout } from "../_app";
+import { type NextPageWithLayout } from "../_app";
 
 const Withdraw: NextPageWithLayout = () => {
   return (
