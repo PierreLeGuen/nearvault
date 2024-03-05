@@ -244,7 +244,6 @@ export const useDepositToRefStableLiquidityPool = () => {
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof stablePoolsRefDeposit>) => {
-      debugger;
       const refAccountId = "v2.ref-finance.near";
       const storageDepositRequest = transactions.functionCall(
         "add_request",

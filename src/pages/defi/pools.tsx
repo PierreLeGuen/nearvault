@@ -17,7 +17,6 @@ const LiquidityPools: NextPageWithLayout = () => {
         </TabsList>
         <TabsContent value="a">
           <RefLiquidityPools />
-          <div>qwe</div>
         </TabsContent>
         <TabsContent value="b">
           <BurrowSupply />

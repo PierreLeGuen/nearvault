@@ -87,8 +87,6 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
     const min_shares_bn = convertToIndivisibleFormat(min_shares.toString(), 24);
     console.log(min_shares_bn.toString());
 
-    debugger;
-
     depositStableMutation.mutate({
       amounts: values.tokens.map((t, idx) =>
         convertToIndivisibleFormat(
@@ -151,11 +149,6 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
             />
           ))}
 
-          {form.formState.errors && (
-            <div className="text-red-500">
-              {JSON.stringify(form.formState.errors)}
-            </div>
-          )}
           <Button type="submit">Create liquidity deposit request</Button>
         </form>
       </Form>
