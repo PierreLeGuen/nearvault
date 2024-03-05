@@ -69,6 +69,7 @@ export function DropdownFormField<
                     !field.value && "text-muted-foreground",
                   )}
                   disabled={isLoading}
+                  type="button"
                 >
                   {isLoading && "Loading..."}
                   {!isLoading &&

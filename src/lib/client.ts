@@ -176,3 +176,25 @@ export const fetchJson = async <T>(url: string, options = {}): Promise<T> => {
   const response = await fetch(url, options);
   return (await response.json()) as T;
 };
+
+type RatedPoolResult = {
+  amounts: string[];
+  amp: number;
+  c_amounts: string[];
+  decimals: number[];
+  rates: string[];
+  shares_total_supply: string;
+  token_account_ids: string[];
+  total_fee: number;
+};
+
+export const getRatedPool = async (poolId: number) => {
+  // near contract call-function as-read-only v2.ref-finance.near get_rated_pool json-args '{"pool_id":4179}' network-config mainnet now
+  return await viewCall<RatedPoolResult>(
+    "v2.ref-finance.near",
+    "get_rated_pool",
+    {
+      pool_id: poolId,
+    },
+  );
+};

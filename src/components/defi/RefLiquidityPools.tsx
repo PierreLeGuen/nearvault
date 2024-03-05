@@ -9,7 +9,7 @@ import { Form } from "~/components/ui/form";
 import {
   useDepositToRefLiquidityPool,
   useGetLiquidityPoolById,
-  useGetLiquidityPools,
+  useGetRefLiquidityPools,
   useGetTokenPrices,
   type LiquidityPool,
 } from "~/hooks/defi";
@@ -36,20 +36,31 @@ export const getFormattedPoolBalance = (pool: {
   token_symbols: string[];
   id: string;
 }) => {
-  return `${pool.token_symbols.join("-")} (${pool.amounts[0]} ${
-    pool.token_symbols[0]
-  } - ${pool.amounts[1]} ${pool.token_symbols[1]}) ID: ${pool.id}`;
+  return `${pool.token_symbols.join("-")} (${Object.keys(pool.amounts)
+    .map((_, idx) => `${pool.amounts[idx]} ${pool.token_symbols[idx]}`)
+    .join(" | ")}) ID: ${pool.id}`;
 };
 
-const getUserBalanceForPool = (pool?: LiquidityPool, userTokens?: Token[]) => {
-  const tokenLeft = userTokens?.find(
-    (t) => t.account_id == pool?.token_account_ids[0],
-  );
-  const tokenRight = userTokens?.find(
-    (t) => t.account_id == pool?.token_account_ids[1],
-  );
+export const getUserBalanceForPool = (
+  pool?: LiquidityPool,
+  userTokens?: Token[],
+) => {
+  const tokens: Token[] = [];
 
-  return [tokenLeft, tokenRight];
+  if (pool && userTokens) {
+    for (let i = 0; i < pool.token_account_ids.length; i++) {
+      const token = userTokens.find(
+        (t) => t.account_id == pool.token_account_ids[i],
+      );
+      if (token) {
+        tokens.push(token);
+      } else {
+        tokens.push(undefined);
+      }
+    }
+  }
+
+  return tokens;
 };
 
 const RefLiquidityPools = () => {
@@ -61,8 +72,7 @@ const RefLiquidityPools = () => {
     },
   });
   const walletsQuery = useTeamsWalletsWithLockups();
-  const liquidityPoolsQuery = useGetLiquidityPools(
-    "REF",
+  const liquidityPoolsQuery = useGetRefLiquidityPools(
     form.watch("enableEmptyPools"),
   );
 

@@ -27,7 +27,6 @@ export const RefYourDeposits = () => {
   const withdrawQuery = useWithdrawFromRefLiquidityPool();
 
   const onSubmit = async (values: z.infer<typeof depositForm>) => {
-    console.log(values);
     const endpoint =
       "https://indexer.ref.finance/liquidity-pools/" + values.funding;
     const pools = await fetchJson<LiquidityPoolRef[]>(endpoint);
@@ -48,18 +47,15 @@ export const RefYourDeposits = () => {
 
     const sharesbn = new BigNumber(shares);
     const shares_total_supply = new BigNumber(selectedPool.shares_total_supply);
+
     // your share/shares_total_supply*token A amount*(1-slippage)
     const amounts = selectedPool.amounts.map((amount) => {
-      const amountbn = new BigNumber(amount);
-      const l = sharesbn.div(shares_total_supply);
-
-      return l
-        .multipliedBy(amountbn)
+      return sharesbn
+        .div(shares_total_supply)
+        .multipliedBy(BigNumber(amount))
         .multipliedBy(BigNumber(1).minus(BigNumber(slippage)))
         .toFixed(0);
     });
-
-    debugger;
 
     withdrawQuery.mutate({
       poolId: parseInt(values.poolId),

@@ -42,11 +42,11 @@ export interface LiquidityPool {
   token0_ref_price: string;
 }
 
-export const useGetLiquidityPools = (
-  exchange: string,
+export const useGetRefLiquidityPools = (
   includeEmptyPools: boolean,
+  poolType?: "SIMPLE_POOL" | "RATED_SWAP",
 ) => {
-  return useQuery(["liquidityPools", exchange, includeEmptyPools], async () => {
+  return useQuery(["liquidityPools", includeEmptyPools], async () => {
     const pools = await fetchJson<LiquidityPool[]>(
       "https://indexer.ref.finance/list-pools",
     );
@@ -63,33 +63,32 @@ export const useGetLiquidityPools = (
 
     console.log(ftMetadatas);
 
-    return (
-      pools
-        .filter((pool) => {
-          return includeEmptyPools || pool.tvl !== "0";
-        })
-        // .filter((pool) => {
-        //   if (includeNotOwningTokens) {
-        //     return true;
-        //   }
-        //   pool.token_account_ids.every((id) =>
-        //     tokensQuery.data.find((t) => t.account_id === id),
-        //   );
-        // })
-        .map((pool) => {
-          const amounts = pool.amounts.map((amount, i) => {
-            const accId = pool.token_account_ids[i];
-            const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
-            if (!ftMetadata) {
-              return "0";
-            }
-            const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
-            return formattedAmount.toString();
-          });
-          pool.amounts = amounts;
-          return pool;
-        })
-    );
+    return pools
+      .filter((pool) => {
+        return includeEmptyPools || pool.tvl !== "0";
+      })
+      .filter((pool) => {
+        if (!poolType) {
+          return true;
+        }
+        return pool.pool_kind === poolType;
+      })
+      .map((pool) => {
+        const amounts = pool.amounts.map((amount, i) => {
+          const accId = pool.token_account_ids[i];
+          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          if (!ftMetadata) {
+            return "0";
+          }
+          const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
+          return formattedAmount.toString();
+        });
+        pool.amounts = amounts;
+        return pool;
+      })
+      .sort((a, b) => {
+        return Number(a.id) - Number(b.id);
+      });
   });
 };
 
@@ -227,6 +226,100 @@ export const useDepositToRefLiquidityPool = () => {
         senderId: params.fundingAccId,
         receiverId: params.fundingAccId,
         actions: [addLiquidityRequest],
+      });
+    },
+  });
+};
+
+const stablePoolsRefDeposit = z.object({
+  poolId: z.number(),
+  tokens: z.array(z.string()),
+  amounts: z.array(z.string()),
+  shares: z.string(),
+  fundingAccId: z.string(),
+});
+
+export const useDepositToRefStableLiquidityPool = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async (params: z.infer<typeof stablePoolsRefDeposit>) => {
+      debugger;
+      const refAccountId = "v2.ref-finance.near";
+      const storageDepositRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "storage_deposit",
+            {
+              account_id: params.fundingAccId,
+              registration_only: false,
+            },
+            parseNearAmount("0.125"),
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [storageDepositRequest],
+      });
+
+      for (let i = 0; i < params.tokens.length; i++) {
+        if (params.amounts[i] === "0") {
+          continue;
+        }
+        const ftTransferCallRequest = transactions.functionCall(
+          "add_request",
+          addMultisigRequestAction(params.tokens[i], [
+            functionCallAction(
+              "ft_transfer_call",
+              {
+                receiver_id: refAccountId,
+                amount: params.amounts[i],
+                msg: "",
+              },
+              "1",
+              (50 * TGas).toString(),
+            ),
+          ]),
+          new BN(100 * TGas),
+          new BN("0"),
+        );
+
+        await wsStore.signAndSendTransaction({
+          senderId: params.fundingAccId,
+          receiverId: params.fundingAccId,
+          actions: [ftTransferCallRequest],
+        });
+      }
+
+      const addStableLiquidityRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "add_stable_liquidity",
+            {
+              pool_id: params.poolId,
+              amounts: params.amounts,
+              min_shares: params.shares,
+            },
+            parseNearAmount("0.01"),
+            (100 * TGas).toString(),
+          ),
+        ]),
+        new BN(200 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [addStableLiquidityRequest],
       });
     },
   });
