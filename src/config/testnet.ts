@@ -3,6 +3,7 @@ import { createKitWalletUrls } from "~/config/kitWallet";
 import { createNearBlocksUrls } from "~/config/nearBlocks";
 import { createNearBlocksApiUrls } from "~/config/nearBlocksApi";
 import { newNearNearBlocksApiNew } from "./nearBlocksApiNew";
+import { newFastNearApi } from "./fastnear";
 
 export const testnet: Config = {
   networkId: "testnet",
@@ -16,6 +17,7 @@ export const testnet: Config = {
       "https://api-testnet.nearblocks.io/v1",
     ),
     nearBlocksApiNew: newNearNearBlocksApiNew("https://api3.nearblocks.io"),
+    fastNearApi: newFastNearApi(),
   },
   accounts: {
     multisigFactory: "multisignature.testnet",

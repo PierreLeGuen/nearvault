@@ -4,6 +4,7 @@ import type { KitWalletUrls } from "~/config/kitWallet";
 import { type NearBlocksUrls } from "~/config/nearBlocks";
 import { type NearBlocksApiUrls } from "./nearBlocksApi";
 import { NearBlocksApiNewType } from "./nearBlocksApiNew";
+import { FastNearApiType } from "./fastnear";
 
 export type Config = {
   networkId: "mainnet" | "testnet";
@@ -14,6 +15,7 @@ export type Config = {
     nearBlocks: NearBlocksUrls;
     nearBlocksApi: NearBlocksApiUrls;
     nearBlocksApiNew: NearBlocksApiNewType;
+    fastNearApi: FastNearApiType;
   };
   accounts: {
     multisigFactory: string;
