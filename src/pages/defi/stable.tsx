@@ -68,21 +68,25 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
 
     let min_shares = BigNumber(0);
     for (let idx = 0; idx < values.tokens.length; idx++) {
-      const decimals = ratedPool.decimals[idx];
       // const token_amount = convertToIndivisibleFormat(
       //   values.tokens[idx].amount,
       //   decimals,
       // );
       const token_amount = BigNumber(values.tokens[idx].amount);
       console.log(token_amount.toString());
-      const l = shares_total_supply.dividedBy(sum_c_amounts);
+      let l = shares_total_supply.dividedBy(sum_c_amounts);
       console.log("div", l.toString());
+      if (l.isNaN()) {
+        l = BigNumber(1);
+      }
 
       const min_amount = l.multipliedBy(BigNumber(token_amount.toString()));
       console.log(min_amount.toString());
 
       min_shares = min_shares.plus(min_amount);
     }
+    // add slippage
+    min_shares = min_shares.multipliedBy(0.999);
     // put to indisible format
     const min_shares_bn = convertToIndivisibleFormat(min_shares.toString(), 24);
     console.log(min_shares_bn.toString());
