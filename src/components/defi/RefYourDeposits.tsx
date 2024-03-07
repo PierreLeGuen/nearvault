@@ -60,7 +60,7 @@ export const RefYourDeposits = () => {
     withdrawQuery.mutate({
       poolId: parseInt(values.poolId),
       tokens: selectedPool.token_account_ids,
-      amounts: amounts.map((a) => a.toString()),
+      minAmounts: amounts.map(() => "0"),
       shares: shares,
       fundingAccId: values.funding,
     });

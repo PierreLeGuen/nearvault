@@ -367,7 +367,7 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
 export const withdrawRef = z.object({
   poolId: z.number(),
   tokens: z.array(z.string()),
-  amounts: z.array(z.string()),
+  minAmounts: z.array(z.string()),
   shares: z.string(),
   fundingAccId: z.string(),
 });
@@ -405,7 +405,7 @@ export const useWithdrawFromRefLiquidityPool = () => {
             {
               pool_id: params.poolId,
               shares: params.shares,
-              min_amounts: params.amounts,
+              min_amounts: params.minAmounts,
             },
             "1",
             (50 * TGas).toString(),
