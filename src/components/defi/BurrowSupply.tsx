@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -150,7 +149,7 @@ const BurrowSupply = () => {
                     }}
                   />
                 </FormControl>
-                <FormDescription>Balance: {0}</FormDescription>
+                {/* <FormDescription>Balance: {0}</FormDescription> */}
                 <FormMessage />
               </FormItem>
             )}

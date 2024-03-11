@@ -3,6 +3,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { viewCall } from "./client";
 import { type FungibleTokenMetadata } from "./ft/contract";
+import { BurrowAssetConfig } from "~/hooks/defi";
 
 export const getNearTimestamp = (date: Date) => {
   return date.getTime() * 1_000_000;
@@ -66,4 +67,24 @@ export async function getFtMetadataForAccounts(accountIds: string[]) {
   });
   const ftMetadatas = (await Promise.all(promises)).filter(Boolean);
   return ftMetadatas;
+}
+
+export async function getBurrowConfigsForTokens(accountIds: string[]) {
+  const burrowAccountId = "contract.main.burrow.near";
+  const promises = accountIds.map(async (accountId) => {
+    try {
+      const res = await viewCall<BurrowAssetConfig>(
+        burrowAccountId,
+        "get_asset",
+        {
+          token_id: accountId,
+        },
+      );
+      return res;
+    } catch (e) {
+      console.log(e);
+    }
+  });
+  const res = (await Promise.all(promises)).filter(Boolean);
+  return res;
 }
