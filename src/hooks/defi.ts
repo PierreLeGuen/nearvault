@@ -547,7 +547,7 @@ export const useSupplyToBurrow = () => {
             "ft_transfer_call",
             {
               receiver_id: burrowAccountId,
-              amount: indivisibleAmount,
+              amount: indivisibleAmount.toString(),
               msg: `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${
                 params.token
               }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
