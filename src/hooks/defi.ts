@@ -641,6 +641,7 @@ export const useWithdrawSupplyFromBurrow = () => {
                     {
                       Withdraw: {
                         token_id: params.token,
+                        max_amount: indivisibleAmount.toString(),
                       },
                     },
                   ],
