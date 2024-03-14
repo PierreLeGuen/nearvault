@@ -727,8 +727,8 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
     const tokens = suppliedAndCollat.map((token) => {
       const b = BigNumber(token.balance);
       // add some slippage
-      const c = b.multipliedBy(0.999);
-      token.balance = c.toString();
+      // const c = b.multipliedBy(0.999);
+      token.balance = b.toString();
       const ftMetadata = ftMetadatas.find(
         (ft) => ft.accountId === token.token_id,
       );
