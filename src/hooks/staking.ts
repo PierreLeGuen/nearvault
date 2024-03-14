@@ -132,7 +132,6 @@ export function useAddRequestStakeToPool() {
           }
           fromAddress = selectedWallet.ownerAccountId;
         }
-        if (!wsStore.canSignForAccount(fromAddress)) return;
 
         if (selectedWallet.isLockup) {
           if (!selectedWallet.ownerAccountId) {
@@ -306,8 +305,6 @@ export function useUnstakeTransaction() {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
 
-      if (!wsStore.canSignForAccount(multisigWallet)) return;
-
       let requestReceiver = poolId;
       // If the staking was done through the lockup contract, then the request
       // should be sent to the lockup contract
@@ -355,8 +352,6 @@ export function useUnstakeAllTransaction() {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
 
-      if (!wsStore.canSignForAccount(multisigWallet)) return;
-
       let requestReceiver = poolId;
       // If the staking was done through the lockup contract, then the request
       // should be sent to the lockup contract
@@ -403,8 +398,6 @@ export function useWithdrawTransaction() {
     }) => {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
-
-      if (!wsStore.canSignForAccount(multisigWallet)) return;
 
       const yoctoAmount = parseNearAmount(amountNear);
       let requestReceiver = poolId;
@@ -467,8 +460,6 @@ export function useWithdrawAllTransaction() {
     }) => {
       const multisigWallet =
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
-
-      if (!wsStore.canSignForAccount(multisigWallet)) return;
 
       let requestReceiver = poolId;
       let methodName = "withdraw_all";

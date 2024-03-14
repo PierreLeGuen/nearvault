@@ -24,8 +24,6 @@ const Pending: NextPageWithLayout = () => {
   ) => {
     const multisigAccountId = multisigWallet.walletAddress;
 
-    if (!wsStore.canSignForAccount(multisigAccountId)) return;
-
     try {
       console.log("Approving or rejecting request", requestId, kind);
 

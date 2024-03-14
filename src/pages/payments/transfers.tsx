@@ -134,8 +134,6 @@ const TransfersPage: NextPageWithLayout = () => {
       throw new Error("Sender address not found");
     }
 
-    if (!wsStore.canSignForAccount(senderAddress)) return;
-
     console.log("senderAddress", senderAddress);
 
     try {
