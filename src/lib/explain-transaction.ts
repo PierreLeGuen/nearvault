@@ -333,16 +333,24 @@ const methodDescriptions: {
   },
 
   ft_transfer_call: {
-    getExplanation: async (args: MethodArgs, executed_from: string) => {
+    getExplanation: async (
+      args: MethodArgs,
+      contract: string,
+      from_account: string,
+      near_connection: naj.Account,
+    ) => {
+      const c = initFungibleTokenContract(near_connection, contract);
+      const metadata = await c.ft_metadata();
       const ftTransferCallParams = args as FtTransferCallParams;
       return {
-        desc: `Transfers ${
-          ftTransferCallParams.amount
-        } tokens from ${executed_from} to ${
-          ftTransferCallParams.receiver_id
-        }, and makes a contract call. Memo: ${
-          ftTransferCallParams.memo || "None"
-        }, Message: ${ftTransferCallParams.msg}`,
+        desc: `Transfers ${(
+          parseInt(ftTransferCallParams.amount) /
+          10 ** metadata.decimals
+        ).toLocaleString()} ${metadata.symbol}. ${
+          ftTransferCallParams.msg.length > 0
+            ? `Message: ${ftTransferCallParams.msg}.`
+            : ""
+        }`,
         fnReceiverId: ftTransferCallParams.receiver_id,
       };
     },
