@@ -548,11 +548,13 @@ export const useSupplyToBurrow = () => {
             {
               receiver_id: burrowAccountId,
               amount: indivisibleAmount.toString(),
-              msg: `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${
-                params.token
-              }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
-                config.config.extra_decimals,
-              )}\"}}]}}`,
+              msg: config.config.can_use_as_collateral
+                ? `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${
+                    params.token
+                  }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
+                    config.config.extra_decimals,
+                  )}\"}}]}}`
+                : "",
             },
             "1",
             (50 * TGas).toString(),
@@ -608,26 +610,48 @@ export const useWithdrawSupplyFromBurrow = () => {
         ftMetadata.decimals + config.config.extra_decimals,
       );
 
-      const ftTransferCall = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(oracle, [
-          functionCallAction(
-            "oracle_call",
-            {
-              receiver_id: burrowAccountId,
-              msg: `{"Execute":{"actions":[{"DecreaseCollateral":{"token_id":"${
-                params.token
-              }","amount":"${indivisibleAmount.toString()}"}},{"Withdraw":{"token_id":"${
-                params.token
-              }"}}]}}`,
-            },
-            "1",
-            (200 * TGas).toString(),
-          ),
-        ]),
-        new BN(300 * TGas),
-        new BN("0"),
-      );
+      const ftTransferCall = config.config.can_use_as_collateral
+        ? transactions.functionCall(
+            "add_request",
+            addMultisigRequestAction(oracle, [
+              functionCallAction(
+                "oracle_call",
+                {
+                  receiver_id: burrowAccountId,
+                  msg: `{"Execute":{"actions":[{"DecreaseCollateral":{"token_id":"${
+                    params.token
+                  }","amount":"${indivisibleAmount.toString()}"}},{"Withdraw":{"token_id":"${
+                    params.token
+                  }"}}]}}`,
+                },
+                "1",
+                (200 * TGas).toString(),
+              ),
+            ]),
+            new BN(300 * TGas),
+            new BN("0"),
+          )
+        : transactions.functionCall(
+            "add_request",
+            addMultisigRequestAction(burrowAccountId, [
+              functionCallAction(
+                "execute",
+                {
+                  actions: [
+                    {
+                      Withdraw: {
+                        token_id: params.token,
+                      },
+                    },
+                  ],
+                },
+                "1",
+                (200 * TGas).toString(),
+              ),
+            ]),
+            new BN(300 * TGas),
+            new BN("0"),
+          );
 
       await wsStore.signAndSendTransaction({
         senderId: params.funding,
@@ -671,7 +695,7 @@ type BurrowAccountInfo = {
   booster_staking: unknown;
 };
 
-export const useGetBurrowCollaterals = (accountId: string) => {
+export const useGetBurrowSuppliedTokens = (accountId: string) => {
   return useQuery(["burrowHoldings", accountId], async () => {
     const burrowAccountId = "contract.main.burrow.near";
     const holdings = await viewCall<BurrowAccountInfo>(
@@ -681,14 +705,25 @@ export const useGetBurrowCollaterals = (accountId: string) => {
         account_id: accountId,
       },
     );
-    const ftMetadatas = await getFtMetadataForAccounts(
+    let ftMetadatas = await getFtMetadataForAccounts(
       holdings.collateral.map((t) => t.token_id),
     );
-    const configs = await getBurrowConfigsForTokens(
+    let configs = await getBurrowConfigsForTokens(
       holdings.collateral.map((t) => t.token_id),
+    );
+    const ft2 = await getFtMetadataForAccounts(
+      holdings.supplied.map((t) => t.token_id),
+    );
+    const c2 = await getBurrowConfigsForTokens(
+      holdings.supplied.map((t) => t.token_id),
     );
 
-    const tokens = holdings.collateral.map((token) => {
+    ftMetadatas = ftMetadatas.concat(ft2);
+    configs = configs.concat(c2);
+
+    const suppliedAndCollat = [...holdings.supplied, ...holdings.collateral];
+
+    const tokens = suppliedAndCollat.map((token) => {
       const b = BigNumber(token.balance);
       // add some slippage
       const c = b.multipliedBy(0.999);

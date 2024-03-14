@@ -4,7 +4,7 @@ import { CheckIcon } from "@radix-ui/react-icons";
 import { type z } from "zod";
 import {
   burrowWithdrawFormSchema,
-  useGetBurrowCollaterals,
+  useGetBurrowSuppliedTokens,
   useWithdrawSupplyFromBurrow,
 } from "~/hooks/defi";
 import { useZodForm } from "~/hooks/form";
@@ -37,7 +37,9 @@ const BurrowWithdraw = () => {
   const currentToken = form.watch("token");
 
   const walletsQuery = useTeamsWalletsWithLockups();
-  const burrowCollateralsQuery = useGetBurrowCollaterals(form.watch("funding"));
+  const burrowCollateralsQuery = useGetBurrowSuppliedTokens(
+    form.watch("funding"),
+  );
   const withdrawMutation = useWithdrawSupplyFromBurrow();
   const currentCollateral =
     currentToken && burrowCollateralsQuery.data
