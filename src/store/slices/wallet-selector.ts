@@ -54,6 +54,7 @@ export interface WsState {
 interface WsActions {
   getAndIncreaseUniqueNonce: () => number;
   addAccounts: (accounts: PkAndAccounts, sources: PkAndSources) => void;
+  refreshAccounts: () => Promise<void>;
   removeKey: (pk: PublicKeyStr) => void;
   signWithLedger: (
     tx: Transaction,
@@ -85,7 +86,7 @@ interface WsActions {
     actions: Action[];
   }) => Promise<void>;
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
-  canSignForAccount: (accountId: AccountId) => boolean;
+  canSignForAccount: (accountId: AccountId) => Promise<boolean>;
   getPublicKeysForAccount: (accountId: AccountId) => PublicKeyStr[];
 }
 
@@ -149,6 +150,17 @@ export const createWalletTerminator: StateCreator<
       accounts: get().keysToAccounts,
       sources: get().sources,
     });
+  },
+  refreshAccounts: async () => {
+    const keys = Object.keys(get().keysToAccounts);
+    const resPromises = keys.map(async (pk) => {
+      const accounts = await getAccountsForPublicKey(pk);
+      const filteredAccounts = await filterMultisig(accounts);
+      const pkToAccounts = { [pk]: filteredAccounts };
+      get().addAccounts(pkToAccounts, {});
+    });
+    const res = await Promise.all(resPromises);
+    console.log("refreshAccounts", res);
   },
   removeKey: (pk: PublicKeyStr) => {
     const accounts = get().keysToAccounts;
@@ -299,7 +311,7 @@ export const createWalletTerminator: StateCreator<
     console.log("signAndSendTransaction", params);
     try {
       // find a pk that can be used to sign for the senderId
-      get().canSignForAccount(params.senderId);
+      await get().canSignForAccount(params.senderId);
 
       let publicKeyForTxn = "";
       for (const pk in get().keysToAccounts) {
@@ -383,12 +395,22 @@ export const createWalletTerminator: StateCreator<
 
     window.location.assign(signUrl);
   },
-  canSignForAccount: (accountId: AccountId) => {
+  canSignForAccount: async (accountId: AccountId) => {
     const pkAndAccounts = get().keysToAccounts;
 
-    const can = Object.keys(pkAndAccounts).some((pk) =>
-      pkAndAccounts[pk].includes(accountId),
-    );
+    // If the account is not found, try to refresh the accounts
+    // and try again. Max 2 executions.
+    let can = false;
+    for (let i = 0; i < 2; i++) {
+      can = Object.keys(pkAndAccounts).some((pk) =>
+        pkAndAccounts[pk].includes(accountId),
+      );
+      if (can) {
+        break;
+      }
+      await get().refreshAccounts();
+    }
+
     if (!can) {
       toast.error(
         `You need to connect ${accountId} before performing this action`,
