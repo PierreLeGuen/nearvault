@@ -173,7 +173,7 @@ const TransfersPage: NextPageWithLayout = () => {
               method: "add_request",
               args: {
                 request: {
-                  receiver_id: receiver.walletAddress,
+                  receiver_id: lockupAddress,
                   actions: [
                     {
                       type: "FunctionCall",
