@@ -45,7 +45,6 @@ export const RequestColumn = ({
       <Button
         className="bg-green-500 hover:bg-green-400"
         size="icon"
-        disabled={!query.data?.length}
         onClick={approve}
       >
         <CheckIcon className="h-5 w-5 text-white" />
