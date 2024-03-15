@@ -63,24 +63,30 @@ const Pending: NextPageWithLayout = () => {
   return (
     <ContentCentered className="px-12 py-10 lg:px-12">
       <HeaderTitle level="h1" text="Pending requests" />
-      {Array.from(query.data)
-        .sort((a, b) => a[0].walletAddress.localeCompare(b[0].walletAddress))
-        .map(([wallet, _requests], idx) =>
-          _requests.length === 0 ? null : (
-            <div key={wallet.id + idx} className="mb-2 border-gray-200 ">
-              <h2 className="text-md mb-1 font-bold">
-                Wallet ID: {wallet.walletAddress}
-              </h2>
-              <div>
-                <RequestsTable
-                  data={_requests}
-                  wallet={wallet}
-                  approveRejectFn={approveOrRejectRequest}
-                />
+      {query.isError && (
+        <p>
+          Error loading pending requests, error: {JSON.stringify(query.error)}
+        </p>
+      )}
+      {query.data &&
+        Array.from(query.data)
+          .sort((a, b) => a[0].walletAddress.localeCompare(b[0].walletAddress))
+          .map(([wallet, _requests], idx) =>
+            _requests.length === 0 ? null : (
+              <div key={wallet.id + idx} className="mb-2 border-gray-200 ">
+                <h2 className="text-md mb-1 font-bold">
+                  Wallet ID: {wallet.walletAddress}
+                </h2>
+                <div>
+                  <RequestsTable
+                    data={_requests}
+                    wallet={wallet}
+                    approveRejectFn={approveOrRejectRequest}
+                  />
+                </div>
               </div>
-            </div>
-          ),
-        )}
+            ),
+          )}
     </ContentCentered>
   );
 };
