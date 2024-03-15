@@ -69,8 +69,15 @@ export const getAccountsForPublicKey = async (
   publicKey: string,
 ): Promise<string[]> => {
   const accounts = await config.urls.fastNearApi.getAccountsForKey(publicKey);
+  const accountsNb =
+    await config.urls.nearBlocksApiNew.getAccountsForPublicKey(publicKey);
 
-  return accounts.account_ids;
+  const uniqueAccounts = new Set([
+    ...accounts.account_ids,
+    ...accountsNb.keys.flatMap((k) => k.account_id),
+  ]);
+
+  return [...uniqueAccounts];
 };
 
 export const filterMultisig = async (accountIds: string[]) => {
