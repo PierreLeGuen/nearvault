@@ -43,6 +43,7 @@ import {
   useListAddressBook,
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
+import { useCheckTransferVote } from "~/hooks/transfers";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
 import { cn } from "~/lib/utils";
@@ -82,6 +83,8 @@ const TransfersPage: NextPageWithLayout = () => {
 
   const watchedSender = form.watch("fromWallet");
   const watchedToken = form.watch("token");
+
+  const checkTransferVoteMut = useCheckTransferVote();
 
   const { data: senderWallets, isLoading } = useTeamsWalletsWithLockups();
 
@@ -154,32 +157,11 @@ const TransfersPage: NextPageWithLayout = () => {
             await lockupContract.are_transfers_enabled();
 
           if (!areTransfersEnabled) {
-            transactions.push({
-              senderId: senderAddress,
-              receiverId: senderAddress,
-              actions: [
-                {
-                  type: "FunctionCall",
-                  method: "add_request",
-                  args: {
-                    request: {
-                      receiver_id: lockupAddress,
-                      actions: [
-                        {
-                          type: "FunctionCall",
-                          method_name: "check_transfers_vote",
-                          args: btoa(JSON.stringify({})),
-                          gas: "125000000000000",
-                          deposit: "0",
-                        },
-                      ],
-                    },
-                  },
-                  tGas: 300,
-                },
-              ],
-            });
             toast.error("Transfers are disabled for this lockup");
+            await checkTransferVoteMut.mutateAsync({
+              lockupAddress,
+              fundingAccId: senderAddress,
+            });
             return;
           }
 
