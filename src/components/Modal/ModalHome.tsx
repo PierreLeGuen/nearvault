@@ -14,6 +14,7 @@ import { DerivationPathInput } from "../inputs/derivation";
 import { TextInput } from "../inputs/text";
 import { Button } from "../ui/button";
 import { Form } from "../ui/form";
+import { ScrollArea } from "../ui/scroll-area";
 
 const Default = () => {
   const wsStore = useWalletTerminator();
@@ -188,11 +189,13 @@ const SharePublicKeySuccess = () => {
       <p className="break-word break-alls">
         Found the following accounts associated to the key: {wsStore.sharedPk}.
       </p>
-      <ul className="flex list-inside list-disc flex-col gap-2">
-        {wsStore.discoveredAccounts.map((account) => (
-          <li key={account}>{account}</li>
-        ))}
-      </ul>
+      <ScrollArea className="h-72">
+        <ul className="flex list-inside list-disc flex-col gap-2">
+          {wsStore.discoveredAccounts.map((account) => (
+            <li key={account}>{account}</li>
+          ))}
+        </ul>
+      </ScrollArea>
       {wsStore.discoveredAccounts.length === 0 && (
         <p className="text-red-500">
           No multisig accounts found for this public key.
@@ -276,28 +279,31 @@ const CurrentlyImportedKeys = () => {
   return (
     <>
       <strong>Currently imported keys:</strong>
-      {Object.keys(wsStore.keysToAccounts).map((pubK) => {
-        return (
-          <div key={pubK} className="flex flex-col gap-2">
-            <p>
-              <strong>{pubK}</strong>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  wsStore.removeKey(pubK);
-                }}
-              >
-                Forget key
-              </Button>
-            </p>
-            <ul className="flex list-inside list-disc flex-col gap-2">
-              {wsStore.keysToAccounts[pubK].map((account) => (
-                <li key={account}>{account}</li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+      <ScrollArea className="h-72">
+        {Object.keys(wsStore.keysToAccounts).map((pubK) => {
+          return (
+            <div key={pubK} className="flex flex-col gap-2">
+              <p>
+                <strong>{pubK}</strong>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    wsStore.removeKey(pubK);
+                  }}
+                >
+                  Forget key
+                </Button>
+              </p>
+              <ul className="flex list-inside list-disc flex-col gap-2">
+                {wsStore.keysToAccounts[pubK].map((account) => (
+                  <li key={account}>{account}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </ScrollArea>
+
       <Button onClick={wsStore.goHome} variant="outline">
         Go back
       </Button>
