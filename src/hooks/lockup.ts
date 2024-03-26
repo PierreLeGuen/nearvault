@@ -238,7 +238,7 @@ export const useTerminationWithdraw = () => {
 
       const withdrawAction = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(config.accounts.lockupFactoryFoundation, [
+        addMultisigRequestAction(lockupAccountId, [
           functionCallAction(
             "termination_withdraw",
             { receiver_id: multisigAccId },
