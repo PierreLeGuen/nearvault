@@ -157,7 +157,9 @@ const TransfersPage: NextPageWithLayout = () => {
             await lockupContract.are_transfers_enabled();
 
           if (!areTransfersEnabled) {
-            toast.error("Transfers are disabled for this lockup");
+            toast.error(
+              "Transfers are disabled for this lockup, add and approve the following request to enable transfers from this lockup.",
+            );
             await checkTransferVoteMut.mutateAsync({
               lockupAddress,
               fundingAccId: senderAddress,
