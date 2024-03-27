@@ -1,9 +1,22 @@
-import { FC, type ReactNode } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { type FC, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar/Sidebar";
 
 const SidebarLayout: FC<{
   children: ReactNode;
 }> = ({ children }) => {
+  const session = useSession();
+  const router = useRouter();
+
+  if (session.status == "loading") {
+    return <div>Loading...</div>;
+  }
+  if (!session.data) {
+    router.push("/auth/signin").catch(console.error);
+    return null;
+  }
+
   return (
     <div className="relative flex min-h-screen flex-row overflow-visible">
       <Sidebar />
