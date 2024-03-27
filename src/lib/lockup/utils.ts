@@ -268,11 +268,15 @@ export function findProperVestingSchedule({
 
     for (let timezone = -12; timezone <= 12; timezone += 1) {
       const lockupVestingStartDateCopy = new Date(start);
-      lockupVestingStartDateCopy.setHours(start.getHours() + timezone);
+      lockupVestingStartDateCopy.setHours(
+        new Date(start).getHours() + timezone,
+      );
       const lockupVestingEndDateCopy = new Date(end);
-      lockupVestingEndDateCopy.setHours(end.getHours() + timezone);
+      lockupVestingEndDateCopy.setHours(new Date(end).getHours() + timezone);
       const lockupVestingCliffDateCopy = new Date(cliff);
-      lockupVestingCliffDateCopy.setHours(cliff.getHours() + timezone);
+      lockupVestingCliffDateCopy.setHours(
+        new Date(cliff).getHours() + timezone,
+      );
       const { vestingSchedule, salt, vestingHash } = computeVestingSchedule(
         authToken,
         lockupOwnerInput,
