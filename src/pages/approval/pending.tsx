@@ -5,14 +5,11 @@ import { RequestsTable } from "~/components/approval/pending/RequestsTable/Reque
 import HeaderTitle from "~/components/ui/header";
 import { useConfirmRequest, useDeleteRequest } from "~/hooks/manage";
 import { useGetMultisigRequestRowsForTeam } from "~/hooks/multisig";
-import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { type NextPageWithLayout } from "../_app";
 
 export type ApproveOrReject = "approve" | "reject";
 
 const Pending: NextPageWithLayout = () => {
-  const wsStore = useWalletTerminator();
-
   const confirmRequest = useConfirmRequest();
   const deleteRequest = useDeleteRequest();
   const query = useGetMultisigRequestRowsForTeam();
