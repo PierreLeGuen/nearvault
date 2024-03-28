@@ -123,7 +123,7 @@ export const useTerminationPrepareToWithdraw = () => {
 
       const prepareToWithdrawAction = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(config.accounts.lockupFactoryFoundation, [
+        addMultisigRequestAction(lockupAccountId, [
           functionCallAction(
             "termination_prepare_to_withdraw",
             {},
