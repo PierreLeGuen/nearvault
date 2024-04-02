@@ -59,8 +59,8 @@ export const WalletSelectorContextProvider: React.FC<{
       modules: [
         setupLedger(),
         setupMyNearWallet({
-          successUrl: "http://localhost:3000/welcome/setup",
-          failureUrl: "http://localhost:3000/welcome/setup",
+          successUrl: `${window.location.origin}/welcome/setup`,
+          failureUrl: `${window.location.origin}/welcome/setup`,
         }),
       ],
     });
