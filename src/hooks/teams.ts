@@ -115,8 +115,10 @@ export function useGetTokensForWallet(walletId: string) {
       const fndata =
         (await config.urls.fastNearApi.getTokensForAccount(walletId))
           .contract_ids || [];
-      fndata.push("aurora"); // indexers does not return aurora token...
-      const data = [...new Set([...nbdata, ...fndata])];
+      const psdata = (
+        await config.urls.pikespeakApi.getTokensForAccount(walletId)
+      ).flatMap((w) => w.contract);
+      const data = [...new Set([...nbdata, ...fndata, ...psdata])];
 
       console.log(data);
 

@@ -4,6 +4,7 @@ import { createNearBlocksUrls } from "~/config/nearBlocks";
 import { createNearBlocksApiUrls } from "~/config/nearBlocksApi";
 import { newNearNearBlocksApiNew } from "./nearBlocksApiNew";
 import { newFastNearApi } from "./fastnear";
+import { newPikeSpeakApi } from "./pikespeak";
 
 export const testnet: Config = {
   networkId: "testnet",
@@ -18,6 +19,7 @@ export const testnet: Config = {
     ),
     nearBlocksApiNew: newNearNearBlocksApiNew("https://api3.nearblocks.io"),
     fastNearApi: newFastNearApi(),
+    pikespeakApi: newPikeSpeakApi(),
   },
   accounts: {
     multisigFactory: "multisignature.testnet",

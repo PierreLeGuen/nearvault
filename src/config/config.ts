@@ -3,8 +3,9 @@ import { testnet } from "~/config/testnet";
 import type { KitWalletUrls } from "~/config/kitWallet";
 import { type NearBlocksUrls } from "~/config/nearBlocks";
 import { type NearBlocksApiUrls } from "./nearBlocksApi";
-import { NearBlocksApiNewType } from "./nearBlocksApiNew";
-import { FastNearApiType } from "./fastnear";
+import { type NearBlocksApiNewType } from "./nearBlocksApiNew";
+import { type FastNearApiType } from "./fastnear";
+import { type PikeSpeakApiType } from "./pikespeak";
 
 export type Config = {
   networkId: "mainnet" | "testnet";
@@ -16,6 +17,7 @@ export type Config = {
     nearBlocksApi: NearBlocksApiUrls;
     nearBlocksApiNew: NearBlocksApiNewType;
     fastNearApi: FastNearApiType;
+    pikespeakApi: PikeSpeakApiType;
   };
   accounts: {
     multisigFactory: string;
