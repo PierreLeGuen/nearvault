@@ -192,9 +192,9 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
         }
       };
 
-      return (await Promise.all(promises.concat(nearPromise())))
-        .filter((t) => !!t)
-        .filter((t) => t.balance !== "0");
+      return (await Promise.all(promises.concat(nearPromise()))).filter(
+        (t) => !!t,
+      );
     },
     enabled: !!data,
   });
