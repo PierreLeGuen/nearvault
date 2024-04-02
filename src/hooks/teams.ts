@@ -109,12 +109,14 @@ export function useGetTokensForWallet(walletId: string) {
       // const data = await fetchJson<LikelyTokens>(
       //   config.urls.kitWallet.likelyTokens(walletId),
       // );
-      // const data =
-      //   await config.urls.nearBlocksApiNew.getTokensForAccount(walletId);
-      const data =
+      const nbdata = (
+        await config.urls.nearBlocksApiNew.getTokensForAccount(walletId)
+      ).tokens.fts;
+      const fndata =
         (await config.urls.fastNearApi.getTokensForAccount(walletId))
           .contract_ids || [];
-      data.push("aurora"); // indexers does not return aurora token...
+      fndata.push("aurora"); // indexers does not return aurora token...
+      const data = [...new Set([...nbdata, ...fndata])];
 
       console.log(data);
 
