@@ -14,9 +14,10 @@ export const newFastNearApi = () => {
       );
     },
     getTokensForAccount: async (accountId: string) => {
-      return await fetchJson<{ tokens: string[] }>(
-        `https://api.fastnear.com/v0/account/${accountId}/ft`,
-      );
+      return await fetchJson<{
+        account_id: string;
+        contract_ids: string[];
+      }>(`https://api.fastnear.com/v0/account/${accountId}/ft`);
     },
     getStakingDeposits: async (accountId: string) => {
       return await fetchJson<{ deposits: string[] }>(

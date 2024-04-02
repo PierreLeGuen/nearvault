@@ -109,9 +109,15 @@ export function useGetTokensForWallet(walletId: string) {
       // const data = await fetchJson<LikelyTokens>(
       //   config.urls.kitWallet.likelyTokens(walletId),
       // );
+      // const data =
+      //   await config.urls.nearBlocksApiNew.getTokensForAccount(walletId);
       const data =
-        await config.urls.nearBlocksApiNew.getTokensForAccount(walletId);
+        (await config.urls.fastNearApi.getTokensForAccount(walletId))
+          .contract_ids || [];
+      data.push("aurora"); // indexers does not return aurora token...
+
       console.log(data);
+
       return data;
     },
     enabled: !!walletId,
@@ -142,9 +148,9 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
   const { data } = useGetTokensForWallet(walletId);
 
   return useQuery({
-    queryKey: ["tokensWithBalances", walletId, data?.tokens],
+    queryKey: ["tokensWithBalances", walletId, data],
     queryFn: async () => {
-      const tokAddrs = data.tokens.fts || [];
+      const tokAddrs = data || [];
 
       const promises = tokAddrs.map(async (token) => {
         const near = await newNearConnection();
@@ -186,9 +192,9 @@ export function useGetAllTokensWithBalanceForWallet(walletId: string) {
         }
       };
 
-      return (await Promise.all(promises.concat(nearPromise()))).filter(
-        (t) => !!t,
-      );
+      return (await Promise.all(promises.concat(nearPromise())))
+        .filter((t) => !!t)
+        .filter((t) => t.balance !== "0");
     },
     enabled: !!data,
   });
