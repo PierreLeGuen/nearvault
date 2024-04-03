@@ -18,12 +18,26 @@ export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
 }
 
+export function useAddBeneficiary() {
+  const view = useListAddressBook();
+  return api.teams.addBeneficiaryForTeam.useMutation({
+    onSuccess: async () => {
+      await view.refetch();
+    },
+  });
+}
+
 export function useListInvitations() {
   return api.teams.getPendingInvitationsForUser.useQuery();
 }
 
 export function useAcceptOrRejectInvitation() {
-  return api.teams.acceptOrRejectInvitation.useMutation();
+  const view = useListInvitations();
+  return api.teams.acceptOrRejectInvitation.useMutation({
+    onSuccess: async () => {
+      await view.refetch();
+    },
+  });
 }
 
 export function useRemoveInvitation() {

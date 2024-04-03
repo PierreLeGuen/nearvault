@@ -28,7 +28,6 @@ export const PendingInvitations = ({
       invitationId: invitation.id,
       status: status,
     });
-    await invitationsQuery.refetch();
 
     callback(invitation, status);
   };

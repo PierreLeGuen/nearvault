@@ -29,8 +29,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useGetCurrentTeam, useListAddressBook } from "~/hooks/teams";
-import { api } from "~/lib/api";
+import { useAddBeneficiary, useGetCurrentTeam } from "~/hooks/teams";
 
 const formSchema = z.object({
   identifier: z.string().min(2).max(50),
@@ -40,7 +39,7 @@ const formSchema = z.object({
 export const AddDialog = () => {
   const [submitMessage, setSubmitMessage] = useState("");
   const currentTeamQuery = useGetCurrentTeam();
-  const addMut = api.teams.addBeneficiaryForTeam.useMutation();
+  const addBenefMut = useAddBeneficiary();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,30 +49,13 @@ export const AddDialog = () => {
     },
   });
 
-  const createBeneficiary = async ({
-    identifier,
-    accountId,
-  }: {
-    identifier: string;
-    accountId: string;
-  }) => {
-    await addMut.mutateAsync({
-      firstName: identifier,
-      lastName: "",
-      walletAddress: accountId,
-      teamId: currentTeamQuery.data.id,
-    });
-
-    await refetchBook();
-  };
-
-  const { refetch: refetchBook } = useListAddressBook();
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await createBeneficiary({
-        identifier: values.identifier,
-        accountId: values.accountId,
+      await addBenefMut.mutateAsync({
+        firstName: values.identifier,
+        lastName: "",
+        walletAddress: values.accountId,
+        teamId: currentTeamQuery.data.id,
       });
       setSubmitMessage("Beneficiary created successfully!");
     } catch (error) {
@@ -138,7 +120,9 @@ export const AddDialog = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit">Create Beneficiary</Button>
+            <Button type="submit" disabled={addBenefMut.isLoading}>
+              Create Beneficiary
+            </Button>
             {submitMessage && <FormMessage>{submitMessage}</FormMessage>}
           </form>
         </Form>
