@@ -35,7 +35,7 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
   };
 
   const stepDone = (step) => {
-    return step === 0 ? !!teamCreated : true;
+    return step === 1 ? !!teamCreated : true;
   };
 
   const isLastStep = () => {
@@ -60,17 +60,18 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
     <div className="flex h-screen flex-1 flex-col items-center justify-center">
       <div className="flex w-[700px] flex-col gap-3">
         <CreateMultisigWalletCard
-          className={step !== 1 ? "hidden" : ""}
+          className={step === 0 ? "" : "hidden"}
           onMultisigCreateSuccess={setMultisigWalletCreated}
         />
-        <div className={cn("flex flex-col gap-2", step !== 0 ? "hidden" : "")}>
+
+        <div className={cn("flex flex-col gap-2", step === 1 ? "" : "hidden")}>
           <PendingInvitations callback={teamInvitationCallback} />
           <CreateTeamCard
             onTeamCreated={setTeamCreated}
             defaultValues={{
               name: `My Awesome Team`,
               members: [email],
-              wallets: [""],
+              wallets: [(multisigWalletCreated as string) || ""],
             }}
           />
         </div>
