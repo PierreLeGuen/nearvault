@@ -3,3 +3,7 @@
 * [Onboarding](README.md)
 * [Connect your key](connect-key.md)
 * [Ledger error 0x6990](ledger-error-0x6990.md)
+
+## 🚀 introduction
+
+* [Welcome to Nearvault](introduction/welcome-to-nearvault.md)
