@@ -1,9 +1,14 @@
 # Table of contents
 
-* [Onboarding](README.md)
-* [Connect your key](connect-key.md)
-* [Ledger error 0x6990](ledger-error-0x6990.md)
-
 ## 🚀 introduction
 
-* [Welcome to Nearvault](introduction/welcome-to-nearvault.md)
+* [Welcome to Nearvault](README.md)
+
+## 🥳 Getting Started
+
+* [Onboarding](getting-started/readme.md)
+* [Connect your key](getting-started/connect-key.md)
+
+## 📢 Frequently Asked Questions
+
+* [Ledger error 0x6990](frequently-asked-questions/ledger-error-0x6990.md)
