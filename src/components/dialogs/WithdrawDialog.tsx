@@ -89,7 +89,7 @@ export function WithdrawDialog(props: {
             <span className="inline-flex gap-2">
               <Button type="submit">Withdraw</Button>
               <Button type="button" variant="outline" onClick={onWithdrawAll}>
-                Unstake all tokens
+                Withdraw all tokens
               </Button>
             </span>
             {withdrawTxn.isError && (

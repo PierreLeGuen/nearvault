@@ -462,7 +462,6 @@ export function useWithdrawAllTransaction() {
         wallet.ownerAccountId ?? wallet.walletDetails.walletAddress;
 
       let requestReceiver = poolId;
-      let methodName = "withdraw_all";
 
       // let deselectAction = undefined;
 
@@ -470,40 +469,70 @@ export function useWithdrawAllTransaction() {
       // should be sent to the lockup contract
       if (wallet.isLockup) {
         requestReceiver = wallet.walletDetails.walletAddress;
-        methodName = "withdraw_all_from_staking_pool";
 
-        // TODO(fix): needs to be done in a seperate transaction
-        // if (yoctoAmount === maxAmountYocto) {
-        //   deselectAction = {
-        //     type: "FunctionCall",
-        //     method_name: "unselect_staking_pool",
-        //     args: btoa(JSON.stringify({})),
-        //     deposit: parseNearAmount("0"),
-        //     gas: "150000000000000",
-        //   };
-        // }
+        const withdrawAll = transactions.functionCall(
+          "add_request",
+          addMultisigRequestAction(requestReceiver, [
+            {
+              type: "FunctionCall",
+              method_name: "withdraw_all_from_staking_pool",
+              args: btoa(JSON.stringify({})),
+              deposit: parseNearAmount("0"),
+              gas: (200 * TGas).toString(),
+            },
+          ]),
+          new BN(300 * TGas),
+          new BN("0"),
+        );
+
+        await wsStore.signAndSendTransaction({
+          senderId: multisigWallet,
+          receiverId: multisigWallet,
+          actions: [withdrawAll],
+        });
+
+        const unselectAction = transactions.functionCall(
+          "add_request",
+          addMultisigRequestAction(requestReceiver, [
+            {
+              type: "FunctionCall",
+              method_name: "unselect_staking_pool",
+              args: btoa(JSON.stringify({})),
+              deposit: parseNearAmount("0"),
+              gas: (200 * TGas).toString(),
+            },
+          ]),
+          new BN(300 * TGas),
+          new BN("0"),
+        );
+
+        await wsStore.signAndSendTransaction({
+          senderId: multisigWallet,
+          receiverId: multisigWallet,
+          actions: [unselectAction],
+        });
+      } else {
+        const addRequestAction = transactions.functionCall(
+          "add_request",
+          addMultisigRequestAction(requestReceiver, [
+            {
+              type: "FunctionCall",
+              method_name: "withdraw_all",
+              args: btoa(JSON.stringify({})),
+              deposit: parseNearAmount("0"),
+              gas: (200 * TGas).toString(),
+            },
+          ]),
+          new BN(300 * TGas),
+          new BN("0"),
+        );
+
+        await wsStore.signAndSendTransaction({
+          senderId: multisigWallet,
+          receiverId: multisigWallet,
+          actions: [addRequestAction],
+        });
       }
-
-      const addRequestAction = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(requestReceiver, [
-          {
-            type: "FunctionCall",
-            method_name: methodName,
-            args: btoa(JSON.stringify({})),
-            deposit: parseNearAmount("0"),
-            gas: (200 * TGas).toString(),
-          },
-        ]),
-        new BN(300 * TGas),
-        new BN("0"),
-      );
-
-      await wsStore.signAndSendTransaction({
-        senderId: multisigWallet,
-        receiverId: multisigWallet,
-        actions: [addRequestAction],
-      });
     },
   });
 }
