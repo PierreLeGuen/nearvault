@@ -277,7 +277,10 @@ export function useGetStakingDetailsForWallets() {
               stakedPools,
             };
           } else {
-            console.log("No staked pools found for wallet", wallet);
+            console.log(
+              "No staked pools found for wallet",
+              wallet.walletDetails.walletAddress,
+            );
           }
         } catch (e) {
           console.error(e);

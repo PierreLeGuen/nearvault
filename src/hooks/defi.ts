@@ -96,6 +96,58 @@ export const useGetRefLiquidityPools = (
       });
   });
 };
+export const useGetPoolsForToken = (tokenId: string) => {
+  return useQuery(["poolsForToken", tokenId], async () => {
+    const pools = await fetchJson<LiquidityPool[]>(
+      "https://indexer.ref.finance/list-pools",
+    );
+    const tokenAccountIds = [
+      ...new Set(
+        pools.flatMap((pool) => {
+          return pool.token_account_ids;
+        }),
+      ),
+    ];
+    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds);
+
+    const accountIdToSymbol: Record<string, string> = {};
+    ftMetadatas.forEach((ftMetadata) => {
+      accountIdToSymbol[ftMetadata.accountId] = ftMetadata.symbol;
+    });
+
+    const filteredPools = pools
+      .filter((pool) => {
+        return pool.token_account_ids.includes(tokenId);
+      })
+      .map((pool) => {
+        const amounts = pool.amounts.map((amount, i) => {
+          const accId = pool.token_account_ids[i];
+          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          if (!ftMetadata) {
+            return "0";
+          }
+          const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
+          return formattedAmount.toString();
+        });
+        pool.amounts = amounts;
+        pool.token_account_ids = pool.token_account_ids.filter(
+          (id) => id !== tokenId,
+        );
+        pool.token_symbols = pool.token_symbols.filter(
+          (symbol) => symbol !== tokenId,
+        );
+        return pool;
+      })
+      .sort((a, b) => {
+        return Number(a.id) - Number(b.id);
+      });
+
+    return {
+      pools: filteredPools,
+      accountIdToSymbol,
+    };
+  });
+};
 
 export const useGetLiquidityPoolById = (poolId?: string) => {
   return useQuery(
@@ -741,5 +793,48 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
     });
 
     return tokens;
+  });
+};
+
+type SwapParams = {
+  fundingAccId: string;
+  outAccId: string;
+  inAccId: string;
+  outAmount: string;
+  minInAmount: string;
+  poolId: string;
+};
+
+export const useRefSwap = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async (params: SwapParams) => {
+      const refAccountId = "v2.ref-finance.near";
+
+      const ftTransferCallRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(params.outAccId, [
+          functionCallAction(
+            "ft_transfer_call",
+            {
+              receiver_id: refAccountId,
+              amount: params.outAmount,
+              msg: `{"force":0,"actions":[{"pool_id":${params.poolId},"token_in":"${params.outAccId}","token_out":"${params.inAccId}","amount_in":"${params.outAmount}","min_amount_out":"${params.minInAmount}"}]}`,
+            },
+            "1",
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [ftTransferCallRequest],
+      });
+    },
   });
 };

@@ -46,6 +46,7 @@ export function TokenWithMaxInput<
               <Button
                 type="button"
                 className="rounded-l-none"
+                disabled={props.disabled}
                 onClick={() => {
                   field.onChange(
                     (
