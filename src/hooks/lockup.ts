@@ -35,6 +35,13 @@ export const functionCallAction = (
   };
 };
 
+export const transferAction = (amount: string) => {
+  return {
+    type: "Transfer",
+    amount: amount,
+  };
+};
+
 // Vesting schedule that can be cancelled
 const getCreateVestingScheduleArgs = (params: CreateLockup) => {
   const defaultArgs = {

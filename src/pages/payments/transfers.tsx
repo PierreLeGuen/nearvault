@@ -43,12 +43,17 @@ import {
   useListAddressBook,
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
-import { useCheckTransferVote } from "~/hooks/transfers";
+import {
+  useCheckTransferVote,
+  useFtTransfer,
+  useLockupTransfer,
+  useNearTransfer,
+  useStorageDeposit,
+} from "~/hooks/transfers";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
 import { cn } from "~/lib/utils";
 import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
-import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
@@ -68,8 +73,6 @@ const TransfersPage: NextPageWithLayout = () => {
   const { newNearConnection } = usePersistingStore();
   const [formattedBalance, setFormattedBalance] = useState<string>("");
 
-  const wsStore = useWalletTerminator();
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -85,6 +88,10 @@ const TransfersPage: NextPageWithLayout = () => {
   const watchedToken = form.watch("token");
 
   const checkTransferVoteMut = useCheckTransferVote();
+  const storageDepositMut = useStorageDeposit();
+  const ftTransferMut = useFtTransfer();
+  const lockupTransferMut = useLockupTransfer();
+  const nearTransferMut = useNearTransfer();
 
   const { data: senderWallets, isLoading } = useTeamsWalletsWithLockups();
 
@@ -140,8 +147,6 @@ const TransfersPage: NextPageWithLayout = () => {
     console.log("senderAddress", senderAddress);
 
     try {
-      const transactions: any[] = [];
-
       if (token.account_id === "near") {
         const yoctoAmount = parseNearAmount(amount.toString());
         const near = await newNearConnection();
@@ -167,95 +172,39 @@ const TransfersPage: NextPageWithLayout = () => {
             return;
           }
 
-          transactions.push({
-            senderId: senderAddress,
-            receiverId: senderAddress,
-            action: {
-              type: "FunctionCall",
-              method: "add_request",
-              args: {
-                request: {
-                  receiver_id: lockupAddress,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "transfer",
-                      args: btoa(
-                        JSON.stringify({
-                          receiver_id: receiver.walletAddress,
-                          amount: yoctoAmount,
-                        }),
-                      ),
-                      gas: "125000000000000",
-                      deposit: "0",
-                    },
-                  ],
-                },
-              },
-              tGas: 300,
-            },
+          await lockupTransferMut.mutateAsync({
+            fundingAccId: senderAddress,
+            lockupAddress: lockupAddress,
+            receiverAddress: receiver.walletAddress,
+            indivAmount: yoctoAmount,
           });
         } else {
           // from multisig wallet
-          transactions.push({
-            senderId: senderAddress,
-            receiverId: senderAddress,
-            action: {
-              type: "FunctionCall",
-              method: "add_request",
-              args: {
-                request: {
-                  receiver_id: receiver.walletAddress,
-                  actions: [
-                    {
-                      type: "Transfer",
-                      amount: yoctoAmount,
-                    },
-                  ],
-                },
-              },
-              tGas: 300,
-            },
+          await nearTransferMut.mutateAsync({
+            fundingAccId: senderAddress,
+            receiverAddress: receiver.walletAddress,
+            indivAmount: yoctoAmount,
           });
         }
       } else {
         // NEP-141 tokens
-        const ftTransferArgs = {
-          receiver_id: receiver.walletAddress,
-          amount: convertDecimalToBN(amount, token.decimals),
-        };
-
         if (lockupAddress) {
           toast.error("Lockup NEP-141 transfers not supported yet");
         } else {
-          transactions.push({
-            senderId: senderAddress,
-            receiverId: senderAddress,
-            action: {
-              type: "FunctionCall",
-              method: "add_request",
-              args: {
-                request: {
-                  receiver_id: token.account_id,
-                  actions: [
-                    {
-                      type: "FunctionCall",
-                      method_name: "ft_transfer",
-                      args: btoa(JSON.stringify(ftTransferArgs)),
-                      deposit: "1",
-                      gas: "200000000000000",
-                    },
-                  ],
-                },
-              },
-              tGas: 300,
-            },
+          await storageDepositMut.mutateAsync({
+            fundingAccId: senderAddress,
+            tokenAddress: token.account_id,
+            receiverAddress: receiver.walletAddress,
+          });
+
+          await ftTransferMut.mutateAsync({
+            fundingAccId: senderAddress,
+            tokenAddress: token.account_id,
+            receiverAddress: receiver.walletAddress,
+            indivAmount: convertDecimalToBN(amount, token.decimals),
           });
         }
       }
-      console.log("transfer transactions", transactions);
-      // await signAndSendTransaction(transactions[0]);
-      await wsStore.signAndSendTransaction(transactions[0]);
     } catch (e) {
       console.error(e);
     }
