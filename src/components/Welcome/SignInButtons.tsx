@@ -1,5 +1,9 @@
-import { BuiltInProviderType } from "next-auth/providers";
-import { ClientSafeProvider, LiteralUnion, signIn } from "next-auth/react";
+import { type BuiltInProviderType } from "next-auth/providers";
+import {
+  signIn,
+  type ClientSafeProvider,
+  type LiteralUnion,
+} from "next-auth/react";
 import { z } from "zod";
 import { useZodForm } from "~/hooks/form";
 import { EmailInput } from "../inputs/email";

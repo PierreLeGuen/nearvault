@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import BigNumber from "bignumber.js";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 import { SenderFormField } from "~/components/inputs/sender";
 import { Button } from "~/components/ui/button";
@@ -91,8 +91,6 @@ const RefSwap = () => {
       userMinAmountIn: "0",
     },
   });
-  const [expectedAmountIn, setExpectedAmountIn] = useState("0");
-
   const walletsQuery = useTeamsWalletsWithLockups();
   const poolsForTokenQuery = useGetPoolsForToken(form.watch("tokenOutId"));
 
@@ -117,10 +115,8 @@ const RefSwap = () => {
         .multipliedBy(tokenOutPrice)
         .dividedBy(tokenInPrice)
         .toString();
-      setExpectedAmountIn(expectedAmount);
       form.setValue("userMinAmountIn", expectedAmount);
     } else {
-      setExpectedAmountIn("0");
       form.setValue("userMinAmountIn", "0");
     }
   };

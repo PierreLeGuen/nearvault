@@ -38,7 +38,7 @@ export function CreateTeamDialog({
       await listTeams.refetch();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create team", err);
+      toast.error(`Failed to create team ${(err as Error).message}`);
     }
   }
 

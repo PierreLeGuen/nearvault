@@ -70,24 +70,6 @@ const getCreateVestingScheduleArgs = (params: CreateLockup) => {
   };
 };
 
-// Linear lockup, can't be cancelled.
-const getCreateLockupArgs = (params: CreateLockup) => {
-  const defaultArgs = {
-    owner_account_id: params.ownerId,
-    lockup_duration: "0",
-  };
-  if (!params.allowStaking) {
-    defaultArgs["whitelist_account_id"] = "system";
-  }
-  return {
-    ...defaultArgs,
-    lockup_timestamp: getNearTimestamp(params.start).toString(),
-    release_duration: (
-      getNearTimestamp(params.end) - getNearTimestamp(params.start)
-    ).toString(),
-  };
-};
-
 export const useCreateLockup = () => {
   const wsStore = useWalletTerminator();
   return useMutation({

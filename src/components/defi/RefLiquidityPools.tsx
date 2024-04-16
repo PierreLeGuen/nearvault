@@ -133,6 +133,7 @@ const RefLiquidityPools = () => {
       }
     };
     updateAmounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedLeft, watchedRight]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {

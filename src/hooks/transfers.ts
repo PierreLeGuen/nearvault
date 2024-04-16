@@ -6,7 +6,6 @@ import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { functionCallAction, transferAction } from "./lockup";
 import { addMultisigRequestAction } from "./manage";
 import { TGas } from "./staking";
-import { convertDecimalToBN } from "~/store-easy-peasy/helpers/convertDecimalToBN";
 
 export const useCheckTransferVote = () => {
   const wsStore = useWalletTerminator();

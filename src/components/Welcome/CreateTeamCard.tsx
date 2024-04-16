@@ -1,6 +1,6 @@
-import { Team } from "@prisma/client";
+import { type Team } from "@prisma/client";
 import { useEffect } from "react";
-import { z } from "zod";
+import { type z } from "zod";
 import { TextInput } from "~/components/inputs/text";
 import { Button } from "~/components/ui/button";
 import {
@@ -35,11 +35,11 @@ export function CreateTeamCard(params: Params) {
 
   useEffect(() => {
     form.reset(params.defaultValues);
-  }, [params.defaultValues]);
+  }, [form, params.defaultValues]);
 
   const query = useCreateTeamAndInviteUsers();
 
-  const onSubmit = async (values: z.infer<typeof createTeamAndInviteUsers>) => {
+  const onSubmit = (values: z.infer<typeof createTeamAndInviteUsers>) => {
     query.mutate(values, {
       onSuccess: (data) => {
         params.onTeamCreated(data);

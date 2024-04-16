@@ -3,12 +3,9 @@ import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
-import {
-  type StakedPool,
-  type WalletData,
-} from "~/components/Staking/AllStaked";
+import { type WalletData } from "~/components/Staking/AllStaked";
 import { config } from "~/config/config";
-import { fetchJson, getSelectedPool } from "~/lib/client";
+import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
 import { type WalletPretty } from "~/pages/staking/stake";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";

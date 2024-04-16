@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { z } from "zod";
+import { type z } from "zod";
 import { KeysInput } from "~/components/inputs/keys";
 import { TextInput } from "~/components/inputs/text";
 import { ThresholdInput } from "~/components/inputs/threshold";
@@ -57,13 +57,13 @@ export function CreateMultisigWalletCard(params: Params) {
     }
 
     setTransactionHashes(transactionHashes.split(","));
-  }, []);
+  }, [setTransactionHashes]);
 
   useEffect(() => {
     if (query.isSuccess) {
       params.onMultisigCreateSuccess(query.data);
     }
-  }, [query.isSuccess]);
+  }, [params, query.data, query.isSuccess]);
 
   const handleSignOut = async () => {
     if (!fundingAccount) return;

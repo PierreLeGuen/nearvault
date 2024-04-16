@@ -1,4 +1,4 @@
-import { Team, TeamInvitation } from "@prisma/client";
+import { type Team, type TeamInvitation } from "@prisma/client";
 import {
   Card,
   CardContent,

@@ -1,6 +1,6 @@
 import { ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { CheckIcon } from "@radix-ui/react-icons";
-import { z } from "zod";
+import { type z } from "zod";
 import { SenderFormField } from "~/components/inputs/sender";
 import { Button } from "~/components/ui/button";
 import {
