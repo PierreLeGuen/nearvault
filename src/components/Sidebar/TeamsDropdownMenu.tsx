@@ -118,6 +118,26 @@ export function TeamsDropdownMenu() {
               <ArrowTopRightOnSquareIcon className="h-4 w-4" />
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link
+              href="/nearvault-tos.pdf"
+              target="_blank"
+              className="inline-flex w-full cursor-pointer items-center gap-2"
+            >
+              Terms of Service
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link
+              href="/privacy.pdf"
+              target="_blank"
+              className="inline-flex w-full cursor-pointer items-center gap-2"
+            >
+              Privacy Policy
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
             Log out
