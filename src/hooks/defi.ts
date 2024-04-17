@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { fetchJson, viewCall } from "~/lib/client";
+import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";
 import { type Token } from "~/lib/transformations";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { transactions } from "near-api-js";
@@ -16,6 +16,8 @@ import {
   getFtMetadataForAccounts,
 } from "~/lib/utils";
 import BigNumber from "bignumber.js";
+import { useStorageDeposit } from "./transfers";
+import { toast } from "react-toastify";
 
 export const EXCHANGES = ["REF"] as const;
 
@@ -807,10 +809,26 @@ type SwapParams = {
 
 export const useRefSwap = () => {
   const wsStore = useWalletTerminator();
+  const storageDeposit = useStorageDeposit();
 
   return useMutation({
     mutationFn: async (params: SwapParams) => {
       const refAccountId = "v2.ref-finance.near";
+
+      const isRegistered = await getStorageBalance(
+        params.inAccId,
+        params.fundingAccId,
+      );
+      if (isRegistered === null) {
+        toast.warn(
+          "Your wallet is not registered with the incoming token. Please add and execute the following transaction first for the swap to work.",
+        );
+        await storageDeposit.mutateAsync({
+          fundingAccId: params.fundingAccId,
+          tokenAddress: params.inAccId,
+          receiverAddress: params.fundingAccId,
+        });
+      }
 
       const ftTransferCallRequest = transactions.functionCall(
         "add_request",
@@ -823,10 +841,10 @@ export const useRefSwap = () => {
               msg: `{"force":0,"actions":[{"pool_id":${params.poolId},"token_in":"${params.outAccId}","token_out":"${params.inAccId}","amount_in":"${params.outAmount}","min_amount_out":"${params.minInAmount}"}]}`,
             },
             "1",
-            (50 * TGas).toString(),
+            (200 * TGas).toString(),
           ),
         ]),
-        new BN(100 * TGas),
+        new BN(300 * TGas),
         new BN("0"),
       );
 

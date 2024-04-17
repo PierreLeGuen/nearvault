@@ -198,3 +198,9 @@ export const getRatedPool = async (poolId: number) => {
     },
   );
 };
+
+export const getStorageBalance = async (tokenId: string, accountId: string) => {
+  return await viewCall(tokenId, "storage_balance_of", {
+    account_id: accountId,
+  });
+};

@@ -4,6 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   ArrowUturnDownIcon,
+  ArrowsRightLeftIcon,
   BanknotesIcon,
   BookOpenIcon,
   EyeIcon,
@@ -92,6 +93,16 @@ export function Sidebar() {
               <SidebarSectionItem href="/staking/withdraw">
                 <ArrowDownTrayIcon className={iconsClasses} />
                 Withdraw
+              </SidebarSectionItem>
+            </SidebarSectionBody>
+          </SidebarSection>
+
+          <SidebarSection>
+            <SidebarSectionHeader>DeFi</SidebarSectionHeader>
+            <SidebarSectionBody>
+              <SidebarSectionItem href="/defi/swap">
+                <ArrowsRightLeftIcon className={iconsClasses} />
+                Swap
               </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>
