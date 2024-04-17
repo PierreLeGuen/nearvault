@@ -328,29 +328,29 @@ const RefSwap = () => {
                           {poolsForTokenQuery.isLoading && "Loading..."}
                           {!poolsForTokenQuery.isLoading &&
                             poolsForTokenQuery.data?.pools.map((pool) => {
-                              const tokens = pool.token_account_ids.filter(
+                              const tokenAccIds = pool.token_account_ids.filter(
                                 (tokenId) =>
                                   tokenId !== form.watch("tokenOutId"),
                               );
-                              return tokens.map((tokenInId) => (
+                              return tokenAccIds.map((tokenAccInId) => (
                                 <CommandItem
-                                  value={`${pool.id}-${tokenInId}`}
-                                  key={`${pool.id}-${tokenInId}`}
+                                  value={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
+                                  key={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
                                   onSelect={() => {
-                                    form.setValue("tokenInId", tokenInId);
+                                    form.setValue("tokenInId", tokenAccInId);
                                     form.setValue("poolId", pool.id);
                                   }}
                                 >
                                   <CheckIcon
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      tokenInId === field.value &&
+                                      tokenAccInId === field.value &&
                                         pool.id === form.watch("poolId")
                                         ? "opacity-100"
                                         : "opacity-0",
                                     )}
                                   />
-                                  {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenInId]} (Pool: ${pool.id})`}
+                                  {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]} (Pool: ${pool.id})`}
                                 </CommandItem>
                               ));
                             })}
