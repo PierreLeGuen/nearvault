@@ -1,17 +1,13 @@
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import getWelcomeLayout from "~/components/WelcomeLayout";
 import { type NextPageWithLayout } from "./_app";
 
 const Home: NextPageWithLayout = () => {
-  const { data: sessionData, status } = useSession();
-
-  // Determine user's name or a default greeting
-  const userName = sessionData?.user?.name ? sessionData.user.name : "there";
+  const { status } = useSession();
 
   // Determine the main content based on session status
-  let mainContent;
   if (status === "loading") {
     return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3">
@@ -21,19 +17,19 @@ const Home: NextPageWithLayout = () => {
   }
   return (
     <>
-      <header className="sticky flex top-0 z-50 w-full border-b border-border/40 bg-foreground/95 backdrop-blur supports-[backdrop-filter]:bg-foreground h-12">
-        <div className="mr-4 hidden md:flex">
-          <Link className="mr-6 flex items-center space-x-2 text-background" href={"/"}>
+      <header className="sticky flex top-0 z-50 w-full border-b border-border/40 bg-foreground/95 backdrop-blur supports-[backdrop-filter]:bg-foreground h-12 pl-5 lg:pl-0">
+        <div className="mr-4 flex  ">
+          <Link className="mr-6 flex items-center space-x-2 text-background hidden md:flex " href={"/"}>
             <Image src="/logo.png" width={100} height={50} className="mr-2" alt="Logo" />
             White logo ?
           </Link>
-          <nav className="flex items-center gap-4 text-sm lg:gap-6">
+          <nav className="flex items-center gap-4 text-sm gap-6">
             <a className="transition-colors hover:text-background/80 text-background/60" href="https://nearvault-1.gitbook.io/nearvault">Docs</a>
             <a className="text-background/60 transition-colors hover:text-background/80 lg:block" href="https://github.com/PierreLeGuen/near-finance">GitHub</a>
           </nav>
         </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end text-background">
+        <div className="flex flex-1 items-center sm:justify-between space-x-2 md:justify-end text-background">
           <nav className="flex items-center">
             <a target="_blank" rel="noreferrer" href="https://github.com/PierreLeGuen/near-finance">
               <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 py-2 w-9 px-0">
@@ -56,10 +52,10 @@ const Home: NextPageWithLayout = () => {
         </div>
       </header>
 
-      <main className="flex-1 space-y-6">
+      <main className="flex-1 space-y-10">
         <section className="w-full bg-foreground">
           <div className="mx-auto flex max-w-[980px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
-            <h1 className="text-center text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1] hidden md:block text-background">
+            <h1 className="text-center text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1] block text-background">
               Nearvault Lorem ipsum dolor sit amet consectetur, adipisicing elit.
             </h1>
 
@@ -69,27 +65,29 @@ const Home: NextPageWithLayout = () => {
 
             <div className="flex w-full items-center justify-center space-x-4 py-4 md:pb-10">
               <Link className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-background text-background-foreground shadow hover:bg-background/90 h-9 px-4 py-2 rounded-[6px]" href={"/lockup/manage"}>Get Started</Link>
-              <a className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-foreground text-background shadow-sm hover:bg-accent-foreground hover:text-background h-9 px-4 py-2 rounded-[6px]" href="/docs">Docs</a>
+              <a className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-foreground text-background shadow-sm hover:bg-accent-foreground hover:text-background h-9 px-4 py-2 rounded-[6px]" href="https://nearvault-1.gitbook.io/nearvault">Docs</a>
             </div>
           </div>
         </section>
 
-        <section className="relative -top-20">
+        <div className="relative -top-20 space-y-10">
+
+        <section>
           <Image
             src="/webpage.png"
             alt="Screenshow"
-            width={500}
-            height={500}
+            width={600}
+            height={600}
             className="mx-auto"
           />
         </section>
 
 
-        <section className="space-y-4 container">
-          <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] hidden md:block text-foreground">
+        <section className="space-y-6 container">
+          <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] block text-foreground">
             Trusted by the best
           </h2>
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {['devac', 'devac', 'devac', 'devac', 'devac', 'devac', 'devac', 'devac', 'devac'].map((e) => <div
               key={e}
               className="mx-auto"
@@ -101,24 +99,24 @@ const Home: NextPageWithLayout = () => {
           </div>
         </section>
 
-        <section className="space-y-4 container">
-          <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] hidden md:block text-foreground">
+        <section className="space-y-6 container">
+          <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] block text-foreground">
             Your keys. Your coins
           </h2>
-          <div className="flex space-x-3 mx-auto">
-            <div>
+          <div className="grid mx-auto grid-cols-1 md:grid-cols-3 md:space-x-4">
+            <div className="m-1">
               <div>icon</div>
               <h4>Battle-tested security</h4>
               <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum, quis fugit! Omnis repudiandae architecto</p>
             </div>
 
-            <div>
+            <div className="m-1">
               <div>icon</div>
               <h4>Multi-signature access</h4>
               <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum, quis fugit! Omnis repudiandae architecto</p>
             </div>
 
-            <div>
+            <div className="m-1">
               <div>icon</div>
               <h4>Self-custody</h4>
               <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum, quis fugit! Omnis repudiandae architecto</p>
@@ -126,64 +124,38 @@ const Home: NextPageWithLayout = () => {
           </div>
         </section>
 
-        <section className="container flex space-x-5">
-          <div className="flex-1 my-auto space-y-5">
-            <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] hidden md:block text-foreground">Co-manage your assets</h2>
+        <section className="container flex md:space-x-5">
+          <div className="w-full md:w-2/3 my-auto space-y-5">
+            <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] block text-foreground">Co-manage your assets</h2>
 
             <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Enim, illum! Molestiae earum quibusdam et atque dolore veritatis fugiat itaque, excepturi aliquam est molestias sit quis obcaecati, quasi, corrupti minima aspernatur?</p>
 
             <Link href={"/lockup/manage"}>Get started</Link>
           </div>
 
-          <Image src="/my-near-wallet-icon.png" alt="wallet" width={500} height={500} className="flex-1"/>
+          <Image src="/my-near-wallet-icon.png" alt="wallet" width={400} height={400} className="w-1/3 hidden md:block"/>{/* TODO: custom image */} 
         </section>
 
-        <section className="container flex space-x-5">
+        <section className="container flex md:space-x-5">
 
-          <Image src="/my-near-wallet-icon.png" alt="wallet" width={500} height={500} className="flex-1"/>
+          <Image src="/my-near-wallet-icon.png" alt="wallet" width={400} height={400} className="w-1/3 hidden md:block"/> {/* TODO: custom image */} 
 
-          <div className="flex-1 my-auto space-y-5">
-            <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] hidden md:block text-foreground">Control and change account ownership</h2>
+          <div className="w-full md:w-2/3 my-auto space-y-5">
+            <h2 className="text-center text-2xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] block text-foreground">Control and change account ownership</h2>
 
             <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Enim, illum! Molestiae earum quibusdam et atque dolore veritatis fugiat itaque, excepturi aliquam est molestias sit quis obcaecati, quasi, corrupti minima aspernatur?</p>
 
-            <Link href={"/lockup/manage"}>Get started</Link>
+            <Link href={"/lockup/manage"} className="w-fullunderline text-foreground font-bold text-right ml-auto block">Get started</Link>
           </div>
         </section>
+
+        </div>
 
       </main>
 
       
     </>
-  ); /* else if (sessionData) {
-    mainContent = (
-      <>
-        <h2>Welcome back, {userName}!</h2>
-        <p>Ready to continue?</p>
-        <Link
-          href={"/lockup/manage"}
-          className="rounded-md bg-blue-300 px-4 py-2 hover:bg-blue-100"
-        >
-          Continue
-        </Link>
-      </>
-    );
-  } else {
-    mainContent = (
-      <>
-        <p>
-          You need to be signed in to access this apps. Please sign in to
-          continue.
-        </p>
-        <button
-          onClick={() => void signIn()}
-          className="rounded-md bg-blue-300 px-4 py-2 hover:bg-blue-100"
-        >
-          Sign in
-        </button>
-      </>
-    );
-  } */
+  );
 };
 
 Home.getLayout = getWelcomeLayout;
