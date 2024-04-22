@@ -15,7 +15,7 @@
 
 ## 🔐 Treasury
 
-* [Create NEAR lockup (vesting)](treasury/create-near-lockup-vesting.md)
+* [Create NEAR Lockup (Vesting)](treasury/create-near-lockup-vesting.md)
 
 ## 📢 Frequently Asked Questions
 

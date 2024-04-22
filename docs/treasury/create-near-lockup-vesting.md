@@ -1,6 +1,4 @@
-# Create NEAR lockup (vesting)
-
-## Create NEAR Lockup (Vesting)
+# Create NEAR Lockup (Vesting)
 
 NEAR Vault supports two types of lockups: linear release and cancellable with a cliff feature.
 
