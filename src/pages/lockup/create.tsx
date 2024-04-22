@@ -316,7 +316,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   )}
                 />
                 {explanation && <div>{explanation}</div>}
-                <Button type="submit">Create Lockup</Button>
+                <Button type="submit">Send Create Lockup Request</Button>
               </form>
             </Form>
           </div>
