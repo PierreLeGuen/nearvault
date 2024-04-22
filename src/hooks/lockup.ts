@@ -16,6 +16,7 @@ type CreateLockup = {
   end: Date;
   allowStaking: boolean;
   cliff?: Date;
+  cancelable: boolean;
 };
 
 export const functionCallAction = (
@@ -39,6 +40,24 @@ export const transferAction = (amount: string) => {
   return {
     type: "Transfer",
     amount: amount,
+  };
+};
+
+// Linear lockup, can't be cancelled.
+const getCreateLockupArgs = (params: CreateLockup) => {
+  const defaultArgs = {
+    owner_account_id: params.ownerId,
+    lockup_duration: "0",
+  };
+  if (!params.allowStaking) {
+    defaultArgs["whitelist_account_id"] = "system";
+  }
+  return {
+    ...defaultArgs,
+    lockup_timestamp: getNearTimestamp(params.start).toString(),
+    release_duration: (
+      getNearTimestamp(params.end) - getNearTimestamp(params.start)
+    ).toString(),
   };
 };
 
@@ -70,13 +89,18 @@ const getCreateVestingScheduleArgs = (params: CreateLockup) => {
   };
 };
 
-export const useCreateLockup = () => {
+export const useCreateCancellableLockup = () => {
   const wsStore = useWalletTerminator();
   return useMutation({
     mutationFn: async (params: CreateLockup) => {
       console.log("useCreateLockup", { params });
 
-      const args = getCreateVestingScheduleArgs(params);
+      let args = {};
+      if (params.cancelable) {
+        args = getCreateVestingScheduleArgs(params);
+      } else {
+        args = getCreateLockupArgs(params);
+      }
       console.log("useCreateLockup", { args });
 
       const createLockupAction = transactions.functionCall(

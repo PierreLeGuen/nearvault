@@ -28,7 +28,7 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import { useCreateLockup } from "~/hooks/lockup";
+import { useCreateCancellableLockup } from "~/hooks/lockup";
 import {
   useGetNearBalanceForWallet,
   useListAddressBook,
@@ -64,11 +64,11 @@ const createLockupForm = z.object({
   endDate: z.date(),
   cliffDate: z.date().optional(),
   allowStaking: z.boolean(),
+  cancelable: z.boolean(),
 });
 
 const CreateLockup: NextPageWithLayout = () => {
   const [explanation, setExplanation] = useState("");
-
   const form = useForm<z.infer<typeof createLockupForm>>({
     resolver: zodResolver(createLockupForm),
     defaultValues: {
@@ -76,6 +76,7 @@ const CreateLockup: NextPageWithLayout = () => {
       startDate: new Date(),
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
       cliffDate: undefined,
+      cancelable: true,
     },
   });
 
@@ -87,10 +88,9 @@ const CreateLockup: NextPageWithLayout = () => {
   const cliffDate = form.watch("cliffDate");
   const allowStaking = form.watch("allowStaking");
 
-  const createLockup = useCreateLockup();
+  const createLockup = useCreateCancellableLockup();
   const walletsWithLockupQuery = useTeamsWalletsWithLockups();
   const nearBalanceQuery = useGetNearBalanceForWallet(watchedSender);
-
   const listAddressBookQuery = useListAddressBook();
 
   function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
@@ -109,6 +109,7 @@ const CreateLockup: NextPageWithLayout = () => {
       end: values.endDate,
       cliff: values.cliffDate,
       allowStaking: values.allowStaking,
+      cancelable: values.cancelable,
     });
   }
 
@@ -117,11 +118,10 @@ const CreateLockup: NextPageWithLayout = () => {
       return;
     }
 
-    let explenation = `The lockup of ${amount} NEAR for account ${account} will start on ${startDate.toLocaleDateString()} and end on ${endDate.toLocaleDateString()}. `;
+    let explanation = `The lockup of ${amount} NEAR for account ${account} will start on ${startDate.toLocaleDateString()} and end on ${endDate.toLocaleDateString()}. `;
 
     // Subtract one day from endDate and cliffDate
     const adjustedEndDate = subDays(endDate, 1);
-
     const totalDurationDays = differenceInDays(adjustedEndDate, startDate);
     const totalDurationYears = Math.floor(totalDurationDays / 365);
     const remainingDaysAfterYears = totalDurationDays % 365;
@@ -132,19 +132,19 @@ const CreateLockup: NextPageWithLayout = () => {
       const cliffDurationYears = Math.floor(cliffDurationDays / 365);
       const remainingCliffDaysAfterYears = cliffDurationDays % 365;
 
-      explenation += `It includes a cliff period of ${cliffDurationYears} year(s) and ${remainingCliffDaysAfterYears} day(s), ending on ${cliffDate.toLocaleDateString()}. `;
-      explenation += `The release will last for a total of ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s) (counting the cliff). `;
+      explanation += `It includes a cliff period of ${cliffDurationYears} year(s) and ${remainingCliffDaysAfterYears} day(s), ending on ${cliffDate.toLocaleDateString()}. `;
+      explanation += `The release will last for a total of ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s) (counting the cliff). `;
     } else {
-      explenation += `The release will be linear over ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s). (Ending dates are excluded from the calculations). `;
+      explanation += `The tokens will be released linearly over ${totalDurationYears} year(s) and ${remainingDaysAfterYears} day(s). (The end date is not included in the calculations). `;
     }
 
     if (allowStaking) {
-      explenation += `Staking is allowed during the lockup period.`;
+      explanation += `Staking is allowed during the lockup period.`;
     } else {
-      explenation += `Staking is not allowed during the lockup period.`;
+      explanation += `Staking is not allowed during the lockup period.`;
     }
 
-    setExplanation(explenation);
+    setExplanation(explanation);
   }, [
     amount,
     account,
@@ -159,8 +159,8 @@ const CreateLockup: NextPageWithLayout = () => {
     <div className="flex flex-grow flex-col p-12">
       <Card>
         <CardHeader>
-          <CardTitle>Create lockup</CardTitle>
-          <CardDescription>Create a cancellable NEAR lockup.</CardDescription>
+          <CardTitle>Create Lockup</CardTitle>
+          <CardDescription>Create a NEAR lockup contract.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col">
@@ -177,9 +177,9 @@ const CreateLockup: NextPageWithLayout = () => {
                   rules={{
                     required: "Please select a wallet.",
                   }}
-                  description="Funding wallet."
+                  description="Select the wallet to fund the lockup."
                   placeholder="Select a wallet"
-                  label="Sender"
+                  label="Sender Wallet"
                 />
                 <ReceiverFormField
                   isLoading={listAddressBookQuery.isLoading}
@@ -189,9 +189,9 @@ const CreateLockup: NextPageWithLayout = () => {
                   rules={{
                     required: "Please select a wallet.",
                   }}
-                  description="Create lockup for this account."
+                  description="Select the account to receive the lockup."
                   placeholder="Select a wallet"
-                  label="Receiver"
+                  label="Receiver Account"
                 />
                 <div className="flex flex-grow flex-row">
                   <FormItem className="flex flex-col">
@@ -209,7 +209,6 @@ const CreateLockup: NextPageWithLayout = () => {
                       <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </FormItem>
-
                   <FormField
                     control={form.control}
                     name="amount"
@@ -243,10 +242,32 @@ const CreateLockup: NextPageWithLayout = () => {
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="cancelable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Allow Cancellation</FormLabel>
+                        <FormDescription>
+                          Allows the NEAR Foundation to cancel the lockup at any
+                          time. Non-cancellable lockups are not compatible with
+                          cliff dates.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <DateField
-                  label="Start date"
+                  label="Start Date"
                   placeholder="Select a date"
-                  description="Start date of the lockup."
+                  description="Select the start date of the lockup."
                   name="startDate"
                   control={form.control}
                   rules={{
@@ -254,32 +275,34 @@ const CreateLockup: NextPageWithLayout = () => {
                   }}
                 />
                 <DateField
-                  label="End date"
+                  label="End Date"
                   placeholder="Select a date"
-                  description="Start date of the lockup."
+                  description="Select the end date of the lockup."
                   name="endDate"
                   control={form.control}
                   rules={{
-                    required: "Please select a end date.",
+                    required: "Please select an end date.",
                   }}
                 />
-                <DateField
-                  label="Cliff date"
-                  placeholder="Optional. Select a date"
-                  description="Date at which the receiver can start withdrawing tokens."
-                  name="cliffDate"
-                  control={form.control}
-                />
+                {form.watch("cancelable") && (
+                  <DateField
+                    label="Cliff Date"
+                    placeholder="Optional. Select a date"
+                    description="Select the date when the receiver can start withdrawing tokens."
+                    name="cliffDate"
+                    control={form.control}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="allowStaking"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                       <div className="space-y-0.5">
-                        <FormLabel>Allow staking</FormLabel>
+                        <FormLabel>Allow Staking</FormLabel>
                         <FormDescription>
                           Allows the owner of the lockup to stake the full
-                          amount of tokens in the lockup (even before cliff
+                          amount of tokens in the lockup (even before the cliff
                           date).
                         </FormDescription>
                       </div>
@@ -293,7 +316,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   )}
                 />
                 {explanation && <div>{explanation}</div>}
-                <Button type="submit">Submit</Button>
+                <Button type="submit">Create Lockup</Button>
               </form>
             </Form>
           </div>
@@ -304,4 +327,5 @@ const CreateLockup: NextPageWithLayout = () => {
 };
 
 CreateLockup.getLayout = getSidebarLayout;
+
 export default CreateLockup;
