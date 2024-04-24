@@ -6,6 +6,8 @@ import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import { functionCallAction, transferAction } from "./lockup";
 import { addMultisigRequestAction } from "./manage";
 import { TGas } from "./staking";
+import { getStorageBalance } from "~/lib/client";
+import { toast } from "react-toastify";
 
 export const useCheckTransferVote = () => {
   const wsStore = useWalletTerminator();
@@ -73,6 +75,7 @@ export const useStorageDeposit = () => {
 
 export const useFtTransfer = () => {
   const wsStore = useWalletTerminator();
+  const storageDeposit = useStorageDeposit();
 
   return useMutation({
     mutationFn: async (params: {
@@ -81,6 +84,21 @@ export const useFtTransfer = () => {
       receiverAddress: string;
       indivAmount: string;
     }) => {
+      const isRegistered = await getStorageBalance(
+        params.tokenAddress,
+        params.receiverAddress,
+      );
+      if (isRegistered === null) {
+        toast.warn(
+          `The receiving wallet is not registered within the FT contract. Please add and execute the following transaction first for the transfer to work.`,
+        );
+        await storageDeposit.mutateAsync({
+          fundingAccId: params.fundingAccId,
+          tokenAddress: params.tokenAddress,
+          receiverAddress: params.receiverAddress,
+        });
+      }
+
       const ftTransferRequest = transactions.functionCall(
         "add_request",
         addMultisigRequestAction(params.tokenAddress, [

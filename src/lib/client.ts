@@ -199,8 +199,13 @@ export const getRatedPool = async (poolId: number) => {
   );
 };
 
+type StorageBalance = {
+  total: string;
+  available: string;
+};
+
 export const getStorageBalance = async (tokenId: string, accountId: string) => {
-  return await viewCall(tokenId, "storage_balance_of", {
+  return await viewCall<StorageBalance>(tokenId, "storage_balance_of", {
     account_id: accountId,
   });
 };

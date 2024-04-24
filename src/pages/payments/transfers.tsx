@@ -48,7 +48,6 @@ import {
   useFtTransfer,
   useLockupTransfer,
   useNearTransfer,
-  useStorageDeposit,
 } from "~/hooks/transfers";
 import { initLockupContract } from "~/lib/lockup/contract";
 import { getFormattedAmount } from "~/lib/transformations";
@@ -88,7 +87,6 @@ const TransfersPage: NextPageWithLayout = () => {
   const watchedToken = form.watch("token");
 
   const checkTransferVoteMut = useCheckTransferVote();
-  const storageDepositMut = useStorageDeposit();
   const ftTransferMut = useFtTransfer();
   const lockupTransferMut = useLockupTransfer();
   const nearTransferMut = useNearTransfer();
@@ -191,12 +189,6 @@ const TransfersPage: NextPageWithLayout = () => {
         if (lockupAddress) {
           toast.error("Lockup NEP-141 transfers not supported yet");
         } else {
-          await storageDepositMut.mutateAsync({
-            fundingAccId: senderAddress,
-            tokenAddress: token.account_id,
-            receiverAddress: receiver.walletAddress,
-          });
-
           await ftTransferMut.mutateAsync({
             fundingAccId: senderAddress,
             tokenAddress: token.account_id,
