@@ -121,9 +121,9 @@ const Home: NextPageWithLayout = () => {
             <Image
               src="/webpage.png"
               alt="Screenshow"
-              width={600}
-              height={600}
-              className="mx-auto rounded shadow"
+              width={800}
+              height={800}
+              className="mx-auto rounded shadow-xl"
             />
           </section>
 
@@ -140,7 +140,6 @@ const Home: NextPageWithLayout = () => {
                 "Burrow",
               ].map((e) => (
                 <div key={e} className="mx-auto">
-                  {/* TOOD: logo */}
                   {e}
                 </div>
               ))}
@@ -199,22 +198,21 @@ const Home: NextPageWithLayout = () => {
             </div>
 
             <Image
-              src="/my-near-wallet-icon.png"
+              src="/manage-team.png"
               alt="wallet"
               width={400}
               height={400}
-              className="hidden w-1/3 md:block"
+              className="hidden w-1/3 shadow-xl md:block"
             />
-            {/* TODO: custom image */}
           </section>
 
           <section className="container flex md:space-x-5">
             <Image
-              src="/my-near-wallet-icon.png"
+              src="/manage-wallets.png"
               alt="wallet"
               width={400}
               height={400}
-              className="hidden w-1/3 md:block"
+              className="hidden w-1/3 shadow-xl md:block"
             />{" "}
             {/* TODO: custom image */}
             <div className="my-auto w-full space-y-5 md:w-2/3">
