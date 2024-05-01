@@ -53,7 +53,7 @@ const Stake: NextPageWithLayout = () => {
   const addRequestStakeToPool = useAddRequestStakeToPool();
   const isPoolSelected = useIsPoolSelected(wallet);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     addRequestStakeToPool.mutate({
       selectedWallet: wallet,
       poolId: values.poolId,
@@ -77,7 +77,7 @@ const Stake: NextPageWithLayout = () => {
         new Map([[isPoolSelected.data, pools.get(isPoolSelected.data)]]),
       );
     }
-  }, [pools, watchedWallet]);
+  }, [isPoolSelected.data, pools, wallet, watchedWallet]);
 
   if (isLoading || !filteredPools) {
     return (
