@@ -95,9 +95,17 @@ export function useListAllStakingPoolsWithDetails() {
       // Wait for all promises to resolve
       await Promise.all(poolPromises);
 
+      // Convert Map to Array, sort by id, and convert back to Map
+      const sortedActivePools = new Map(
+        [...activePools.entries()].sort((a, b) => a[0].localeCompare(b[0])),
+      );
+      const sortedInactivePools = new Map(
+        [...inactivePools.entries()].sort((a, b) => a[0].localeCompare(b[0])),
+      );
+
       const sortedPools: Map<PoolId, Pool> = new Map([
-        ...activePools,
-        ...inactivePools,
+        ...sortedActivePools,
+        ...sortedInactivePools,
       ]);
 
       return sortedPools;
