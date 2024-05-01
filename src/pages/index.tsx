@@ -17,22 +17,21 @@ const Home: NextPageWithLayout = () => {
   }
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-12 w-full border-b border-border/40 bg-foreground/95 pl-5 backdrop-blur supports-[backdrop-filter]:bg-foreground lg:pl-0">
-        <div className="mr-4 flex  ">
+      <header className="sticky top-0 z-50 flex h-12 w-full border-b border-border/40 bg-foreground/95 px-4 pl-5 backdrop-blur supports-[backdrop-filter]:bg-foreground">
+        <div className="mr-4 flex">
           <Link
-            className="mr-6 flex hidden items-center space-x-2 text-background md:flex "
+            className="mr-6 hidden items-center space-x-2 text-background md:flex "
             href={"/"}
           >
             <Image
-              src="/logo.png"
+              src="/white-logo.png"
               width={100}
               height={50}
               className="mr-2"
               alt="Logo"
             />
-            Nearvault
           </Link>
-          <nav className="flex items-center gap-4 gap-6 text-sm">
+          <nav className="flex items-center gap-6 text-sm">
             <a
               className="text-background/60 transition-colors hover:text-background/80"
               href="https://nearvault-1.gitbook.io/nearvault"
@@ -129,16 +128,10 @@ const Home: NextPageWithLayout = () => {
 
           <section className="container space-y-6">
             <h2 className="block text-center text-2xl font-bold leading-tight tracking-tighter text-foreground md:text-4xl lg:leading-[1.1]">
-              Trusted by Leading NEAR Projects
+              Trusted by Leading NEAR Ecosystem Members
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-              {[
-                "Ref Finance",
-                "Paras",
-                "Octopus Network",
-                "Flux",
-                "Burrow",
-              ].map((e) => (
+              {["Ref Finance", "Burrow", "NEAR Foundation"].map((e) => (
                 <div key={e} className="mx-auto">
                   {e}
                 </div>
