@@ -55,7 +55,7 @@ export const useGetRefLiquidityPools = (
 ) => {
   return useQuery(["liquidityPools", includeEmptyPools], async () => {
     const pools = await fetchJson<LiquidityPool[]>(
-      "https://indexer.ref.finance/list-pools",
+      "https://api.ref.finance/list-pools",
     );
 
     const tokenAccountIds = [
@@ -101,7 +101,7 @@ export const useGetRefLiquidityPools = (
 export const useGetPoolsForToken = (tokenId: string) => {
   return useQuery(["poolsForToken", tokenId], async () => {
     const pools = await fetchJson<LiquidityPool[]>(
-      "https://indexer.ref.finance/list-pools",
+      "https://api.ref.finance/list-pools",
     );
     const tokenAccountIds = [
       ...new Set(
@@ -156,7 +156,7 @@ export const useGetLiquidityPoolById = (poolId?: string) => {
     ["liquidityPool", poolId],
     async () => {
       const poolDetails = await fetchJson<LiquidityPool[]>(
-        "https://indexer.ref.finance/list-pools-by-ids?ids=" + poolId,
+        "https://api.ref.finance/list-pools-by-ids?ids=" + poolId,
       );
       return poolDetails[0];
     },
@@ -175,7 +175,7 @@ type Tokens = Record<string, TokenInfo>;
 export const useGetTokenPrices = () => {
   return useQuery(["tokenPrices"], async () => {
     const res = await fetchJson<Tokens>(
-      "https://indexer.ref.finance/list-token-price",
+      "https://api.ref.finance/list-token-price",
     );
     return res;
   });
@@ -399,8 +399,7 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
   return useQuery(
     ["liquidityPoolsForAccount", accountId],
     async () => {
-      const endpoint =
-        "https://indexer.ref.finance/liquidity-pools/" + accountId;
+      const endpoint = "https://api.ref.finance/liquidity-pools/" + accountId;
       const pools = await fetchJson<LiquidityPoolRef[]>(endpoint);
       const ftMetadatas = await getFtMetadataForAccounts(
         pools.flatMap((pool) => pool.token_account_ids),
@@ -423,12 +422,66 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
   );
 };
 
+export const useGetRefPoolShares = (poolId?: string, accountId?: string) => {
+  return useQuery(
+    ["poolShares", poolId, accountId],
+    async () => {
+      return viewCall<string>("v2.ref-finance.near", "get_pool_shares", {
+        pool_id: parseInt(poolId),
+        account_id: accountId,
+      });
+    },
+    { enabled: !!poolId && !!accountId },
+  );
+};
+
+export const useGetRefSharesForAmount = (
+  amounts: string[],
+  poolId: string,
+  fundingAccId: string,
+) => {
+  const shares = useGetRefPoolShares(poolId, fundingAccId);
+  const poolsQuery = useGetRefLiquidityPoolsForAccount(fundingAccId);
+
+  return useQuery(
+    ["sharesForAmount", amounts, poolId, fundingAccId],
+    () => {
+      const shares: string[] = [];
+      const pool = poolsQuery.data?.find((p) => p.id === poolId);
+      if (!pool) {
+        throw new Error("Pool not found");
+      }
+
+      console.log(pool);
+      console.log(amounts);
+
+      for (const indivAmount of amounts) {
+        const sharesTotalSupply = new BigNumber(pool.shares_total_supply);
+        const amountInPool = pool.amounts
+          .flatMap((amount) => {
+            return new BigNumber(amount);
+          })
+          .reduce((acc, curr) => acc.plus(curr), new BigNumber(0));
+
+        const myShares = sharesTotalSupply
+          .multipliedBy(indivAmount)
+          .dividedBy(amountInPool);
+        shares.push(myShares.toString());
+      }
+      console.log(shares);
+
+      return shares;
+    },
+    { enabled: !!shares.data },
+  );
+};
+
 export const withdrawRef = z.object({
+  fundingAccId: z.string(),
   poolId: z.number(),
   tokens: z.array(z.string()),
-  minAmounts: z.array(z.string()),
-  shares: z.string(),
-  fundingAccId: z.string(),
+  amounts: z.array(z.string()),
+  maxSharesBurn: z.string(),
 });
 
 export const useWithdrawFromRefLiquidityPool = () => {
@@ -437,7 +490,6 @@ export const useWithdrawFromRefLiquidityPool = () => {
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof withdrawRef>) => {
-      await viewQuery.refetch();
       const refAccountId = "v2.ref-finance.near";
       const storageDepositRequest = transactions.functionCall(
         "add_request",
@@ -460,11 +512,11 @@ export const useWithdrawFromRefLiquidityPool = () => {
         "add_request",
         addMultisigRequestAction(refAccountId, [
           functionCallAction(
-            "remove_liquidity",
+            "remove_liquidity_by_tokens",
             {
               pool_id: params.poolId,
-              shares: params.shares,
-              min_amounts: params.minAmounts,
+              max_burn_shares: params.maxSharesBurn,
+              amounts: params.amounts,
             },
             "1",
             (50 * TGas).toString(),
@@ -485,14 +537,20 @@ export const useWithdrawFromRefLiquidityPool = () => {
         actions: [removeLiquidityRequest],
       });
 
-      for (const token of params.tokens) {
+      await viewQuery.refetch();
+
+      for (let i = 0; i < params.tokens.length; i++) {
+        if (params.amounts[i] === "0") {
+          continue;
+        }
+
         const withdraw = transactions.functionCall(
           "add_request",
           addMultisigRequestAction(refAccountId, [
             functionCallAction(
               "withdraw",
               {
-                token_id: token,
+                token_id: params.tokens[i],
                 amount: "0",
                 unregister: false,
               },
