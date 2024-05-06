@@ -104,6 +104,14 @@ export function Sidebar() {
                 <ArrowsRightLeftIcon className={iconsClasses} />
                 Swap
               </SidebarSectionItem>
+              <SidebarSectionItem href="/defi/stable">
+                <ArrowUpTrayIcon className={iconsClasses} />
+                Stable deposit
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/defi/withdraw">
+                <ArrowDownTrayIcon className={iconsClasses} />
+                Stable withdraw
+              </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>
 
