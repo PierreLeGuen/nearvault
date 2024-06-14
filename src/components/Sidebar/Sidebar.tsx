@@ -2,6 +2,7 @@ import {
   AdjustmentsVerticalIcon,
   ArchiveBoxIcon,
   ArrowDownTrayIcon,
+  ArrowTrendingUpIcon,
   ArrowUpTrayIcon,
   ArrowUturnDownIcon,
   ArrowsRightLeftIcon,
@@ -104,13 +105,21 @@ export function Sidebar() {
                 <ArrowsRightLeftIcon className={iconsClasses} />
                 Swap
               </SidebarSectionItem>
+              <SidebarSectionItem href="/defi/pools">
+                <ArrowUpTrayIcon className={iconsClasses} />
+                Pools deposit
+              </SidebarSectionItem>
               <SidebarSectionItem href="/defi/stable">
                 <ArrowUpTrayIcon className={iconsClasses} />
-                Stable deposit
+                Ref Stable deposit
               </SidebarSectionItem>
               <SidebarSectionItem href="/defi/withdraw">
                 <ArrowDownTrayIcon className={iconsClasses} />
                 Stable withdraw
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/defi/claim">
+                <ArrowTrendingUpIcon className={iconsClasses} />
+                Rewards claim
               </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>

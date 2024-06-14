@@ -808,6 +808,7 @@ type BurrowAccountInfo = {
   booster_staking: unknown;
 };
 
+// near contract call-function as-read-only contract.main.burrow.near get_account json-args '{"account_id":"pqla.near"}' network-config mainnet now
 export const useGetBurrowSuppliedTokens = (accountId: string) => {
   return useQuery(["burrowHoldings", accountId], async () => {
     const burrowAccountId = "contract.main.burrow.near";
@@ -840,11 +841,13 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
       const b = BigNumber(token.balance);
       // add some slippage
       // const c = b.multipliedBy(0.999);
-      token.balance = b.toString();
+      token.balance = b.toFixed();
       const ftMetadata = ftMetadatas.find(
         (ft) => ft.accountId === token.token_id,
       );
       const config = configs.find((c) => c.token_id === token.token_id);
+      console.log(token, ftMetadata, config);
+
       return {
         token,
         ftMetadata,
@@ -853,6 +856,41 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
     });
 
     return tokens;
+  });
+};
+
+export const burrowClaimRewardsSchema = z.object({
+  accountId: z.string(),
+});
+
+export const useGetBurrowClaim = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async ({
+      accountId,
+    }: z.infer<typeof burrowClaimRewardsSchema>) => {
+      const burrow = "contract.main.burrow.near";
+      const claim = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(burrow, [
+          functionCallAction(
+            "account_farm_claim_all",
+            {},
+            "0",
+            (200 * TGas).toString(),
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: accountId,
+        receiverId: accountId,
+        actions: [claim],
+      });
+    },
   });
 };
 
