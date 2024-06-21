@@ -7,7 +7,7 @@ import { type NextPageWithLayout } from "../_app";
 
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
-import { AddDialog } from "~/components/dialogs/AddBeneficiaryDialog";
+import { AddBeneficiaryDialog } from "~/components/dialogs/AddBeneficiaryDialog";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -53,7 +53,7 @@ const Manage: NextPageWithLayout = () => {
     <div className="flex flex-grow flex-col gap-10 px-24 py-10">
       <div className="flex flex-row justify-between">
         <HeaderTitle level="h1" text="Address Book" />
-        <AddDialog />
+        <AddBeneficiaryDialog />
       </div>
       <div className="rounded-md border shadow-lg">
         <Table>

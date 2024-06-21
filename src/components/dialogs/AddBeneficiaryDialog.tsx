@@ -36,7 +36,7 @@ const formSchema = z.object({
   accountId: z.string().min(2),
 });
 
-export const AddDialog = () => {
+export const AddBeneficiaryDialog = () => {
   const [submitMessage, setSubmitMessage] = useState("");
   const currentTeamQuery = useGetCurrentTeam();
   const addBenefMut = useAddBeneficiary();
@@ -52,9 +52,9 @@ export const AddDialog = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await addBenefMut.mutateAsync({
-        firstName: values.identifier,
+        firstName: values.identifier.trim(),
         lastName: "",
-        walletAddress: values.accountId,
+        walletAddress: values.accountId.trim(),
         teamId: currentTeamQuery.data.id,
       });
       setSubmitMessage("Beneficiary created successfully!");
