@@ -14,9 +14,14 @@ import { TGas } from "./staking";
 
 export const multisigFactoryFormSchema = z.object({
   fundingAccountId: z.string(),
-  accountId: z.string().refine((value) => {
-    return !/[.\s]/.test(value);
-  }),
+  accountId: z.string().refine(
+    (value) => {
+      return /^[a-zA-Z0-9]+$/.test(value);
+    },
+    {
+      message: "Account ID must contain only letters and numbers",
+    },
+  ),
   threshold: z.string().refine((value) => {
     const threshold = Number(value);
     return threshold > 0; // TODO: && threshold <= maxThreshold
