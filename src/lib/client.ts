@@ -17,7 +17,7 @@ export async function getSelectedPool(
   return await c.get_staking_pool_account_id();
 }
 
-const TTA_URL = "https://tta-api.onrender.com";
+const TTA_URL = "http://65.21.11.6:8080";
 
 function getProvider() {
   return new providers.JsonRpcProvider({
