@@ -1,3 +1,4 @@
+import { env } from "~/env.mjs";
 import { fetchJson } from "~/lib/client";
 
 type AccountInfo = {
@@ -17,7 +18,11 @@ export const newPikeSpeakApi = () => {
           icon: string;
           isParsed: boolean;
         }[]
-      >(`https://pikespeak.ai/api/contract/balance/${accountId}`);
+      >(`https://api.pikespeak.ai/account/balance/${accountId}`, {
+        headers: {
+          "x-api-key": env.PIKESPEAK_API_KEY,
+        },
+      });
     },
   };
 };
