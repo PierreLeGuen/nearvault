@@ -1,5 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { toast } from "react-toastify";
+import { z } from "zod";
+import { config } from "~/config/config";
 import { api } from "~/lib/api";
+import { getFtBalanceAtDate } from "~/lib/client";
 import { initFungibleTokenContract } from "~/lib/ft/contract";
 import {
   dbDataToTransfersData,
@@ -7,12 +12,7 @@ import {
   type Token,
 } from "~/lib/transformations";
 import usePersistingStore from "~/store/useStore";
-import { config } from "~/config/config";
-import { z } from "zod";
-import { useSession } from "next-auth/react";
 import { getDaysDateBetweenDates } from "./dashboard";
-import { getFtBalanceAtDate } from "~/lib/client";
-import { toast } from "react-toastify";
 
 export function useAddMember() {
   return api.teams.inviteToTeam.useMutation();
@@ -120,21 +120,23 @@ export function useGetTokensForWallet(walletId: string) {
   return useQuery({
     queryKey: ["likelyTokensForWallet", walletId],
     queryFn: async () => {
-      // const data = await fetchJson<LikelyTokens>(
-      //   config.urls.kitWallet.likelyTokens(walletId),
-      // );
-      const nbdata = (
-        await config.urls.nearBlocksApiNew.getTokensForAccount(walletId)
-      ).tokens.fts;
-      const fndata =
-        (await config.urls.fastNearApi.getTokensForAccount(walletId))
-          .contract_ids || [];
-      const psdata = (
-        await config.urls.pikespeakApi.getTokensForAccount(walletId)
-      ).flatMap((w) => w.contract);
-      const data = [...new Set([...nbdata, ...fndata, ...psdata])];
+      const fetchData = async (fetcher: () => Promise<string[]>, source: string) => {
+        try {
+          return await fetcher();
+        } catch (error) {
+          console.error(`Error fetching data from ${source}:`, error);
+          return [];
+        }
+      };
 
-      console.log(data);
+      const [nbdata, fndata, psdata] = await Promise.all([
+        fetchData(async () => (await config.urls.nearBlocksApiNew.getTokensForAccount(walletId)).tokens.fts, 'NearBlocks'),
+        fetchData(async () => (await config.urls.fastNearApi.getTokensForAccount(walletId)).contract_ids || [], 'FastNear'),
+        fetchData(async () => (await config.urls.pikespeakApi.getTokensForAccount(walletId)).flatMap((w) => w.contract), 'PikesPeak'),
+      ]);
+
+      const data = [...new Set([...nbdata, ...fndata, ...psdata])];
+      console.log('Combined token data:', data);
 
       return data;
     },
