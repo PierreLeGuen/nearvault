@@ -24,6 +24,7 @@ export function TokenWithMaxInput<
       maxIndivisible: string;
       decimals: number;
       symbol: string;
+      onChange?: () => void;
     },
 ) {
   return (
@@ -42,18 +43,22 @@ export function TokenWithMaxInput<
                 placeholder={props.placeholder}
                 type="text"
                 className="rounded-r-none"
+                onChange={(e) => {
+                  field.onChange(e);
+                  props.onChange?.();
+                }}
               />
               <Button
                 type="button"
                 className="rounded-l-none"
                 disabled={props.disabled}
                 onClick={() => {
-                  field.onChange(
-                    (
-                      parseInt(props.maxIndivisible) /
-                      10 ** props.decimals
-                    ).toString(),
-                  );
+                  const maxValue = (
+                    parseInt(props.maxIndivisible) /
+                    10 ** props.decimals
+                  ).toString();
+                  field.onChange(maxValue);
+                  props.onChange?.();
                 }}
               >
                 <div className="inline-flex items-center">Max</div>
@@ -64,9 +69,9 @@ export function TokenWithMaxInput<
             {props.description
               ? props.description
               : `You can transfer up to: ${(
-                  parseInt(props.maxIndivisible) /
-                  10 ** props.decimals
-                ).toString()} ${props.symbol}`}
+                parseInt(props.maxIndivisible) /
+                10 ** props.decimals
+              ).toString()} ${props.symbol}`}
           </FormDescription>
           <FormMessage />
         </FormItem>

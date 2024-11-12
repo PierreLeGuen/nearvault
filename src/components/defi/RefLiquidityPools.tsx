@@ -25,8 +25,7 @@ import { convertToIndivisibleFormat } from "~/lib/utils";
 
 const formSchema = z.object({
   poolId: z.string(),
-  tokenLeftAmount: z.string(),
-  tokenRightAmount: z.string(),
+  tokenAmounts: z.array(z.string()).length(4),
   enableEmptyPools: z.boolean(),
   funding: z.string(),
 });
@@ -45,18 +44,14 @@ export const getUserBalanceForPool = (
   pool?: LiquidityPool,
   userTokens?: Token[],
 ) => {
-  const tokens: Token[] = [];
+  const tokens: (Token | undefined)[] = [];
 
   if (pool && userTokens) {
-    for (let i = 0; i < pool.token_account_ids.length; i++) {
+    for (let i = 0; i < 4; i++) {
       const token = userTokens.find(
         (t) => t.account_id == pool.token_account_ids[i],
       );
-      if (token) {
-        tokens.push(token);
-      } else {
-        tokens.push(undefined);
-      }
+      tokens.push(token);
     }
   }
 
@@ -67,8 +62,7 @@ const RefLiquidityPools = () => {
   const form = useZodForm(formSchema, {
     defaultValues: {
       enableEmptyPools: false,
-      tokenLeftAmount: "0",
-      tokenRightAmount: "0",
+      tokenAmounts: ["0", "0", "0", "0"],
     },
   });
   const walletsQuery = useTeamsWalletsWithLockups();
@@ -90,92 +84,83 @@ const RefLiquidityPools = () => {
     tokensQuery.data,
   );
 
-  const watchedLeft = form.watch("tokenLeftAmount");
-  const watchedRight = form.watch("tokenRightAmount");
+  const watchedAmounts = form.watch("tokenAmounts");
+  const [lastUpdatedIndex, setLastUpdatedIndex] = useState<number | null>(null);
 
-  const [expectedLeft, setExpectedLeft] = useState("0");
-  const [expectedRight, setExpectedRight] = useState("0");
   useEffect(() => {
-    const updateAmounts = () => {
-      if (!tokenPricesQuery.data) {
-        return;
+    if (
+      !tokenPricesQuery.data ||
+      !liquidityPoolDetailsQuery.data ||
+      lastUpdatedIndex === null ||
+      !watchedAmounts[lastUpdatedIndex]
+    ) {
+      return;
+    }
+
+    const prices = tokenPricesQuery.data;
+    const tokenIds = liquidityPoolDetailsQuery.data.token_account_ids;
+    const tokenCount = liquidityPoolDetailsQuery.data.token_symbols.length;
+    const amount = watchedAmounts[lastUpdatedIndex];
+
+    // Skip if the amount is invalid
+    if (amount === "" || isNaN(parseFloat(amount))) {
+      return;
+    }
+
+    const val = parseFloat(amount);
+    const currentTokenId = tokenIds[lastUpdatedIndex];
+    const currentTokenPrice = parseFloat(prices[currentTokenId]?.price || "0");
+
+    if (!currentTokenPrice) return;
+
+    // Batch all updates together
+    const updates = [...watchedAmounts];
+
+    for (let i = 0; i < tokenCount; i++) {
+      if (i !== lastUpdatedIndex) {
+        const otherTokenId = tokenIds[i];
+        const otherTokenPrice = parseFloat(prices[otherTokenId]?.price || "0");
+
+        if (otherTokenPrice) {
+          const otherAmount = (val * currentTokenPrice) / otherTokenPrice;
+          updates[i] = otherAmount.toFixed(8);
+        }
       }
-      const prices = tokenPricesQuery.data;
-      const tokenRight = liquidityPoolDetailsQuery.data?.token_account_ids[1];
-      const tokenLeft = liquidityPoolDetailsQuery.data?.token_account_ids[0];
+    }
 
-      if (watchedLeft !== expectedLeft) {
-        const leftVal = parseFloat(watchedLeft);
+    // Update all values at once
+    form.setValue("tokenAmounts", updates, {
+      shouldValidate: false,
+      shouldDirty: true,
+    });
 
-        const right =
-          (leftVal * parseFloat(prices[tokenLeft]?.price)) /
-          parseFloat(prices[tokenRight]?.price);
-
-        // update right
-        form.setValue("tokenRightAmount", right.toString());
-        setExpectedRight(right.toString());
-
-        setExpectedLeft(watchedLeft);
-        console.log("update right");
-      }
-      if (watchedRight !== expectedRight) {
-        const rightVal = parseFloat(watchedRight);
-
-        const left =
-          (rightVal * parseFloat(prices[tokenRight]?.price)) /
-          parseFloat(prices[tokenLeft]?.price);
-
-        form.setValue("tokenLeftAmount", left.toString());
-        setExpectedLeft(left.toString());
-
-        setExpectedRight(watchedRight);
-        console.log("update left");
-      }
-    };
-    updateAmounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedLeft, watchedRight]);
+  }, [lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
-    const tokenLeftAccId = liquidityPoolDetailsQuery.data?.token_account_ids[0];
-    const tokenRightAccId =
-      liquidityPoolDetailsQuery.data?.token_account_ids[1];
+    const tokenAccIds = liquidityPoolDetailsQuery.data?.token_account_ids;
+    const tokenCount = liquidityPoolDetailsQuery.data?.token_symbols.length;
 
-    const leftMetadata = await viewCall<FungibleTokenMetadata>(
-      tokenLeftAccId,
-      "ft_metadata",
-      {},
+    const metadataPromises = tokenAccIds.slice(0, tokenCount).map((accId) =>
+      viewCall<FungibleTokenMetadata>(accId, "ft_metadata", {}),
     );
-    const rightMetadata = await viewCall<FungibleTokenMetadata>(
-      tokenRightAccId,
-      "ft_metadata",
-      {},
-    );
-    const l = convertToIndivisibleFormat(
-      values.tokenLeftAmount,
-      leftMetadata.decimals,
+    const metadatas = await Promise.all(metadataPromises);
+
+    const indivisibleAmounts = values.tokenAmounts.slice(0, tokenCount).map((amount, index) =>
+      convertToIndivisibleFormat(amount, metadatas[index].decimals),
     );
 
-    const r = convertToIndivisibleFormat(
-      values.tokenRightAmount,
-      rightMetadata.decimals,
-    );
     console.log(
-      l,
-      r,
+      indivisibleAmounts,
       values.poolId,
-      tokenLeftAccId,
-      tokenRightAccId,
+      tokenAccIds,
       values.funding,
     );
 
     await depositMutation.mutateAsync({
       fundingAccId: values.funding,
-      tokenLeftAccId: tokenLeftAccId,
-      tokenRightAccId: tokenRightAccId,
-      tokenLeftAmount: l.toString(),
-      tokenRightAmount: r.toString(),
+      tokenAccIds: tokenAccIds.slice(0, tokenCount),
+      tokenAmounts: indivisibleAmounts.map((amt) => amt.toString()),
       poolId: values.poolId,
     });
   };
@@ -212,35 +197,20 @@ const RefLiquidityPools = () => {
           label="Liquidity pool"
         />
 
-        <TokenWithMaxInput
-          control={form.control}
-          name="tokenLeftAmount"
-          label={`Amount of ${
-            liquidityPoolDetailsQuery.data
-              ? liquidityPoolDetailsQuery.data?.token_symbols[0]
-              : "first token"
-          } to deposit in the pool`}
-          placeholder="10"
-          rules={{ required: true }}
-          decimals={userTokensForPool[0]?.decimals || 0}
-          maxIndivisible={userTokensForPool[0]?.balance || "0"}
-          symbol={liquidityPoolDetailsQuery.data?.token_symbols[0]}
-        />
-
-        <TokenWithMaxInput
-          control={form.control}
-          name="tokenRightAmount"
-          label={`Amount of ${
-            liquidityPoolDetailsQuery.data
-              ? liquidityPoolDetailsQuery.data?.token_symbols[1]
-              : "second token"
-          } to deposit in the pool`}
-          placeholder="10"
-          rules={{ required: true }}
-          decimals={userTokensForPool[1]?.decimals || 0}
-          maxIndivisible={userTokensForPool[1]?.balance || "0"}
-          symbol={liquidityPoolDetailsQuery.data?.token_symbols[1]}
-        />
+        {liquidityPoolDetailsQuery.data?.token_symbols.map((symbol, index) => (
+          <TokenWithMaxInput
+            key={index}
+            control={form.control}
+            name={`tokenAmounts.${index}`}
+            label={`Amount of ${symbol} to deposit in the pool`}
+            placeholder="10"
+            rules={{ required: true }}
+            decimals={userTokensForPool[index]?.decimals || 0}
+            maxIndivisible={userTokensForPool[index]?.balance || "0"}
+            symbol={symbol}
+            onChange={() => setLastUpdatedIndex(index)}
+          />
+        ))}
 
         <SwitchInput
           control={form.control}
@@ -249,14 +219,6 @@ const RefLiquidityPools = () => {
           description="Note: enable this option if you want to see empty pools."
           rules={{ required: false }}
         />
-
-        {/* <SwitchInput
-            control={form.control}
-            name={"enableNotOwningTokens"}
-            label="Enable not owning tokens"
-            description="Note: enable this option if you want to see pools where you don't own any tokens, thus you can't participate in the pool without swapping."
-            rules={{ required: false }}
-          /> */}
 
         <Button type="submit">Create liquidity deposit request</Button>
       </form>

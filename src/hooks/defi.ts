@@ -1,23 +1,23 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";
-import { type Token } from "~/lib/transformations";
-import { type FungibleTokenMetadata } from "~/lib/ft/contract";
-import { transactions } from "near-api-js";
-import { addMultisigRequestAction } from "./manage";
-import { functionCallAction } from "./lockup";
-import { TGas } from "./staking";
+import BigNumber from "bignumber.js";
 import BN from "bn.js";
-import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { toast } from "react-toastify";
 import { z } from "zod";
+import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";
+import { type FungibleTokenMetadata } from "~/lib/ft/contract";
+import { type Token } from "~/lib/transformations";
 import {
   convertToIndivisibleFormat,
   getBurrowConfigsForTokens,
   getFtMetadataForAccounts,
 } from "~/lib/utils";
-import BigNumber from "bignumber.js";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import { functionCallAction } from "./lockup";
+import { addMultisigRequestAction } from "./manage";
+import { TGas } from "./staking";
 import { useStorageDeposit } from "./transfers";
-import { toast } from "react-toastify";
 
 export const EXCHANGES = ["REF"] as const;
 
@@ -183,10 +183,12 @@ export const useGetTokenPrices = () => {
 
 type DepositParams = {
   fundingAccId: string;
-  tokenLeftAccId: string;
-  tokenLeftAmount: string;
-  tokenRightAccId: string;
-  tokenRightAmount: string;
+  tokenLeftAccId?: string;
+  tokenLeftAmount?: string;
+  tokenRightAccId?: string;
+  tokenRightAmount?: string;
+  tokenAccIds?: string[];
+  tokenAmounts?: string[];
   poolId: string;
 };
 
@@ -213,41 +215,44 @@ export const useDepositToRefLiquidityPool = () => {
         new BN("0"),
       );
 
-      const ftTransferCallLeftRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(params.tokenLeftAccId, [
-          functionCallAction(
-            "ft_transfer_call",
-            {
-              receiver_id: refAccountId,
-              amount: params.tokenLeftAmount,
-              msg: "",
-            },
-            "1",
-            (50 * TGas).toString(),
-          ),
-        ]),
-        new BN(100 * TGas),
-        new BN("0"),
-      );
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [storageDepositRequest],
+      });
 
-      const ftTransferCallRightRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(params.tokenRightAccId, [
-          functionCallAction(
-            "ft_transfer_call",
-            {
-              receiver_id: refAccountId,
-              amount: params.tokenRightAmount,
-              msg: "",
-            },
-            "1",
-            (50 * TGas).toString(),
-          ),
-        ]),
-        new BN(100 * TGas),
-        new BN("0"),
-      );
+      const tokenIds = params.tokenAccIds ||
+        [params.tokenLeftAccId, params.tokenRightAccId].filter(Boolean) as string[];
+      const amounts = params.tokenAmounts ||
+        [params.tokenLeftAmount, params.tokenRightAmount].filter(Boolean) as string[];
+
+      for (let i = 0; i < tokenIds.length; i++) {
+        if (amounts[i] === "0") continue;
+
+        const ftTransferCallRequest = transactions.functionCall(
+          "add_request",
+          addMultisigRequestAction(tokenIds[i], [
+            functionCallAction(
+              "ft_transfer_call",
+              {
+                receiver_id: refAccountId,
+                amount: amounts[i],
+                msg: "",
+              },
+              "1",
+              (50 * TGas).toString(),
+            ),
+          ]),
+          new BN(100 * TGas),
+          new BN("0"),
+        );
+
+        await wsStore.signAndSendTransaction({
+          senderId: params.fundingAccId,
+          receiverId: params.fundingAccId,
+          actions: [ftTransferCallRequest],
+        });
+      }
 
       const addLiquidityRequest = transactions.functionCall(
         "add_request",
@@ -256,7 +261,7 @@ export const useDepositToRefLiquidityPool = () => {
             "add_liquidity",
             {
               pool_id: parseInt(params.poolId),
-              amounts: [params.tokenLeftAmount, params.tokenRightAmount],
+              amounts: amounts,
             },
             parseNearAmount("0.01"),
             (50 * TGas).toString(),
@@ -266,21 +271,6 @@ export const useDepositToRefLiquidityPool = () => {
         new BN("0"),
       );
 
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
-        actions: [storageDepositRequest],
-      });
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
-        actions: [ftTransferCallLeftRequest],
-      });
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
-        actions: [ftTransferCallRightRequest],
-      });
       await wsStore.signAndSendTransaction({
         senderId: params.fundingAccId,
         receiverId: params.fundingAccId,
@@ -661,11 +651,10 @@ export const useSupplyToBurrow = () => {
               receiver_id: burrowAccountId,
               amount: indivisibleAmount.toString(),
               msg: config.config.can_use_as_collateral
-                ? `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${
-                    params.token
-                  }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
-                    config.config.extra_decimals,
-                  )}\"}}]}}`
+                ? `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${params.token
+                }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
+                  config.config.extra_decimals,
+                )}\"}}]}}`
                 : "",
             },
             "1",
@@ -724,47 +713,45 @@ export const useWithdrawSupplyFromBurrow = () => {
 
       const ftTransferCall = config.config.can_use_as_collateral
         ? transactions.functionCall(
-            "add_request",
-            addMultisigRequestAction(oracle, [
-              functionCallAction(
-                "oracle_call",
-                {
-                  receiver_id: burrowAccountId,
-                  msg: `{"Execute":{"actions":[{"DecreaseCollateral":{"token_id":"${
-                    params.token
-                  }","amount":"${indivisibleAmount.toString()}"}},{"Withdraw":{"token_id":"${
-                    params.token
+          "add_request",
+          addMultisigRequestAction(oracle, [
+            functionCallAction(
+              "oracle_call",
+              {
+                receiver_id: burrowAccountId,
+                msg: `{"Execute":{"actions":[{"DecreaseCollateral":{"token_id":"${params.token
+                  }","amount":"${indivisibleAmount.toString()}"}},{"Withdraw":{"token_id":"${params.token
                   }"}}]}}`,
-                },
-                "1",
-                (200 * TGas).toString(),
-              ),
-            ]),
-            new BN(300 * TGas),
-            new BN("0"),
-          )
+              },
+              "1",
+              (200 * TGas).toString(),
+            ),
+          ]),
+          new BN(300 * TGas),
+          new BN("0"),
+        )
         : transactions.functionCall(
-            "add_request",
-            addMultisigRequestAction(burrowAccountId, [
-              functionCallAction(
-                "execute",
-                {
-                  actions: [
-                    {
-                      Withdraw: {
-                        token_id: params.token,
-                        max_amount: indivisibleAmount.toString(),
-                      },
+          "add_request",
+          addMultisigRequestAction(burrowAccountId, [
+            functionCallAction(
+              "execute",
+              {
+                actions: [
+                  {
+                    Withdraw: {
+                      token_id: params.token,
+                      max_amount: indivisibleAmount.toString(),
                     },
-                  ],
-                },
-                "1",
-                (200 * TGas).toString(),
-              ),
-            ]),
-            new BN(300 * TGas),
-            new BN("0"),
-          );
+                  },
+                ],
+              },
+              "1",
+              (200 * TGas).toString(),
+            ),
+          ]),
+          new BN(300 * TGas),
+          new BN("0"),
+        );
 
       await wsStore.signAndSendTransaction({
         senderId: params.funding,
