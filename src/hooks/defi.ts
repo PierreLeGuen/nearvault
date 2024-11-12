@@ -222,9 +222,9 @@ export const useDepositToRefLiquidityPool = () => {
       });
 
       const tokenIds = params.tokenAccIds ||
-        [params.tokenLeftAccId, params.tokenRightAccId].filter(Boolean) as string[];
+        [params.tokenLeftAccId, params.tokenRightAccId].filter(Boolean);
       const amounts = params.tokenAmounts ||
-        [params.tokenLeftAmount, params.tokenRightAmount].filter(Boolean) as string[];
+        [params.tokenLeftAmount, params.tokenRightAmount].filter(Boolean);
 
       for (let i = 0; i < tokenIds.length; i++) {
         if (amounts[i] === "0") continue;
