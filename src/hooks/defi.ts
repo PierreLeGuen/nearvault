@@ -781,9 +781,9 @@ export const useWithdrawSupplyFromBurrow = () => {
               "oracle_call",
               {
                 receiver_id: burrowAccountId,
-                msg: `{"Execute":{"actions":[{"DecreaseCollateral":{"token_id":"${params.token
-                  }","amount":"${indivisibleAmount.toString()}"}},{"Withdraw":{"token_id":"${params.token
-                  }"}}]}}`,
+                msg: `{\"Execute\":{\"actions\":[{\"DecreaseCollateral\":{\"token_id\":\"${params.token
+                  }\",\"amount\":\"${indivisibleAmount.toString()}\"}},{\"Withdraw\":{\"token_id\":\"${params.token
+                  }\"}}]}}`,
               },
               "1",
               (200 * TGas).toString(),
