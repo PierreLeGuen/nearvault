@@ -1,6 +1,7 @@
 import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import BurrowWithdraw from "~/components/defi/BurrowWithdraw";
+import { RefWithdrawDeposits } from "~/components/defi/RefWithdrawDeposits";
 import { RefYourDeposits } from "~/components/defi/RefYourDeposits";
 import HeaderTitle from "~/components/ui/header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -17,6 +18,7 @@ const Withdraw: NextPageWithLayout = () => {
         </TabsList>
         <TabsContent value="a">
           <RefYourDeposits />
+          <RefWithdrawDeposits />
         </TabsContent>
         <TabsContent value="b">
           <BurrowWithdraw />

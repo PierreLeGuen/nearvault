@@ -939,3 +939,89 @@ export const useRefSwap = () => {
     },
   });
 };
+
+type Deposits = {
+  [tokenId: string]: string;
+};
+
+export const useGetRefDeposits = (accountId?: string) => {
+  return useQuery(
+    ["refDeposits", accountId],
+    async () => {
+      if (!accountId) return null;
+
+      const deposits = await viewCall<Deposits>(
+        "v2.ref-finance.near",
+        "get_deposits",
+        { account_id: accountId }
+      );
+
+      // Filter out zero deposits
+      const nonZeroDeposits = Object.entries(deposits)
+        .filter(([_, amount]) => amount !== "0");
+
+      if (nonZeroDeposits.length === 0) return {};
+
+      const ftMetadatas = await getFtMetadataForAccounts(
+        nonZeroDeposits.map(([tokenId]) => tokenId)
+      );
+
+      return Object.fromEntries(
+        nonZeroDeposits.map(([tokenId, amount]) => {
+          const metadata = ftMetadatas.find(ft => ft.accountId === tokenId);
+          const formattedAmount = metadata
+            ? (Number(amount) / Math.pow(10, metadata.decimals)).toString()
+            : amount;
+
+          return [tokenId, { amount, formattedAmount, metadata }];
+        })
+      );
+    },
+    {
+      enabled: !!accountId,
+      staleTime: 30 * 1000,
+    }
+  );
+};
+
+export const useRefWithdraw = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async ({
+      fundingAccId,
+      tokenId,
+      amount,
+    }: {
+      fundingAccId: string;
+      tokenId: string;
+      amount: string;
+    }) => {
+      const refAccountId = "v2.ref-finance.near";
+
+      const withdrawRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "withdraw",
+            {
+              token_id: tokenId,
+              amount,
+              unregister: false,
+            },
+            "1",
+            (200 * TGas).toString()
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0")
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: fundingAccId,
+        receiverId: fundingAccId,
+        actions: [withdrawRequest],
+      });
+    },
+  });
+};
