@@ -68,7 +68,6 @@ export const useGetRefLiquidityPools = (
 
     const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds);
 
-    console.log(ftMetadatas);
 
     return pools
       .filter((pool) => {
@@ -382,6 +381,8 @@ export interface LiquidityPoolRef {
   amp: number;
   farming: boolean;
   token_symbols: string[];
+  decimals: number[];
+  symbols: string[];
   id: string;
 }
 
@@ -404,7 +405,24 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
           const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
           return formattedAmount.toString();
         });
+        const decimals = pool.token_account_ids.map((accId) => {
+          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          if (!ftMetadata) {
+            return 0;
+          }
+          return ftMetadata.decimals;
+        });
+        const symbols = pool.token_account_ids.map((accId) => {
+          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          if (!ftMetadata) {
+            return "";
+          }
+          return ftMetadata.symbol;
+        });
+        pool.decimals = decimals;
         pool.amounts = amounts;
+        pool.symbols = symbols;
+
         return pool;
       });
     },
@@ -558,6 +576,50 @@ export const useWithdrawFromRefLiquidityPool = () => {
           actions: [withdraw],
         });
       }
+    },
+  });
+};
+
+export const useRemoveLiquidity = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async ({
+      fundingAccId,
+      poolId,
+      shares,
+      minAmounts,
+    }: {
+      fundingAccId: string;
+      poolId: number;
+      shares: string;
+      minAmounts: string[];
+    }) => {
+      const refAccountId = "v2.ref-finance.near";
+
+      const removeLiquidityRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(refAccountId, [
+          functionCallAction(
+            "remove_liquidity",
+            {
+              pool_id: poolId,
+              shares,
+              min_amounts: minAmounts,
+            },
+            "1", // depositYocto
+            (100 * TGas).toString(),
+          ),
+        ]),
+        new BN(200 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: fundingAccId,
+        receiverId: fundingAccId,
+        actions: [removeLiquidityRequest],
+      });
     },
   });
 };
@@ -1025,3 +1087,28 @@ export const useRefWithdraw = () => {
     },
   });
 };
+
+// ➜  ~ near view $REF_EX predict_remove_liquidity '{"pool_id": 4514, "shares": "1499300386878853222530449150701"}'
+// ▹▹▸▹▹ Getting a response to a read-only function call ...                                                    --------------
+// No logs
+// --------------
+// Result:
+// [
+//   "1113982708197297037453526",
+//   "393222484017"
+// ]
+// --------------
+export const usePredictRemoveLiquidity = ({ poolId, shares }: { poolId: string, shares: string }) => {
+  return useQuery({
+    queryKey: ["predictRemoveLiquidity", poolId, shares],
+    queryFn: async () => {
+      const result = await viewCall<string[]>(
+        "v2.ref-finance.near",
+        "predict_remove_liquidity",
+        { pool_id: parseInt(poolId), shares: shares }
+      );
+
+      return result;
+    }
+  })
+}

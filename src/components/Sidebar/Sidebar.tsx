@@ -115,7 +115,7 @@ export function Sidebar() {
               </SidebarSectionItem>
               <SidebarSectionItem href="/defi/withdraw">
                 <ArrowDownTrayIcon className={iconsClasses} />
-                Stable withdraw
+                Withdraw
               </SidebarSectionItem>
               <SidebarSectionItem href="/defi/claim">
                 <ArrowTrendingUpIcon className={iconsClasses} />

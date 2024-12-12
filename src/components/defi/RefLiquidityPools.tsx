@@ -137,7 +137,6 @@ const RefLiquidityPools = () => {
   }, [lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
     const tokenAccIds = liquidityPoolDetailsQuery.data?.token_account_ids;
     const tokenCount = liquidityPoolDetailsQuery.data?.token_symbols.length;
 

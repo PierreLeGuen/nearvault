@@ -30,6 +30,7 @@ export function RefWithdrawDeposits() {
         <div className="mt-8 space-y-8">
             <hr />
             <HeaderTitle level="h2">Withdraw pending deposits</HeaderTitle>
+            <p>Withdraw pending (unallocated) deposits from Ref Finance smart contracts. These tokens can be withdrawn to your wallet without any side effects.</p>
 
             {wallets.map((wallet) => (
                 <div key={wallet.id} className="space-y-4">

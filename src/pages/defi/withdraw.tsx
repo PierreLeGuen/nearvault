@@ -10,7 +10,7 @@ import { type NextPageWithLayout } from "../_app";
 const Withdraw: NextPageWithLayout = () => {
   return (
     <ContentCentered>
-      <HeaderTitle level="h1">Withdraw stable liquidity</HeaderTitle>
+      <HeaderTitle level="h1">Withdraw liquidity</HeaderTitle>
       <Tabs defaultValue="a">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="a">Ref Finance</TabsTrigger>
