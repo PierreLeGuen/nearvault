@@ -744,7 +744,7 @@ export const useSupplyToBurrow = () => {
 
 export const burrowWithdrawFormSchema = z.object({
   token: z.string(),
-  tokenAmount: z.string(),
+  tokenAmount: z.string().default("0"),
   funding: z.string(),
 });
 
