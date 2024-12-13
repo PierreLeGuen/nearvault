@@ -897,16 +897,23 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
       const config = configs.find((c) => c.token_id === token.token_id);
       console.log(token, ftMetadata, config);
 
-      return {
+      const r = {
         token,
         ftMetadata,
         config,
       };
+      console.log(r);
+      return r;
     });
 
-    return tokens;
+    return {
+      tokens: tokens,
+      holdings: holdings,
+      ftMetadatas: ftMetadatas,
+    };
   });
 };
+
 
 export const burrowClaimRewardsSchema = z.object({
   accountId: z.string(),
@@ -1112,3 +1119,37 @@ export const usePredictRemoveLiquidity = ({ poolId, shares }: { poolId: string, 
     }
   })
 }
+
+export const useWithdrawAllSupplyFromBurrow = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async ({ token, funding }: { token: string; funding: string }) => {
+      const burrowAccountId = "contract.main.burrow.near";
+      const oracle = "priceoracle.near";
+
+      const withdrawRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(oracle, [
+          functionCallAction(
+            "oracle_call",
+            {
+              receiver_id: burrowAccountId,
+              msg: `{\"Execute\":{\"actions\":[{\"Withdraw\":{\"token_id\":\"${token}\"}}]}}`,
+            },
+            "1",
+            (200 * TGas).toString(),
+          ),
+        ]),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: funding,
+        receiverId: funding,
+        actions: [withdrawRequest],
+      });
+    },
+  });
+};
