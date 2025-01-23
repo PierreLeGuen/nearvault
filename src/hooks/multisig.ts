@@ -1,4 +1,6 @@
+import { type Wallet } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
+import { viewAccessKeyList } from "~/lib/client";
 import {
   type RequestRow,
   explainAction,
@@ -8,11 +10,11 @@ import {
   MultiSigRequestActionType,
   initMultiSigContract,
 } from "~/lib/multisig/contract";
+import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { useListWallets } from "./teams";
-import { type Wallet } from "@prisma/client";
-import { viewAccessKeyList } from "~/lib/client";
-import { useWalletTerminator } from "~/store/slices/wallet-selector";
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const useGetMultisigRequestRowsForTeam = () => {
   const { newNearConnection } = usePersistingStore();
@@ -24,7 +26,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
     queryFn: async () => {
       const rows: Map<Wallet, RequestRow[]> = new Map();
 
-      const walletPromises = walletsQuery.data.map(async (wallet) => {
+      for (const wallet of walletsQuery.data) {
         const near = await newNearConnection();
         const multisig = initMultiSigContract(
           await near.account(wallet.walletAddress),
@@ -32,22 +34,28 @@ export const useGetMultisigRequestRowsForTeam = () => {
 
         let requestIds: number[];
         try {
+          await delay(50);
           requestIds = await multisig.list_request_ids();
         } catch (e) {
           console.error("must not be mutlsig wallet", e);
-          return;
+          continue;
         }
+
+        await delay(50);
         const numConfirmations = await multisig.get_num_confirmations();
 
         requestIds.sort((a, b) => Number(b) - Number(a));
 
-        const requestPromises = requestIds.map(async (requestId) => {
+        const list: RequestRow[] = [];
+        for (const requestId of requestIds) {
+          await delay(50);
           const request = await multisig.get_request({ request_id: requestId });
+          await delay(50);
           const confirmations = await multisig.get_confirmations({
             request_id: requestId,
           });
 
-          return {
+          const processedRequest = {
             ...request,
             request_id: Number(requestId),
             confirmations: confirmations,
@@ -70,40 +78,34 @@ export const useGetMultisigRequestRowsForTeam = () => {
               return action;
             }),
           };
-        });
 
-        const list: RequestRow[] = [];
-        const requests = await Promise.all(requestPromises);
-
-        for (const request of requests) {
           const explanations: explanation[] = [];
-          for (let index = 0; index < request.actions.length; index++) {
+          for (let index = 0; index < processedRequest.actions.length; index++) {
             try {
-              const action = request.actions[index];
+              const action = processedRequest.actions[index];
               const explanation = await explainAction(
                 action,
-                request.receiver_id,
+                processedRequest.receiver_id,
                 wallet.walletAddress,
-                newNearConnection, // TODO replace
+                newNearConnection,
               );
               explanations.push(explanation);
             } catch (e) {
               console.error(e);
             }
           }
+
           list.push({
-            request: request,
+            request: processedRequest,
             actual_receiver:
               explanations.find((e) => e.actual_receiver)?.actual_receiver ||
-              request.receiver_id,
+              processedRequest.receiver_id,
             explanations: explanations,
           });
         }
 
         rows.set(wallet, list);
-      });
-
-      await Promise.all(walletPromises);
+      }
 
       return rows;
     },
@@ -140,6 +142,7 @@ export function useUsableKeysForSigning(
 
       let confirmations: string[] = [];
       try {
+        await delay(50);
         confirmations = await multisig.get_confirmations({
           request_id: requestId,
         });
