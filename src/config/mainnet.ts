@@ -1,15 +1,15 @@
-import { type Config } from "./config";
 import { createKitWalletUrls } from "~/config/kitWallet";
 import { createNearBlocksUrls } from "~/config/nearBlocks";
-import { createNearBlocksApiUrls } from "./nearBlocksApi";
-import { newNearNearBlocksApiNew, baseUrl } from "./nearBlocksApiNew";
+import { type Config } from "./config";
 import { newFastNearApi } from "./fastnear";
+import { createNearBlocksApiUrls } from "./nearBlocksApi";
+import { baseUrl, newNearNearBlocksApiNew } from "./nearBlocksApiNew";
 import { newPikeSpeakApi } from "./pikespeak";
 
 export const mainnet: Config = {
   networkId: "mainnet",
   urls: {
-    rpc: "https://rpc.mainnet.near.org",
+    rpc: "https://free.rpc.fastnear.com/",
     myNearWallet: "https://app.mynearwallet.com",
     kitWallet: createKitWalletUrls("https://api.kitwallet.app"),
     nearBlocks: createNearBlocksUrls("https://nearblocks.io"),

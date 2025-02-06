@@ -14,7 +14,6 @@ import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { useListWallets } from "./teams";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const useGetMultisigRequestRowsForTeam = () => {
   const { newNearConnection } = usePersistingStore();
@@ -26,6 +25,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
     queryFn: async () => {
       const rows: Map<Wallet, RequestRow[]> = new Map();
 
+
       for (const wallet of walletsQuery.data) {
         const near = await newNearConnection();
         const multisig = initMultiSigContract(
@@ -34,23 +34,19 @@ export const useGetMultisigRequestRowsForTeam = () => {
 
         let requestIds: number[];
         try {
-          await delay(50);
           requestIds = await multisig.list_request_ids();
         } catch (e) {
           console.error("must not be mutlsig wallet", e);
           continue;
         }
 
-        await delay(50);
         const numConfirmations = await multisig.get_num_confirmations();
 
         requestIds.sort((a, b) => Number(b) - Number(a));
 
         const list: RequestRow[] = [];
         for (const requestId of requestIds) {
-          await delay(50);
           const request = await multisig.get_request({ request_id: requestId });
-          await delay(50);
           const confirmations = await multisig.get_confirmations({
             request_id: requestId,
           });
@@ -142,7 +138,6 @@ export function useUsableKeysForSigning(
 
       let confirmations: string[] = [];
       try {
-        await delay(50);
         confirmations = await multisig.get_confirmations({
           request_id: requestId,
         });

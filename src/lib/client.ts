@@ -1,12 +1,14 @@
 import type * as nearAPI from "near-api-js";
-import { initLockupContract } from "./lockup/contract";
-import { type FungibleTokenMetadata } from "./ft/contract";
+import { providers } from "near-api-js";
 import {
   type AccessKeyList,
   type CodeResult,
+  type QueryResponseKind,
 } from "near-api-js/lib/providers/provider";
-import { providers } from "near-api-js";
 import { config } from "~/config/config";
+import { RateLimiter } from "~/utils/rate-limiter";
+import { type FungibleTokenMetadata } from "./ft/contract";
+import { initLockupContract } from "./lockup/contract";
 
 export async function getSelectedPool(
   accountId: string,
@@ -19,10 +21,47 @@ export async function getSelectedPool(
 
 const TTA_URL = "http://65.21.11.6:8080";
 
+class RpcClient {
+  private rateLimiter: RateLimiter;
+  private _rpcClient: providers.JsonRpcProvider;
+  private static instance: RpcClient | null = null;
+
+  private constructor(url: string) {
+    this.rateLimiter = new RateLimiter(1);
+    this._rpcClient = new providers.JsonRpcProvider({ url });
+  }
+
+  // Add getter for the provider
+  get rpcClient(): providers.JsonRpcProvider {
+    return this._rpcClient;
+  }
+
+  // Ensure single instance
+  public static getInstance(url: string): RpcClient {
+    if (!RpcClient.instance) {
+      RpcClient.instance = new RpcClient(url);
+    }
+    return RpcClient.instance;
+  }
+
+  async sendJsonRpc(method: string, params: any): Promise<any> {
+    await this.rateLimiter.acquire();
+    const result = await this._rpcClient.sendJsonRpc(method, params);
+    return result;
+  }
+
+  async query<T extends QueryResponseKind>(request: any): Promise<T> {
+    await this.rateLimiter.acquire();
+    const result = await this._rpcClient.query<T>(request);
+    return result;
+  }
+}
+
+// Update the singleton instantiation
+export const RPC_CLIENT = RpcClient.getInstance(config.urls.rpc);
+
 function getProvider() {
-  return new providers.JsonRpcProvider({
-    url: config.urls.rpc,
-  });
+  return RPC_CLIENT
 }
 
 export async function getTransactionsReport(
