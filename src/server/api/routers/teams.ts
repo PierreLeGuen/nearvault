@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
+  publicProcedure,
 } from "~/server/api/trpc";
 
 export const teamsRouter = createTRPCRouter({
@@ -241,8 +241,7 @@ export const teamsRouter = createTRPCRouter({
         } catch (error) {
           errors.push(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
-            `Error processing wallet ${walletAddress}: ${
-              (error as Error).message
+            `Error processing wallet ${walletAddress}: ${(error as Error).message
             }`,
           );
         }
@@ -525,10 +524,10 @@ export const teamsRouter = createTRPCRouter({
           },
           invitedUser: invitedUserId
             ? {
-                connect: {
-                  id: invitedUserId,
-                },
-              }
+              connect: {
+                id: invitedUserId,
+              },
+            }
             : undefined,
           team: {
             connect: {
@@ -785,6 +784,43 @@ export const teamsRouter = createTRPCRouter({
           creator: true,
           wallet: true,
         },
+      });
+    }),
+
+
+  setRpcUrl: protectedProcedure
+    .input(z.object({ teamId: z.string(), rpcUrl: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Check if the user is part of the team
+      const userTeam = await ctx.prisma.userTeam.findUnique({
+        where: {
+          userId_teamId: {
+            userId: ctx.session.user.id,
+            teamId: input.teamId,
+          },
+        },
+      });
+
+      if (!userTeam) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You are not authorized to update this team's RPC URL.",
+        });
+      }
+
+      return ctx.prisma.team.update({
+        where: { id: input.teamId },
+        data: {
+          rpcUrl: input.rpcUrl,
+        },
+      });
+    }),
+
+  getRpcUrl: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      return ctx.prisma.team.findUnique({
+        where: { id: input.teamId },
       });
     }),
 

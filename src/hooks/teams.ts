@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { config } from "~/config/config";
@@ -52,6 +53,30 @@ export function useDeleteTeamMember() {
   return api.teams.deleteTeamMember.useMutation();
 }
 
+export function useSetRpcUrl() {
+  return api.teams.setRpcUrl.useMutation();
+}
+
+export function useAssertRpcUrl() {
+  const { setRpcUrl } = usePersistingStore();
+
+  const currentTeamQuery = useGetCurrentTeam();
+  const rpcUrlQuery = api.teams.getRpcUrl.useQuery({
+    teamId: currentTeamQuery.data?.id,
+  }, {
+    enabled: !!currentTeamQuery.data,
+  });
+
+  useEffect(() => {
+    if (rpcUrlQuery.data && rpcUrlQuery.data.rpcUrl) {
+      console.log("rpcUrlQuery.data", rpcUrlQuery.data);
+      setRpcUrl(rpcUrlQuery.data.rpcUrl);
+    } else {
+      setRpcUrl(config.urls.rpc);
+    }
+  }, [rpcUrlQuery.data, setRpcUrl]);
+}
+
 export function useListWallets() {
   const currentTeamQuery = useGetCurrentTeam();
 
@@ -59,7 +84,6 @@ export function useListWallets() {
     {
       teamId: currentTeamQuery.data?.id,
     },
-    { enabled: !!currentTeamQuery.data },
   );
 
   return useQuery({

@@ -2,10 +2,12 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import getWelcomeLayout from "~/components/WelcomeLayout";
+import { useAssertRpcUrl } from "~/hooks/teams";
 import { type NextPageWithLayout } from "./_app";
 
 const Home: NextPageWithLayout = () => {
   const { status } = useSession();
+  useAssertRpcUrl();
 
   // Determine the main content based on session status
   if (status === "loading") {

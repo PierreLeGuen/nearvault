@@ -27,7 +27,13 @@ class RpcClient {
   private static instance: RpcClient | null = null;
 
   private constructor(url: string) {
-    this.rateLimiter = new RateLimiter(1);
+    if (url === config.urls.rpc) {
+      console.log("using FREE rpc url", url);
+      this.rateLimiter = new RateLimiter(1);
+    } else {
+      console.log("using PRO rpc url", url);
+      this.rateLimiter = new RateLimiter(100);
+    }
     this._rpcClient = new providers.JsonRpcProvider({ url });
   }
 

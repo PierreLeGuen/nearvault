@@ -27,7 +27,15 @@ type AppPropsWithLayout = AppProps & {
   session: Session;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      cacheTime: 1 * 60,
+      staleTime: 2 * 60,
+    },
+  },
+});
 
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   const { getLayout } = Component;

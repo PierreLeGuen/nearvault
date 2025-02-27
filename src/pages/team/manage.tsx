@@ -21,6 +21,7 @@ import {
   useGetTeamMembers,
   useListWallets,
   useRemoveInvitation,
+  useSetRpcUrl,
 } from "~/hooks/teams";
 import { api } from "~/lib/api";
 import { type NextPageWithLayout } from "../_app";
@@ -28,10 +29,14 @@ import { type NextPageWithLayout } from "../_app";
 const ManageTeamPage: NextPageWithLayout = () => {
   const rmInvitationMut = useRemoveInvitation();
   const deleteTeamMember = useDeleteTeamMember();
+  const setRpcUrl = useSetRpcUrl();
 
   const [loadingStates, setLoadingStates] = useState<{ [id: string]: boolean }>(
     {},
   );
+  const [rpcUrlInput, setRpcUrlInput] = useState<string>("");
+  const [isSettingRpcUrl, setIsSettingRpcUrl] = useState<boolean>(false);
+
   const currentTeamQuery = useGetCurrentTeam();
   const { data: members, refetch: refetchTeamMembers } = useGetTeamMembers();
   const { data: wallets, refetch: refetchWallets } = useListWallets();
@@ -104,9 +109,34 @@ const ManageTeamPage: NextPageWithLayout = () => {
     }
   };
 
+  const handleSetRpcUrl = async () => {
+    if (!rpcUrlInput.trim()) {
+      toast.error("Please enter a valid RPC URL");
+      return;
+    }
+
+    setIsSettingRpcUrl(true);
+    try {
+      await setRpcUrl.mutateAsync({
+        teamId: currentTeamQuery.data.id,
+        rpcUrl: rpcUrlInput.trim(),
+      });
+      toast.success("RPC URL updated successfully");
+      setRpcUrlInput("");
+    } catch (error) {
+      toast.error(
+        "Failed to update RPC URL: " + (error as Error).message
+      );
+    } finally {
+      setIsSettingRpcUrl(false);
+    }
+  };
+
   return (
     <div className="flex flex-grow flex-col gap-10 px-36 py-10">
       <HeaderTitle level="h1" text="Manage team" />
+
+
       <div className="flex flex-row justify-between">
         <HeaderTitle level="h2" text="Members" />
         <AddMemberDialog />
@@ -223,6 +253,40 @@ const ManageTeamPage: NextPageWithLayout = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* RPC URL Configuration Section */}
+      <div className="flex flex-row justify-between">
+        <HeaderTitle level="h2" text="RPC URL Configuration" />
+      </div>
+      <div className="rounded-md border p-6 shadow-lg">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600">
+            Set a custom RPC URL for your team to interact with the blockchain.
+          </p>
+          <div className="flex flex-row gap-4">
+            <input
+              type="text"
+              value={rpcUrlInput}
+              onChange={(e) => setRpcUrlInput(e.target.value)}
+              placeholder={currentTeamQuery.data?.rpcUrl || "Enter RPC URL"}
+              className="flex-grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            />
+            <Button
+              onClick={handleSetRpcUrl}
+              disabled={isSettingRpcUrl}
+            >
+              {isSettingRpcUrl ? "Saving..." : "Save RPC URL"}
+            </Button>
+          </div>
+          {currentTeamQuery.data?.rpcUrl && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Current RPC URL:</p>
+              <p className="break-all text-sm text-gray-600">{currentTeamQuery.data.rpcUrl}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };

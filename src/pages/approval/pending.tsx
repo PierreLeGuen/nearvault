@@ -12,6 +12,7 @@ export type ApproveOrReject = "approve" | "reject";
 const Pending: NextPageWithLayout = () => {
   const confirmRequest = useConfirmRequest();
   const deleteRequest = useDeleteRequest();
+
   const query = useGetMultisigRequestRowsForTeam();
 
   const approveOrRejectRequest = async (
@@ -39,10 +40,10 @@ const Pending: NextPageWithLayout = () => {
           requestId: requestId,
         });
       }
+      // Only refetch after a successful action
+      await query.refetch();
     } catch (e) {
       console.error(e);
-    } finally {
-      await query.refetch();
     }
   };
 

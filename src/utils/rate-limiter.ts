@@ -3,7 +3,6 @@ export class RateLimiter {
     private lastRefill: number;
     private readonly rate: number;
     private readonly maxTokens: number;
-    private queue: Array<() => void> = [];
     private processing = false;
 
     constructor(rate: number) {
@@ -14,34 +13,17 @@ export class RateLimiter {
     }
 
     async acquire(): Promise<void> {
-        // Add request to queue
-        return new Promise<void>((resolve) => {
-            this.queue.push(resolve);
-            if (!this.processing) {
-                void this.processQueue();
-            }
-        });
-    }
-
-    private async processQueue(): Promise<void> {
-        if (this.processing) return;
-        this.processing = true;
-
-        while (this.queue.length > 0) {
+        while (true) {
             await this.refill();
 
-            if (this.tokens <= 0) {
-                const waitTime = Math.ceil(1000 / this.rate);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-                continue;
+            if (this.tokens > 0) {
+                this.tokens--;
+                return;
             }
 
-            this.tokens--;
-            const next = this.queue.shift();
-            if (next) next();
+            const waitTime = Math.ceil(1000 / this.rate);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
         }
-
-        this.processing = false;
     }
 
     private async refill(): Promise<void> {
