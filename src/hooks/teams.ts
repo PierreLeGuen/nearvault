@@ -58,23 +58,34 @@ export function useSetRpcUrl() {
 }
 
 export function useAssertRpcUrl() {
-  const { setRpcUrl } = usePersistingStore();
+  const { setRpcUrl, rpcUrl: currentRpcUrl } = usePersistingStore();
 
   const currentTeamQuery = useGetCurrentTeam();
   const rpcUrlQuery = api.teams.getRpcUrl.useQuery({
     teamId: currentTeamQuery.data?.id,
   }, {
     enabled: !!currentTeamQuery.data,
+    // Only refetch when team changes
+    staleTime: Infinity,
+    // Don't refetch on window focus
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
-    if (rpcUrlQuery.data && rpcUrlQuery.data.rpcUrl) {
-      console.log("rpcUrlQuery.data", rpcUrlQuery.data);
-      setRpcUrl(rpcUrlQuery.data.rpcUrl);
-    } else {
-      setRpcUrl(config.urls.rpc);
+    // Only update if we have data and it's different from current value
+    if (rpcUrlQuery.data) {
+      const newRpcUrl = rpcUrlQuery.data.rpcUrl || config.urls.rpc;
+      if (newRpcUrl !== currentRpcUrl) {
+        setRpcUrl(newRpcUrl);
+      }
     }
-  }, [rpcUrlQuery.data, setRpcUrl]);
+  }, [rpcUrlQuery.data, setRpcUrl, currentRpcUrl]);
+
+  return {
+    isLoading: rpcUrlQuery.isLoading,
+    error: rpcUrlQuery.error,
+    rpcUrl: rpcUrlQuery.data?.rpcUrl || config.urls.rpc
+  };
 }
 
 export function useListWallets() {

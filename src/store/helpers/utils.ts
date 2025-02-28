@@ -1,7 +1,6 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type PublicKey } from "near-api-js/lib/utils";
 import { config } from "~/config/config";
-import { fetchJson } from "~/lib/client";
 
 type Key = {
   public_key: string;
@@ -80,8 +79,8 @@ export const getAccountsForPublicKey = async (
   return [...uniqueAccounts];
 };
 
-export const filterMultisig = async (accountIds: string[]) => {
-  const provider = new JsonRpcProvider({ url: config.urls.rpc });
+export const filterMultisig = async (accountIds: string[], rpcUrl: string) => {
+  const provider = new JsonRpcProvider({ url: rpcUrl });
 
   const validAccIds = await Promise.all(
     accountIds

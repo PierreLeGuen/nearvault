@@ -156,7 +156,7 @@ export const createWalletTerminator: StateCreator<
     const keys = Object.keys(get().keysToAccounts);
     const resPromises = keys.map(async (pk) => {
       const accounts = await getAccountsForPublicKey(pk);
-      const filteredAccounts = await filterMultisig(accounts);
+      const filteredAccounts = await filterMultisig(accounts, get().getRpcUrl());
       const pkToAccounts = { [pk]: filteredAccounts };
       get().addAccounts(pkToAccounts, {});
     });
@@ -197,7 +197,7 @@ export const createWalletTerminator: StateCreator<
 
     console.log("connectWithLedger", { accounts });
 
-    const filteredAccounts = await filterMultisig(accounts);
+    const filteredAccounts = await filterMultisig(accounts, get().getRpcUrl());
 
     console.log("connectWithLedger", { filteredAccounts });
 
@@ -220,7 +220,7 @@ export const createWalletTerminator: StateCreator<
     console.log("connectWithPrivateKey", { kp });
     const pubK = kp.getPublicKey().toString();
     const accounts = await getAccountsForPublicKey(pubK);
-    const filteredAccounts = (await filterMultisig(accounts)).filter(Boolean);
+    const filteredAccounts = (await filterMultisig(accounts, get().getRpcUrl())).filter(Boolean);
 
     const newAccounts = { [pubK]: filteredAccounts };
     const newSources: Record<PublicKeyStr, Source> = {

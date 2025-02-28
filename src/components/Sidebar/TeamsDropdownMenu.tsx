@@ -32,7 +32,7 @@ export function TeamsDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const currentTeamQuery = useGetCurrentTeam();
   const setCurrentTeam = useSwictTeam();
-  const assertRpcUrl = useAssertRpcUrl();
+  useAssertRpcUrl();
 
   const teamsQuery = useListTeams();
   const deleteMemberQuery = useDeleteTeamMember();
