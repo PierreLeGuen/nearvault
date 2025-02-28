@@ -205,8 +205,8 @@ type AccessKeyResult = {
   }>;
 };
 
-export const viewAccessKeyList = async (accountId: string) => {
-  const provider = getProvider();
+export const viewAccessKeyList = async (accountId: string, rpcUrl: string) => {
+  const provider = new providers.JsonRpcProvider({ url: rpcUrl });
 
   const result = await provider.query<AccessKeyList>({
     request_type: "view_access_key_list",
