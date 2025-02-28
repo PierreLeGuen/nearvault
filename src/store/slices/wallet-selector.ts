@@ -424,8 +424,7 @@ export const createWalletTerminator: StateCreator<
     return can;
   },
   getRpcUrl: () => {
-    const nearStore = usePersistingStore();
-    return nearStore.rpcUrl;
+    return usePersistingStore.getState().rpcUrl;
   },
 });
 
