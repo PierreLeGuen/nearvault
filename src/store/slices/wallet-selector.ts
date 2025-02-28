@@ -1,35 +1,35 @@
+import { connect, keyStores, transactions, utils } from "near-api-js";
+import {
+  type FinalExecutionStatus,
+  JsonRpcProvider,
+} from "near-api-js/lib/providers";
 import {
   type Action,
   type SignedTransaction,
   type Transaction,
   createTransaction,
 } from "near-api-js/lib/transaction";
-import { create } from "zustand";
+import { KeyPair, PublicKey } from "near-api-js/lib/utils";
+import { type NextRouter } from "next/router";
+import { toast } from "react-toastify";
+import { type StateCreator, create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
 import { config } from "~/config/config";
+import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
+import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
+import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
 import {
   filterMultisig,
   getAccessKey,
   getAccountsForPublicKey,
   getLatestBlockHash,
 } from "../helpers/utils";
-import { KeyPair, PublicKey } from "near-api-js/lib/utils";
-import { connect, keyStores, transactions, utils } from "near-api-js";
-import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
-import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
-import { devtools, persist } from "zustand/middleware";
-import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
-import {
-  type FinalExecutionStatus,
-  JsonRpcProvider,
-} from "near-api-js/lib/providers";
-import { type StateCreator } from "zustand";
-import { type NextRouter } from "next/router";
+import usePersistingStore from "../useStore";
 import {
   type NavActions,
   type NavState,
   createWalletNavigation,
 } from "./navigation";
-import { toast } from "react-toastify";
 
 type PublicKeyStr = string;
 type AccountId = string;
@@ -88,6 +88,7 @@ interface WsActions {
   setSelectedPublicKey: (pk: PublicKeyStr) => void;
   canSignForAccount: (accountId: AccountId) => Promise<boolean>;
   getPublicKeysForAccount: (accountId: AccountId) => PublicKeyStr[];
+  getRpcUrl: () => string;
 }
 
 export const createWalletTerminator: StateCreator<
@@ -333,7 +334,7 @@ export const createWalletTerminator: StateCreator<
       const source = get().sources[publicKeyForTxn];
       if (source.type === "ledger") {
         const signedTx = await get().signWithLedger(tx, source.derivationPath);
-        const provider = new JsonRpcProvider({ url: config.urls.rpc });
+        const provider = new JsonRpcProvider({ url: get().getRpcUrl() });
         get().goToWaitForTransaction();
         const txn = await provider.sendTransaction(signedTx);
         if ((txn.status as FinalExecutionStatus).Failure) {
@@ -353,7 +354,7 @@ export const createWalletTerminator: StateCreator<
         const nearconfig = {
           networkId: network,
           keyStore,
-          nodeUrl: config.urls.rpc,
+          nodeUrl: get().getRpcUrl(),
         };
 
         const near = await connect(nearconfig);
@@ -421,6 +422,10 @@ export const createWalletTerminator: StateCreator<
     }
 
     return can;
+  },
+  getRpcUrl: () => {
+    const nearStore = usePersistingStore();
+    return nearStore.rpcUrl;
   },
 });
 
