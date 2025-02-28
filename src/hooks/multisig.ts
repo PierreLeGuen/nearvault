@@ -118,10 +118,11 @@ export const useGetMultisigRequestRowsForTeam = () => {
 };
 
 export function useGetAccountKeys(multisigAccountId: string) {
+  const { rpcUrl } = usePersistingStore();
   return useQuery({
     queryKey: ["getAccountKeys", multisigAccountId],
     queryFn: async () => {
-      const keys = await viewAccessKeyList(multisigAccountId);
+      const keys = await viewAccessKeyList(multisigAccountId, rpcUrl);
 
       return keys;
     },
