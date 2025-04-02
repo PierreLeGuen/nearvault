@@ -41,6 +41,7 @@ import { viewCall } from "~/lib/client";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { getFormattedAmount, type Token } from "~/lib/transformations";
 import { cn, convertToIndivisibleFormat } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
 import { ScrollArea } from "../ui/scroll-area";
 
 const formSchema = z.object({
@@ -100,6 +101,7 @@ const RefSwap = () => {
 
   const tokenPricesQuery = useGetTokenPrices();
   const swapMutation = useRefSwap();
+  const { getProvider } = usePersistingStore();
 
   const calculateExpectedAmountIn = (
     tokenOutId: string,
@@ -142,11 +144,13 @@ const RefSwap = () => {
       values.tokenOutId,
       "ft_metadata",
       {},
+      getProvider(),
     );
     const userInTokenMeta = await viewCall<FungibleTokenMetadata>(
       values.tokenInId,
       "ft_metadata",
       {},
+      getProvider(),
     );
     const userOutToken = convertToIndivisibleFormat(
       values.userAmountOut,
@@ -220,8 +224,8 @@ const RefSwap = () => {
                         {!tokensQuery.isLoading &&
                           (field.value
                             ? tokensQuery.data?.find(
-                                (token) => token.account_id === field.value,
-                              )?.symbol
+                              (token) => token.account_id === field.value,
+                            )?.symbol
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -312,8 +316,8 @@ const RefSwap = () => {
                         {!poolsForTokenQuery.isLoading &&
                           (field.value
                             ? poolsForTokenQuery.data?.accountIdToSymbol[
-                                field.value
-                              ]
+                            field.value
+                            ]
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>

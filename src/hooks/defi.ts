@@ -14,11 +14,11 @@ import {
   getFtMetadataForAccounts,
 } from "~/lib/utils";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import usePersistingStore from "~/store/useStore";
 import { functionCallAction } from "./lockup";
 import { addMultisigRequestAction } from "./manage";
 import { TGas } from "./staking";
 import { useStorageDeposit } from "./transfers";
-
 export const EXCHANGES = ["REF"] as const;
 
 export const useSupportedExchange = () => {
@@ -53,6 +53,7 @@ export const useGetRefLiquidityPools = (
   includeEmptyPools: boolean,
   poolType?: "SIMPLE_POOL" | "RATED_SWAP",
 ) => {
+  const { getProvider } = usePersistingStore();
   return useQuery(["liquidityPools", includeEmptyPools], async () => {
     const pools = await fetchJson<LiquidityPool[]>(
       "https://api.ref.finance/list-pools",
@@ -66,7 +67,7 @@ export const useGetRefLiquidityPools = (
       ),
     ];
 
-    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds);
+    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds, getProvider());
 
 
     return pools
@@ -98,6 +99,7 @@ export const useGetRefLiquidityPools = (
   });
 };
 export const useGetPoolsForToken = (tokenId: string) => {
+  const { getProvider } = usePersistingStore();
   return useQuery(["poolsForToken", tokenId], async () => {
     const pools = await fetchJson<LiquidityPool[]>(
       "https://api.ref.finance/list-pools",
@@ -109,7 +111,7 @@ export const useGetPoolsForToken = (tokenId: string) => {
         }),
       ),
     ];
-    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds);
+    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds, getProvider());
 
     const accountIdToSymbol: Record<string, string> = {};
     ftMetadatas.forEach((ftMetadata) => {
@@ -387,6 +389,7 @@ export interface LiquidityPoolRef {
 }
 
 export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
+  const { getProvider } = usePersistingStore();
   return useQuery(
     ["liquidityPoolsForAccount", accountId],
     async () => {
@@ -394,6 +397,7 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
       const pools = await fetchJson<LiquidityPoolRef[]>(endpoint);
       const ftMetadatas = await getFtMetadataForAccounts(
         pools.flatMap((pool) => pool.token_account_ids),
+        getProvider(),
       );
       return pools.map((pool) => {
         const amounts = pool.amounts.map((amount, i) => {
@@ -431,13 +435,19 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
 };
 
 export const useGetRefPoolShares = (poolId?: string, accountId?: string) => {
+  const { getProvider } = usePersistingStore();
   return useQuery(
     ["poolShares", poolId, accountId],
     async () => {
-      return viewCall<string>("v2.ref-finance.near", "get_pool_shares", {
-        pool_id: parseInt(poolId),
-        account_id: accountId,
-      });
+      return viewCall<string>(
+        "v2.ref-finance.near",
+        "get_pool_shares",
+        {
+          pool_id: parseInt(poolId),
+          account_id: accountId,
+        },
+        getProvider()
+      );
     },
     { enabled: !!poolId && !!accountId },
   );
@@ -665,6 +675,7 @@ export const burrowSupplyFormSchema = z.object({
 
 export const useSupplyToBurrow = () => {
   const wsStore = useWalletTerminator();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof burrowSupplyFormSchema>) => {
@@ -691,12 +702,14 @@ export const useSupplyToBurrow = () => {
         burrowAccountId,
         "get_asset",
         { token_id: params.token },
+        getProvider()
       );
 
       const ftMetadata = await viewCall<FungibleTokenMetadata>(
         params.token,
         "ft_metadata",
         {},
+        getProvider()
       );
 
       const indivisibleAmount = convertToIndivisibleFormat(
@@ -750,22 +763,25 @@ export const burrowWithdrawFormSchema = z.object({
 
 export const useWithdrawSupplyFromBurrow = () => {
   const wsStore = useWalletTerminator();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof burrowWithdrawFormSchema>) => {
       const burrowAccountId = "contract.main.burrow.near";
-      const oracle = "priceoracle.near";
+      const oracle = "pyth-oracle.near";
 
       const config = await viewCall<BurrowAssetConfig>(
         burrowAccountId,
         "get_asset",
         { token_id: params.token },
+        getProvider()
       );
 
       const ftMetadata = await viewCall<FungibleTokenMetadata>(
         params.token,
         "ft_metadata",
         {},
+        getProvider()
       );
 
       const indivisibleAmount = convertToIndivisibleFormat(
@@ -776,14 +792,23 @@ export const useWithdrawSupplyFromBurrow = () => {
       const ftTransferCall = config.config.can_use_as_collateral
         ? transactions.functionCall(
           "add_request",
-          addMultisigRequestAction(oracle, [
+          addMultisigRequestAction(burrowAccountId, [
             functionCallAction(
-              "oracle_call",
+              "execute_with_pyth",
               {
-                receiver_id: burrowAccountId,
-                msg: `{\"Execute\":{\"actions\":[{\"DecreaseCollateral\":{\"token_id\":\"${params.token
-                  }\",\"amount\":\"${indivisibleAmount.toString()}\"}},{\"Withdraw\":{\"token_id\":\"${params.token
-                  }\"}}]}}`,
+                actions: [
+                  {
+                    DecreaseCollateral: {
+                      token_id: params.token,
+                      amount: indivisibleAmount.toString()
+                    }
+                  },
+                  {
+                    Withdraw: {
+                      token_id: params.token
+                    }
+                  }
+                ]
               },
               "1",
               (200 * TGas).toString(),
@@ -796,7 +821,7 @@ export const useWithdrawSupplyFromBurrow = () => {
           "add_request",
           addMultisigRequestAction(burrowAccountId, [
             functionCallAction(
-              "execute",
+              "execute_with_pyth",
               {
                 actions: [
                   {
@@ -807,7 +832,7 @@ export const useWithdrawSupplyFromBurrow = () => {
                   },
                 ],
               },
-              "1",
+              "0",
               (200 * TGas).toString(),
             ),
           ]),
@@ -859,6 +884,8 @@ type BurrowAccountInfo = {
 
 // near contract call-function as-read-only contract.main.burrow.near get_account json-args '{"account_id":"pqla.near"}' network-config mainnet now
 export const useGetBurrowSuppliedTokens = (accountId: string) => {
+  const { getProvider } = usePersistingStore();
+
   return useQuery(["burrowHoldings", accountId], async () => {
     const burrowAccountId = "contract.main.burrow.near";
     const holdings = await viewCall<BurrowAccountInfo>(
@@ -867,18 +894,24 @@ export const useGetBurrowSuppliedTokens = (accountId: string) => {
       {
         account_id: accountId,
       },
+      getProvider()
     );
+
     let ftMetadatas = await getFtMetadataForAccounts(
       holdings.collateral.map((t) => t.token_id),
+      getProvider()
     );
     let configs = await getBurrowConfigsForTokens(
       holdings.collateral.map((t) => t.token_id),
+      getProvider()
     );
     const ft2 = await getFtMetadataForAccounts(
       holdings.supplied.map((t) => t.token_id),
+      getProvider()
     );
     const c2 = await getBurrowConfigsForTokens(
       holdings.supplied.map((t) => t.token_id),
+      getProvider()
     );
 
     ftMetadatas = ftMetadatas.concat(ft2);
@@ -962,6 +995,7 @@ type SwapParams = {
 export const useRefSwap = () => {
   const wsStore = useWalletTerminator();
   const storageDeposit = useStorageDeposit();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async (params: SwapParams) => {
@@ -970,6 +1004,7 @@ export const useRefSwap = () => {
       const isRegistered = await getStorageBalance(
         params.inAccId,
         params.fundingAccId,
+        getProvider()
       );
       if (isRegistered === null) {
         toast.warn(
@@ -1014,6 +1049,8 @@ type Deposits = {
 };
 
 export const useGetRefDeposits = (accountId?: string) => {
+  const { getProvider } = usePersistingStore();
+
   return useQuery(
     ["refDeposits", accountId],
     async () => {
@@ -1022,7 +1059,8 @@ export const useGetRefDeposits = (accountId?: string) => {
       const deposits = await viewCall<Deposits>(
         "v2.ref-finance.near",
         "get_deposits",
-        { account_id: accountId }
+        { account_id: accountId },
+        getProvider()
       );
 
       // Filter out zero deposits
@@ -1032,7 +1070,8 @@ export const useGetRefDeposits = (accountId?: string) => {
       if (nonZeroDeposits.length === 0) return {};
 
       const ftMetadatas = await getFtMetadataForAccounts(
-        nonZeroDeposits.map(([tokenId]) => tokenId)
+        nonZeroDeposits.map(([tokenId]) => tokenId),
+        getProvider()
       );
 
       return Object.fromEntries(
@@ -1106,18 +1145,21 @@ export const useRefWithdraw = () => {
 // ]
 // --------------
 export const usePredictRemoveLiquidity = ({ poolId, shares }: { poolId: string, shares: string }) => {
+  const { getProvider } = usePersistingStore();
+
   return useQuery({
     queryKey: ["predictRemoveLiquidity", poolId, shares],
     queryFn: async () => {
       const result = await viewCall<string[]>(
         "v2.ref-finance.near",
         "predict_remove_liquidity",
-        { pool_id: parseInt(poolId), shares: shares }
+        { pool_id: parseInt(poolId), shares: shares },
+        getProvider()
       );
 
       return result;
     }
-  })
+  });
 }
 
 export const useWithdrawAllSupplyFromBurrow = () => {
@@ -1130,15 +1172,20 @@ export const useWithdrawAllSupplyFromBurrow = () => {
 
       const withdrawRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(oracle, [
+        addMultisigRequestAction(burrowAccountId, [
           functionCallAction(
-            "oracle_call",
+            "execute_with_pyth",
             {
-              receiver_id: burrowAccountId,
-              msg: `{\"Execute\":{\"actions\":[{\"Withdraw\":{\"token_id\":\"${token}\"}}]}}`,
+              actions: [
+                {
+                  Withdraw: {
+                    token_id: token
+                  }
+                }
+              ]
             },
             "1",
-            (200 * TGas).toString(),
+            (200 * TGas).toString()
           ),
         ]),
         new BN(300 * TGas),

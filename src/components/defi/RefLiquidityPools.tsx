@@ -22,6 +22,7 @@ import { viewCall } from "~/lib/client";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { type Token } from "~/lib/transformations";
 import { convertToIndivisibleFormat } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
 
 const formSchema = z.object({
   poolId: z.string(),
@@ -83,7 +84,7 @@ const RefLiquidityPools = () => {
     liquidityPoolDetailsQuery.data,
     tokensQuery.data,
   );
-
+  const { getProvider } = usePersistingStore();
   const watchedAmounts = form.watch("tokenAmounts");
   const [lastUpdatedIndex, setLastUpdatedIndex] = useState<number | null>(null);
 
@@ -141,7 +142,7 @@ const RefLiquidityPools = () => {
     const tokenCount = liquidityPoolDetailsQuery.data?.token_symbols.length;
 
     const metadataPromises = tokenAccIds.slice(0, tokenCount).map((accId) =>
-      viewCall<FungibleTokenMetadata>(accId, "ft_metadata", {}),
+      viewCall<FungibleTokenMetadata>(accId, "ft_metadata", {}, getProvider()),
     );
     const metadatas = await Promise.all(metadataPromises);
 

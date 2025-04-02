@@ -1,9 +1,9 @@
 import BN from "bn.js";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { viewCall } from "./client";
-import { type FungibleTokenMetadata } from "./ft/contract";
 import { BurrowAssetConfig } from "~/hooks/defi";
+import { RpcClient, viewCall } from "./client";
+import { type FungibleTokenMetadata } from "./ft/contract";
 
 export const getNearTimestamp = (date: Date) => {
   return date.getTime() * 1_000_000;
@@ -51,13 +51,14 @@ export function convertToIndivisibleFormat(
   return indivisibleFormat;
 }
 
-export async function getFtMetadataForAccounts(accountIds: string[]) {
+export async function getFtMetadataForAccounts(accountIds: string[], provider: RpcClient) {
   const promises = accountIds.map(async (accountId) => {
     try {
       const res = await viewCall<FungibleTokenMetadata & { accountId: string }>(
         accountId,
         "ft_metadata",
         {},
+        provider,
       );
       res.accountId = accountId;
       return res;
@@ -69,7 +70,7 @@ export async function getFtMetadataForAccounts(accountIds: string[]) {
   return ftMetadatas;
 }
 
-export async function getBurrowConfigsForTokens(accountIds: string[]) {
+export async function getBurrowConfigsForTokens(accountIds: string[], provider: RpcClient) {
   const burrowAccountId = "contract.main.burrow.near";
   const promises = accountIds.map(async (accountId) => {
     try {
@@ -79,6 +80,7 @@ export async function getBurrowConfigsForTokens(accountIds: string[]) {
         {
           token_id: accountId,
         },
+        provider,
       );
       return res;
     } catch (e) {

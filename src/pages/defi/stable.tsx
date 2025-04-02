@@ -23,6 +23,7 @@ import {
 } from "~/hooks/teams";
 import { getRatedPool } from "~/lib/client";
 import { convertToIndivisibleFormat } from "~/lib/utils";
+import usePersistingStore from "~/store/useStore";
 import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
@@ -39,7 +40,7 @@ const formSchema = z.object({
 
 const StablePoolsRefDeposit: NextPageWithLayout = () => {
   const form = useZodForm(formSchema);
-
+  const { getProvider } = usePersistingStore();
   const depositStableMutation = useDepositToRefStableLiquidityPool();
   const poolsQuery = useGetRefLiquidityPools(true, "RATED_SWAP");
   const walletsQuery = useTeamsWalletsWithLockups();
@@ -58,7 +59,7 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
 
     // shares_total_supply/sum(c_amounts)*your token amount;
     // near contract call-function as-read-only v2.ref-finance.near get_rated_pool json-args '{"pool_id":4179}' network-config mainnet now
-    const ratedPool = await getRatedPool(parseInt(values.poolId));
+    const ratedPool = await getRatedPool(parseInt(values.poolId), getProvider());
     const shares_total_supply = BigNumber(ratedPool.shares_total_supply);
     const c_amounts = ratedPool.c_amounts.map((a) => BigNumber(a));
     // sum(c_amounts)

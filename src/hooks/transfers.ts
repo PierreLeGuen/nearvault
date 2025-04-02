@@ -2,12 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { toast } from "react-toastify";
+import { getStorageBalance } from "~/lib/client";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
+import usePersistingStore from "~/store/useStore";
 import { functionCallAction, transferAction } from "./lockup";
 import { addMultisigRequestAction } from "./manage";
 import { TGas } from "./staking";
-import { getStorageBalance } from "~/lib/client";
-import { toast } from "react-toastify";
 
 export const useCheckTransferVote = () => {
   const wsStore = useWalletTerminator();
@@ -76,7 +77,7 @@ export const useStorageDeposit = () => {
 export const useFtTransfer = () => {
   const wsStore = useWalletTerminator();
   const storageDeposit = useStorageDeposit();
-
+  const { getProvider } = usePersistingStore();
   return useMutation({
     mutationFn: async (params: {
       fundingAccId: string;
@@ -87,6 +88,7 @@ export const useFtTransfer = () => {
       const isRegistered = await getStorageBalance(
         params.tokenAddress,
         params.receiverAddress,
+        getProvider(),
       );
       if (isRegistered === null) {
         toast.warn(

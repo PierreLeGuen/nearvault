@@ -1,11 +1,13 @@
 import { connect, type Near } from "near-api-js";
 import { type StateCreator } from "zustand";
 import { config } from "~/config/config";
+import { RpcClient } from "~/lib/client";
 
 export interface NearState {
   rpcUrl: string;
   setRpcUrl: (rpcUrl: string) => void;
   newNearConnection: () => Promise<Near>;
+  getProvider: () => RpcClient;
 }
 
 export const createNearSlice: StateCreator<NearState> = (set, get) => ({
@@ -20,5 +22,8 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
       nodeUrl: rpcUrl,
     });
     return nearConnection;
+  },
+  getProvider: () => {
+    return RpcClient.getInstance(get().rpcUrl);
   },
 });

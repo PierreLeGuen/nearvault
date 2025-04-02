@@ -9,13 +9,13 @@ export function useGetBalanceBetweenDates(
 ) {
   console.log("useGetBalanceBetweenDates", from, to, accounts);
   const daysTimestamps = getDaysDateBetweenDates(from, to);
-
+  const { getProvider } = usePersistingStore();
   return useQueries({
     queries: daysTimestamps.flatMap((date) =>
       accounts.map((accountId) => ({
         queryKey: ["coinBalance", date, accountId],
         queryFn: async () => {
-          return getFtBalanceAtDate(date, accountId);
+          return getFtBalanceAtDate(date, accountId, getProvider());
         },
       })),
     ),
@@ -23,7 +23,7 @@ export function useGetBalanceBetweenDates(
 }
 
 export function useGetBalanceAtDate(date: Date, accountId: string) {
-  const { newNearConnection } = usePersistingStore();
+  const { newNearConnection, getProvider } = usePersistingStore();
 
   return useQueries({
     queries: [
@@ -31,7 +31,7 @@ export function useGetBalanceAtDate(date: Date, accountId: string) {
         queryKey: ["coinBalanceAtDate", date, accountId],
         queryFn: async () => {
           const near = await newNearConnection();
-          return getFtBalanceAtDate(date, accountId);
+          return getFtBalanceAtDate(date, accountId, getProvider());
         },
       },
     ],

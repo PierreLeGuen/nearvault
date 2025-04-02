@@ -309,6 +309,7 @@ export function useCreateTeamAndInviteUsers() {
 export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
   const wallets = useTeamsWalletsWithLockups();
   const days = getDaysDateBetweenDates(from, to);
+  const { getProvider } = usePersistingStore();
 
   return useQuery({
     queryKey: ["balances", from, to],
@@ -319,6 +320,7 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
             const balance = await getFtBalanceAtDate(
               date,
               wallet.walletDetails.walletAddress,
+              getProvider(),
             );
             return {
               date,

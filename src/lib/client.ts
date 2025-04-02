@@ -21,10 +21,11 @@ export async function getSelectedPool(
 
 const TTA_URL = "http://65.21.11.6:8080";
 
-class RpcClient {
+export class RpcClient {
   private rateLimiter: RateLimiter;
   private _rpcClient: providers.JsonRpcProvider;
   private static instance: RpcClient | null = null;
+  private static currentUrl: string | null = null;
 
   private constructor(url: string) {
     if (url === config.urls.rpc) {
@@ -42,10 +43,11 @@ class RpcClient {
     return this._rpcClient;
   }
 
-  // Ensure single instance
+  // Update getInstance to handle URL changes
   public static getInstance(url: string): RpcClient {
-    if (!RpcClient.instance) {
+    if (!RpcClient.instance || url !== RpcClient.currentUrl) {
       RpcClient.instance = new RpcClient(url);
+      RpcClient.currentUrl = url;
     }
     return RpcClient.instance;
   }
@@ -63,12 +65,7 @@ class RpcClient {
   }
 }
 
-// Update the singleton instantiation
-export const RPC_CLIENT = RpcClient.getInstance(config.urls.rpc);
 
-function getProvider() {
-  return RPC_CLIENT
-}
 
 export async function getTransactionsReport(
   startDate: Date,
@@ -109,13 +106,14 @@ export async function getTransactionsReport(
   }
 }
 
-export async function getFtBalanceAtDate(date: Date, accountId: string) {
+export async function getFtBalanceAtDate(date: Date, accountId: string, provider: RpcClient) {
   const blockId = await getLikelyBlockIdForDate(date);
 
   const balance = await getFtBalanceAtBlock(
     "usdt.tether-token.near",
     accountId,
     Number(blockId),
+    provider,
   );
   return balance;
 }
@@ -124,6 +122,7 @@ export async function getFtBalanceAtBlock(
   contractId: string,
   accountId: string,
   blockId: number,
+  provider: RpcClient,
 ) {
   const balance = await viewCall<string>(
     contractId,
@@ -131,6 +130,7 @@ export async function getFtBalanceAtBlock(
     {
       account_id: accountId,
     },
+    provider,
     Number(blockId),
   );
 
@@ -138,7 +138,8 @@ export async function getFtBalanceAtBlock(
     contractId,
     "ft_metadata",
     {},
-    blockId,
+    provider,
+    Number(blockId),
   );
 
   return {
@@ -165,9 +166,11 @@ export async function viewCall<T>(
   contract: string,
   method: string,
   args: Record<string, unknown>,
+  provider: RpcClient,
+
   blockId?: number,
 ) {
-  const provider = getProvider();
+  console.log("provider", provider);
 
   const opt = {};
   if (blockId) {
@@ -233,7 +236,7 @@ type RatedPoolResult = {
   total_fee: number;
 };
 
-export const getRatedPool = async (poolId: number) => {
+export const getRatedPool = async (poolId: number, provider: RpcClient) => {
   // near contract call-function as-read-only v2.ref-finance.near get_rated_pool json-args '{"pool_id":4179}' network-config mainnet now
   return await viewCall<RatedPoolResult>(
     "v2.ref-finance.near",
@@ -241,6 +244,7 @@ export const getRatedPool = async (poolId: number) => {
     {
       pool_id: poolId,
     },
+    provider,
   );
 };
 
@@ -249,8 +253,8 @@ type StorageBalance = {
   available: string;
 };
 
-export const getStorageBalance = async (tokenId: string, accountId: string) => {
+export const getStorageBalance = async (tokenId: string, accountId: string, provider: RpcClient) => {
   return await viewCall<StorageBalance>(tokenId, "storage_balance_of", {
     account_id: accountId,
-  });
+  }, provider);
 };
