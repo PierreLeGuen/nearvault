@@ -81,7 +81,7 @@ const Stake: NextPageWithLayout = () => {
       
     addRequestStakeToPool.mutate({
       selectedWallet: wallet,
-      poolId: poolId!,
+      poolId: poolId,
       amountNear: values.amountNear,
     });
   }
@@ -212,7 +212,7 @@ const Stake: NextPageWithLayout = () => {
                         type="button"
                         onClick={() => {
                           form.setValue("poolId", key[1].id);
-                          form.handleSubmit(onSubmit)();
+                          void form.handleSubmit(onSubmit)();
                         }}
                       >
                         <div className="inline-flex items-center">
