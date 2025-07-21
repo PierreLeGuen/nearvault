@@ -5,9 +5,12 @@ import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { NumberInput } from "~/components/inputs/number";
 import { SenderFormField } from "~/components/inputs/sender";
+import { TextInput } from "~/components/inputs/text";
 import { Button } from "~/components/ui/button";
 import { Form } from "~/components/ui/form";
 import HeaderTitle from "~/components/ui/header";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -35,13 +38,16 @@ export interface WalletPretty {
 const formSchema = z.object({
   fromWallet: z.string(),
   amountNear: z.number().min(0),
-  poolId: z.string(),
+  poolId: z.string().optional(),
+  useManualPool: z.boolean().default(false),
+  manualPoolId: z.string().optional(),
 });
 
 const Stake: NextPageWithLayout = () => {
   const { data: pools, isLoading } = useListAllStakingPoolsWithDetails();
 
   const [filteredPools, setFilteredPools] = useState(new Map());
+  const [useManualPool, setUseManualPool] = useState(false);
   const listWallets = useTeamsWalletsWithLockups();
 
   const form = useZodForm(formSchema);
@@ -54,9 +60,28 @@ const Stake: NextPageWithLayout = () => {
   const isPoolSelected = useIsPoolSelected(wallet);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Validate pool selection
+    if (values.useManualPool && !values.manualPoolId) {
+      form.setError("manualPoolId", {
+        type: "manual",
+        message: "Please enter a pool ID",
+      });
+      return;
+    }
+    
+    if (!values.useManualPool && !values.poolId) {
+      // Show a general error message since poolId is set by clicking table buttons
+      alert("Please select a pool from the list");
+      return;
+    }
+    
+    const poolId = values.useManualPool && values.manualPoolId 
+      ? values.manualPoolId 
+      : values.poolId;
+      
     addRequestStakeToPool.mutate({
       selectedWallet: wallet,
-      poolId: values.poolId,
+      poolId: poolId!,
       amountNear: values.amountNear,
     });
   }
@@ -113,6 +138,53 @@ const Stake: NextPageWithLayout = () => {
             rules={{ required: true }}
             disabled={false}
           />
+          
+          {/* Manual Pool Entry Section */}
+          <div className="space-y-4 rounded-lg border p-4 bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="manual-pool-toggle">Manual Pool Entry</Label>
+                <p className="text-sm text-gray-600">
+                  Enter a pool ID manually if it's not in the list
+                </p>
+              </div>
+              <Switch
+                id="manual-pool-toggle"
+                checked={useManualPool}
+                onCheckedChange={(checked) => {
+                  setUseManualPool(checked);
+                  form.setValue("useManualPool", checked);
+                  if (!checked) {
+                    form.setValue("manualPoolId", "");
+                  }
+                }}
+              />
+            </div>
+            
+            {useManualPool && (
+              <div className="space-y-2">
+                <TextInput
+                  control={form.control}
+                  name="manualPoolId"
+                  label="Pool ID"
+                  placeholder="example.pool.near"
+                  rules={{ 
+                    required: useManualPool ? "Pool ID is required" : false,
+                    pattern: {
+                      value: /^[a-z0-9-_.]+$/,
+                      message: "Invalid pool ID format"
+                    }
+                  }}
+                  description="Enter the exact pool ID (e.g., zavodil.poolv1.near)"
+                />
+                <p className="text-sm text-yellow-600">
+                  ⚠️ Warning: Make sure you enter the correct pool ID. Invalid pool IDs may result in failed transactions.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {!useManualPool && (
           <div className="rounded-md border shadow-lg">
             <Table>
               <TableHeader>
@@ -137,8 +209,11 @@ const Stake: NextPageWithLayout = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
-                        type="submit"
-                        onClick={() => form.setValue("poolId", key[1].id)}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("poolId", key[1].id);
+                          form.handleSubmit(onSubmit)();
+                        }}
                       >
                         <div className="inline-flex items-center">
                           {wallet && wallet.isLockup && !isPoolSelected.data
@@ -152,6 +227,13 @@ const Stake: NextPageWithLayout = () => {
               </TableBody>
             </Table>
           </div>
+          )}
+          
+          {useManualPool && (
+            <Button type="submit" className="w-full">
+              Create stake request with manual pool
+            </Button>
+          )}
         </form>
       </Form>
     </ContentCentered>
