@@ -236,44 +236,81 @@ export function useGetStakingDetailsForWallets() {
   const { newNearConnection } = usePersistingStore();
   const listWallets = useTeamsWalletsWithLockups();
 
-  return useQuery<WalletData[], Error>(
+  return useQuery<
+    {
+      walletData: WalletData[];
+      errors: { wallet: string; error: string; walletAddress: string }[];
+    },
+    Error
+  >(
     ["allStakedPools", listWallets.data],
-    async (): Promise<WalletData[]> => {
-      const promises = listWallets.data.map(async (wallet) => {
+    async (): Promise<{
+      walletData: WalletData[];
+      errors: { wallet: string; error: string; walletAddress: string }[];
+    }> => {
+      const errors: { wallet: string; error: string; walletAddress: string }[] =
+        [];
+
+      const promises = listWallets.data.map(async (wallet, index) => {
         try {
           const data = await config.urls.nearBlocksApiNew.getStakingDeposits(
             wallet.walletDetails.walletAddress,
           );
+
+          // Check if data is actually an array before processing
+          if (!Array.isArray(data)) {
+            console.error(
+              `Invalid response for wallet ${wallet.walletDetails.walletAddress}: expected array but got`,
+              data,
+            );
+            errors.push({
+              wallet: wallet.prettyName || wallet.walletDetails.walletAddress,
+              error: "Invalid API response format",
+              walletAddress: wallet.walletDetails.walletAddress,
+            });
+            return;
+          }
+
           const n = await newNearConnection();
           const stakedPools = [];
 
           for (const pool of data) {
-            const c = initStakingContract(
-              await n.account(""),
-              pool.validator_id,
-            );
+            try {
+              const c = initStakingContract(
+                await n.account(""),
+                pool.validator_id,
+              );
 
-            const total_balance = await c.get_account_staked_balance({
-              account_id: wallet.walletDetails.walletAddress,
-            });
+              const total_balance = await c.get_account_staked_balance({
+                account_id: wallet.walletDetails.walletAddress,
+              });
 
-            const unstaked_balance = await c.get_account_unstaked_balance({
-              account_id: wallet.walletDetails.walletAddress,
-            });
+              const unstaked_balance = await c.get_account_unstaked_balance({
+                account_id: wallet.walletDetails.walletAddress,
+              });
 
-            if (total_balance === "0" && unstaked_balance === "0") {
-              continue;
+              if (total_balance === "0" && unstaked_balance === "0") {
+                continue;
+              }
+
+              const canWithdraw = await c.is_account_unstaked_balance_available(
+                {
+                  account_id: wallet.walletDetails.walletAddress,
+                },
+              );
+
+              stakedPools.push({
+                deposit: total_balance,
+                validator_id: pool.validator_id,
+                withdraw_available: canWithdraw ? unstaked_balance : "0",
+              });
+            } catch (poolError) {
+              console.error(
+                `Error fetching data for pool ${pool.validator_id}:`,
+                poolError,
+              );
+              // Continue with other pools even if one fails
             }
-
-            const canWithdraw = await c.is_account_unstaked_balance_available({
-              account_id: wallet.walletDetails.walletAddress,
-            });
-
-            stakedPools.push({
-              deposit: total_balance,
-              validator_id: pool.validator_id,
-              withdraw_available: canWithdraw ? unstaked_balance : "0",
-            });
           }
 
           if (stakedPools.length > 0) {
@@ -287,14 +324,50 @@ export function useGetStakingDetailsForWallets() {
               wallet.walletDetails.walletAddress,
             );
           }
-        } catch (e) {
-          console.error(e);
+        } catch (e: any) {
+          console.error(
+            `Error fetching staking data for wallet ${wallet.walletDetails.walletAddress}:`,
+            e,
+          );
+
+          // Provide more specific error messages for common cases
+          let errorMessage = "Failed to fetch staking data";
+
+          // When CORS blocks a 429 response, we get a generic "Failed to fetch" error
+          if (e instanceof TypeError && e.message === "Failed to fetch") {
+            errorMessage =
+              "Rate limit exceeded or network error. Please try again later";
+          } else if (
+            e?.status === 429 ||
+            e?.response?.status === 429 ||
+            e?.message?.includes("429") ||
+            e?.message?.includes("rate limit")
+          ) {
+            errorMessage = "Rate limit exceeded. Please try again later";
+          } else if (e instanceof Error) {
+            errorMessage = e.message;
+          }
+
+          errors.push({
+            wallet: wallet.prettyName || wallet.walletDetails.walletAddress,
+            error: errorMessage,
+            walletAddress: wallet.walletDetails.walletAddress,
+          });
         }
       });
+
       const p = await Promise.all(promises);
-      return p.filter((walletData) => walletData !== undefined) as WalletData[];
+      const walletData = p.filter(
+        (walletData) => walletData !== undefined,
+      ) as WalletData[];
+
+      return { walletData, errors };
     },
-    { enabled: !!listWallets.data },
+    {
+      enabled: !!listWallets.data,
+      // Don't retry on initial load to avoid rate limit cascades
+      retry: false,
+    },
   );
 }
 

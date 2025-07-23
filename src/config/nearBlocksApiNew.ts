@@ -38,7 +38,7 @@ export type NearBlocksApiNewType = ReturnType<typeof newNearNearBlocksApiNew>;
 
 // Create a new limiter with a maximum of 5 requests per second
 const limiter = new Bottleneck({
-  minTime: 200, // 5 requests per second
+  minTime: 400, // 2.5 requests per second
 });
 
 export const newNearNearBlocksApiNew = (baseUrl: string) => ({

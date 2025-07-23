@@ -65,8 +65,6 @@ export class RpcClient {
   }
 }
 
-
-
 export async function getTransactionsReport(
   startDate: Date,
   endDate: Date,
@@ -106,7 +104,11 @@ export async function getTransactionsReport(
   }
 }
 
-export async function getFtBalanceAtDate(date: Date, accountId: string, provider: RpcClient) {
+export async function getFtBalanceAtDate(
+  date: Date,
+  accountId: string,
+  provider: RpcClient,
+) {
   const blockId = await getLikelyBlockIdForDate(date);
 
   const balance = await getFtBalanceAtBlock(
@@ -222,6 +224,14 @@ export const viewAccessKeyList = async (accountId: string, rpcUrl: string) => {
 
 export const fetchJson = async <T>(url: string, options = {}): Promise<T> => {
   const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => response.statusText);
+    throw new Error(
+      `HTTP ${response.status}: ${errorText || response.statusText}`,
+    );
+  }
+
   return (await response.json()) as T;
 };
 
@@ -253,8 +263,17 @@ type StorageBalance = {
   available: string;
 };
 
-export const getStorageBalance = async (tokenId: string, accountId: string, provider: RpcClient) => {
-  return await viewCall<StorageBalance>(tokenId, "storage_balance_of", {
-    account_id: accountId,
-  }, provider);
+export const getStorageBalance = async (
+  tokenId: string,
+  accountId: string,
+  provider: RpcClient,
+) => {
+  return await viewCall<StorageBalance>(
+    tokenId,
+    "storage_balance_of",
+    {
+      account_id: accountId,
+    },
+    provider,
+  );
 };

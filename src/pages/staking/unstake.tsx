@@ -34,10 +34,12 @@ const Unstake: NextPageWithLayout = () => {
     );
   }
 
+  const walletData = getStakingDetailsForWallets.data?.walletData || [];
+
   return (
     <ContentCentered>
       <HeaderTitle level="h1" text="Unstake" />
-      {getStakingDetailsForWallets.data?.map((walletData) => (
+      {walletData.map((walletData) => (
         <div key={walletData.wallet.walletDetails.walletAddress}>
           <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
           <div className="rounded-md border shadow-lg">

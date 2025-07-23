@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { WalletData } from "~/components/Staking/AllStaked";
 import { WithdrawDialog } from "~/components/dialogs/WithdrawDialog";
+import { Button } from "~/components/ui/button";
 import HeaderTitle from "~/components/ui/header";
 import {
   Table,
@@ -20,12 +21,14 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
   const [filteredPools, setFilteredPools] = useState<WalletData[]>([]);
 
   useEffect(() => {
-    const data = getStakingDetailsForWallets.data;
-    console.log(data);
+    const result = getStakingDetailsForWallets.data;
+    console.log("Staking data result:", result);
 
-    if (!data) {
+    if (!result) {
       return;
     }
+
+    const data = result.walletData;
     const tmp = data
       .map((walletData) => {
         const poolsForWallet = walletData.stakedPools
@@ -48,14 +51,113 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
     setFilteredPools(tmp);
   }, [getStakingDetailsForWallets.data]);
 
+  const handleRetry = () => {
+    getStakingDetailsForWallets.refetch();
+  };
+
   if (getStakingDetailsForWallets.isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+        <HeaderTitle level="h1" text="Withdraw" />
+        <div className="text-gray-500">Loading staking data...</div>
+      </div>
+    );
   }
+
+  if (getStakingDetailsForWallets.isError) {
+    return (
+      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+        <HeaderTitle level="h1" text="Withdraw" />
+        <div className="space-y-4">
+          <div className="text-red-500">
+            Error loading staking data:{" "}
+            {getStakingDetailsForWallets.error?.message || "Unknown error"}
+          </div>
+          <Button onClick={handleRetry} variant="outline">
+            Retry Loading
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const errors = getStakingDetailsForWallets.data?.errors || [];
+  const hasRateLimitErrors = errors.some(
+    (error) =>
+      error.error.includes("Rate limit") || error.error.includes("rate limit"),
+  );
 
   return (
     <>
       <div className="flex flex-grow flex-col gap-10 px-36 py-10">
         <HeaderTitle level="h1" text="Withdraw" />
+
+        {errors.length > 0 && (
+          <div
+            className={`rounded-md border p-4 ${
+              hasRateLimitErrors
+                ? "border-orange-200 bg-orange-50"
+                : "border-red-200 bg-red-50"
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p
+                  className={`mb-2 font-semibold ${
+                    hasRateLimitErrors ? "text-orange-700" : "text-red-700"
+                  }`}
+                >
+                  Failed to load staking data for {errors.length} wallet
+                  {errors.length > 1 ? "s" : ""}:
+                </p>
+                {hasRateLimitErrors && (
+                  <p className="mb-2 text-sm text-orange-600">
+                    ⚠️ Rate limit reached. Please wait a moment before retrying
+                    to avoid being temporarily blocked.
+                  </p>
+                )}
+                <ul className="list-inside list-disc space-y-1">
+                  {errors.map((error, index) => (
+                    <li
+                      key={`${error.walletAddress}-${index}`}
+                      className={`text-sm ${
+                        error.error.includes("Rate limit")
+                          ? "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      <span className="font-medium">{error.wallet}:</span>{" "}
+                      {error.error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                size="sm"
+                className="ml-4"
+                disabled={getStakingDetailsForWallets.isFetching}
+              >
+                {getStakingDetailsForWallets.isFetching
+                  ? "Retrying..."
+                  : "Retry"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {getStakingDetailsForWallets.isFetching && (
+          <div className="text-gray-500">Refreshing data...</div>
+        )}
+
+        {filteredPools.length === 0 && errors.length === 0 && (
+          <div className="text-gray-500">
+            No wallets have tokens available for withdrawal. You need to unstake
+            tokens first before you can withdraw them.
+          </div>
+        )}
+
         {filteredPools.map((walletData) => (
           <div key={walletData.wallet.walletDetails.walletAddress}>
             <HeaderTitle level="h2" text={walletData.wallet.prettyName} />
