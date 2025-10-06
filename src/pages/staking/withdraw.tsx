@@ -52,7 +52,7 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
   }, [getStakingDetailsForWallets.data]);
 
   const handleRetry = () => {
-    getStakingDetailsForWallets.refetch();
+    void getStakingDetailsForWallets.refetch();
   };
 
   if (getStakingDetailsForWallets.isLoading) {

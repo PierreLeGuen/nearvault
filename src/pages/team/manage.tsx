@@ -21,6 +21,7 @@ import {
   useGetTeamMembers,
   useListWallets,
   useRemoveInvitation,
+  useSetNearBlocksApiKey,
   useSetRpcUrl,
 } from "~/hooks/teams";
 import { api } from "~/lib/api";
@@ -30,12 +31,15 @@ const ManageTeamPage: NextPageWithLayout = () => {
   const rmInvitationMut = useRemoveInvitation();
   const deleteTeamMember = useDeleteTeamMember();
   const setRpcUrl = useSetRpcUrl();
+  const setNearBlocksApiKey = useSetNearBlocksApiKey();
 
   const [loadingStates, setLoadingStates] = useState<{ [id: string]: boolean }>(
     {},
   );
   const [rpcUrlInput, setRpcUrlInput] = useState<string>("");
   const [isSettingRpcUrl, setIsSettingRpcUrl] = useState<boolean>(false);
+  const [apiKeyInput, setApiKeyInput] = useState<string>("");
+  const [isSettingApiKey, setIsSettingApiKey] = useState<boolean>(false);
 
   const currentTeamQuery = useGetCurrentTeam();
   const { data: members, refetch: refetchTeamMembers } = useGetTeamMembers();
@@ -124,18 +128,36 @@ const ManageTeamPage: NextPageWithLayout = () => {
       toast.success("RPC URL updated successfully");
       setRpcUrlInput("");
     } catch (error) {
-      toast.error(
-        "Failed to update RPC URL: " + (error as Error).message
-      );
+      toast.error("Failed to update RPC URL: " + (error as Error).message);
     } finally {
       setIsSettingRpcUrl(false);
+    }
+  };
+
+  const handleSetApiKey = async () => {
+    if (!apiKeyInput.trim()) {
+      toast.error("Please enter a valid API key");
+      return;
+    }
+
+    setIsSettingApiKey(true);
+    try {
+      await setNearBlocksApiKey.mutateAsync({
+        teamId: currentTeamQuery.data.id,
+        apiKey: apiKeyInput.trim(),
+      });
+      toast.success("NearBlocks API key updated successfully");
+      setApiKeyInput("");
+    } catch (error) {
+      toast.error("Failed to update API key: " + (error as Error).message);
+    } finally {
+      setIsSettingApiKey(false);
     }
   };
 
   return (
     <div className="flex flex-grow flex-col gap-10 px-36 py-10">
       <HeaderTitle level="h1" text="Manage team" />
-
 
       <div className="flex flex-row justify-between">
         <HeaderTitle level="h2" text="Members" />
@@ -271,22 +293,55 @@ const ManageTeamPage: NextPageWithLayout = () => {
               placeholder={currentTeamQuery.data?.rpcUrl || "Enter RPC URL"}
               className="flex-grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
-            <Button
-              onClick={handleSetRpcUrl}
-              disabled={isSettingRpcUrl}
-            >
+            <Button onClick={handleSetRpcUrl} disabled={isSettingRpcUrl}>
               {isSettingRpcUrl ? "Saving..." : "Save RPC URL"}
             </Button>
           </div>
           {currentTeamQuery.data?.rpcUrl && (
             <div className="mt-2">
               <p className="text-sm font-medium">Current RPC URL:</p>
-              <p className="break-all text-sm text-gray-600">{currentTeamQuery.data.rpcUrl}</p>
+              <p className="break-all text-sm text-gray-600">
+                {currentTeamQuery.data.rpcUrl}
+              </p>
             </div>
           )}
         </div>
       </div>
 
+      {/* NearBlocks API Key Configuration Section */}
+      <div className="flex flex-row justify-between">
+        <HeaderTitle level="h2" text="NearBlocks API Key Configuration" />
+      </div>
+      <div className="rounded-md border p-6 shadow-lg">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600">
+            Set a custom NearBlocks API key for your team to access enhanced API
+            features and higher rate limits.
+          </p>
+          <div className="flex flex-row gap-4">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder={
+                currentTeamQuery.data?.nearBlocksApiKey
+                  ? "••••••••"
+                  : "Enter API Key"
+              }
+              className="flex-grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            />
+            <Button onClick={handleSetApiKey} disabled={isSettingApiKey}>
+              {isSettingApiKey ? "Saving..." : "Save API Key"}
+            </Button>
+          </div>
+          {currentTeamQuery.data?.nearBlocksApiKey && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Current API Key:</p>
+              <p className="text-sm text-gray-600">••••••••</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

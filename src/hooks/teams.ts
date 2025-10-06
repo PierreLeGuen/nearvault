@@ -57,19 +57,26 @@ export function useSetRpcUrl() {
   return api.teams.setRpcUrl.useMutation();
 }
 
+export function useSetNearBlocksApiKey() {
+  return api.teams.setNearBlocksApiKey.useMutation();
+}
+
 export function useAssertRpcUrl() {
   const { setRpcUrl, rpcUrl: currentRpcUrl } = usePersistingStore();
 
   const currentTeamQuery = useGetCurrentTeam();
-  const rpcUrlQuery = api.teams.getRpcUrl.useQuery({
-    teamId: currentTeamQuery.data?.id,
-  }, {
-    enabled: !!currentTeamQuery.data,
-    // Only refetch when team changes
-    staleTime: Infinity,
-    // Don't refetch on window focus
-    refetchOnWindowFocus: false,
-  });
+  const rpcUrlQuery = api.teams.getRpcUrl.useQuery(
+    {
+      teamId: currentTeamQuery.data?.id,
+    },
+    {
+      enabled: !!currentTeamQuery.data,
+      // Only refetch when team changes
+      staleTime: Infinity,
+      // Don't refetch on window focus
+      refetchOnWindowFocus: false,
+    },
+  );
 
   useEffect(() => {
     // Only update if we have data and it's different from current value
@@ -84,18 +91,51 @@ export function useAssertRpcUrl() {
   return {
     isLoading: rpcUrlQuery.isLoading,
     error: rpcUrlQuery.error,
-    rpcUrl: rpcUrlQuery.data?.rpcUrl || config.urls.rpc
+    rpcUrl: rpcUrlQuery.data?.rpcUrl || config.urls.rpc,
+  };
+}
+
+export function useAssertNearBlocksApiKey() {
+  const { setNearBlocksApiKey, nearBlocksApiKey: currentApiKey } =
+    usePersistingStore();
+
+  const currentTeamQuery = useGetCurrentTeam();
+  const apiKeyQuery = api.teams.getNearBlocksApiKey.useQuery(
+    {
+      teamId: currentTeamQuery.data?.id,
+    },
+    {
+      enabled: !!currentTeamQuery.data,
+      // Only refetch when team changes
+      staleTime: Infinity,
+      // Don't refetch on window focus
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  useEffect(() => {
+    // Only update if we have data and it's different from current value
+    if (apiKeyQuery.data !== undefined) {
+      const newApiKey = apiKeyQuery.data?.nearBlocksApiKey || null;
+      if (newApiKey !== currentApiKey) {
+        setNearBlocksApiKey(newApiKey);
+      }
+    }
+  }, [apiKeyQuery.data, setNearBlocksApiKey, currentApiKey]);
+
+  return {
+    isLoading: apiKeyQuery.isLoading,
+    error: apiKeyQuery.error,
+    apiKey: apiKeyQuery.data?.nearBlocksApiKey || null,
   };
 }
 
 export function useListWallets() {
   const currentTeamQuery = useGetCurrentTeam();
 
-  const query = api.teams.getWalletsForTeam.useQuery(
-    {
-      teamId: currentTeamQuery.data?.id,
-    },
-  );
+  const query = api.teams.getWalletsForTeam.useQuery({
+    teamId: currentTeamQuery.data?.id,
+  });
 
   return useQuery({
     queryKey: ["walletsSorted", currentTeamQuery.data?.id],
@@ -152,10 +192,15 @@ export function useGetInvitationsForTeam() {
 }
 
 export function useGetTokensForWallet(walletId: string) {
+  const { getNearBlocksApi } = usePersistingStore();
+
   return useQuery({
     queryKey: ["likelyTokensForWallet", walletId],
     queryFn: async () => {
-      const fetchData = async (fetcher: () => Promise<string[]>, source: string) => {
+      const fetchData = async (
+        fetcher: () => Promise<string[]>,
+        source: string,
+      ) => {
         try {
           return await fetcher();
         } catch (error) {
@@ -165,13 +210,28 @@ export function useGetTokensForWallet(walletId: string) {
       };
 
       const [nbdata, fndata, psdata] = await Promise.all([
-        fetchData(async () => (await config.urls.nearBlocksApiNew.getTokensForAccount(walletId)).tokens.fts, 'NearBlocks'),
-        fetchData(async () => (await config.urls.fastNearApi.getTokensForAccount(walletId)).contract_ids || [], 'FastNear'),
-        fetchData(async () => (await config.urls.pikespeakApi.getTokensForAccount(walletId)).flatMap((w) => w.contract), 'PikesPeak'),
+        fetchData(
+          async () =>
+            (await getNearBlocksApi().getTokensForAccount(walletId)).tokens.fts,
+          "NearBlocks",
+        ),
+        fetchData(
+          async () =>
+            (await config.urls.fastNearApi.getTokensForAccount(walletId))
+              .contract_ids || [],
+          "FastNear",
+        ),
+        fetchData(
+          async () =>
+            (
+              await config.urls.pikespeakApi.getTokensForAccount(walletId)
+            ).flatMap((w) => w.contract),
+          "PikesPeak",
+        ),
       ]);
 
       const data = [...new Set([...nbdata, ...fndata, ...psdata])];
-      console.log('Combined token data:', data);
+      console.log("Combined token data:", data);
 
       return data;
     },

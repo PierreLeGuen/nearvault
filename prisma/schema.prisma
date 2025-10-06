@@ -59,15 +59,16 @@ model User {
 }
 
 model Team {
-  id              String            @id @default(cuid())
-  name            String
-  rpcUrl          String?
-  Beneficiary     Beneficiary[]
-  invitations     TeamInvitation[]
-  TransferHistory TransferHistory[]
-  User            User[]
-  users           UserTeam[]
-  wallets         Wallet[]
+  id                String            @id @default(cuid())
+  name              String
+  rpcUrl            String?
+  nearBlocksApiKey  String?
+  Beneficiary       Beneficiary[]
+  invitations       TeamInvitation[]
+  TransferHistory   TransferHistory[]
+  User              User[]
+  users             UserTeam[]
+  wallets           Wallet[]
 }
 
 model Wallet {

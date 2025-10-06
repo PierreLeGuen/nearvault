@@ -76,7 +76,7 @@ const Manage: NextPageWithLayout = () => {
 
                     <Button variant={"ghost"} size={"icon"} asChild>
                       <Link
-                        href={config.urls.nearBlocks.accountDetails(
+                        href={config.urls.nearBlocksApiUI.accountDetails(
                           benef.walletAddress,
                         )}
                         target="_blank"

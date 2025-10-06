@@ -58,7 +58,7 @@ const History: NextPageWithLayout = () => {
                   </TableCell>
                   <TableCell>
                     <a
-                      href={config.urls.nearBlocks.txDetails(
+                      href={config.urls.nearBlocksApiUI.txDetails(
                         transaction.createRequestTxnId,
                       )}
                       target="_blank"

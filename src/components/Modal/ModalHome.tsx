@@ -232,7 +232,7 @@ const WaitForTransaction = () => {
   const wsStore = useWalletTerminator();
 
   if (wsStore.transactionId) {
-    const nbUrl = config.urls.nearBlocks.txDetails(wsStore.transactionId);
+    const nbUrl = config.urls.nearBlocksApiUI.txDetails(wsStore.transactionId);
     return (
       <>
         <p>Success!</p>

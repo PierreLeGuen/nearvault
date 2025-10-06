@@ -1,6 +1,7 @@
 import { JsonRpcProvider } from "near-api-js/lib/providers";
 import { type PublicKey } from "near-api-js/lib/utils";
 import { config } from "~/config/config";
+import { NearBlocksApi } from "~/config/nearBlocksApiNew";
 
 type Key = {
   public_key: string;
@@ -68,8 +69,9 @@ export const getAccountsForPublicKey = async (
   publicKey: string,
 ): Promise<string[]> => {
   const accounts = await config.urls.fastNearApi.getAccountsForKey(publicKey);
-  const accountsNb =
-    await config.urls.nearBlocksApiNew.getAccountsForPublicKey(publicKey);
+  const accountsNb = await NearBlocksApi.getInstance(
+    config.urls.nearBlocksApiUrl,
+  ).getAccountsForPublicKey(publicKey);
 
   const uniqueAccounts = new Set([
     ...accounts.account_ids,

@@ -4,7 +4,6 @@ import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
 import { type WalletData } from "~/components/Staking/AllStaked";
-import { config } from "~/config/config";
 import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
 import { type WalletPretty } from "~/pages/staking/stake";
@@ -40,8 +39,10 @@ export function useIsPoolSelected(selectedWallet: WalletPretty | undefined) {
 }
 
 export function useListAllStakingPools() {
+  const { getNearBlocksApi } = usePersistingStore();
+
   return useQuery(["allAvailablePools"], async () => {
-    const res = await config.urls.nearBlocksApiNew.getStakingPools();
+    const res = await getNearBlocksApi().getStakingPools();
 
     return res;
   });
@@ -233,7 +234,7 @@ export function useAddRequestStakeToPool() {
 }
 
 export function useGetStakingDetailsForWallets() {
-  const { newNearConnection } = usePersistingStore();
+  const { newNearConnection, getNearBlocksApi } = usePersistingStore();
   const listWallets = useTeamsWalletsWithLockups();
 
   return useQuery<
@@ -253,7 +254,7 @@ export function useGetStakingDetailsForWallets() {
 
       const promises = listWallets.data.map(async (wallet, index) => {
         try {
-          const data = await config.urls.nearBlocksApiNew.getStakingDeposits(
+          const data = await getNearBlocksApi().getStakingDeposits(
             wallet.walletDetails.walletAddress,
           );
 

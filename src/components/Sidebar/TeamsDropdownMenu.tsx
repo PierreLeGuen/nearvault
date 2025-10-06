@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
+  useAssertNearBlocksApiKey,
   useAssertRpcUrl,
   useDeleteTeamMember,
   useGetCurrentTeam,
@@ -33,6 +34,7 @@ export function TeamsDropdownMenu() {
   const currentTeamQuery = useGetCurrentTeam();
   const setCurrentTeam = useSwictTeam();
   useAssertRpcUrl();
+  useAssertNearBlocksApiKey();
 
   const teamsQuery = useListTeams();
   const deleteMemberQuery = useDeleteTeamMember();

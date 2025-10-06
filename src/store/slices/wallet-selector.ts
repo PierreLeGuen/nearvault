@@ -156,7 +156,10 @@ export const createWalletTerminator: StateCreator<
     const keys = Object.keys(get().keysToAccounts);
     const resPromises = keys.map(async (pk) => {
       const accounts = await getAccountsForPublicKey(pk);
-      const filteredAccounts = await filterMultisig(accounts, get().getRpcUrl());
+      const filteredAccounts = await filterMultisig(
+        accounts,
+        get().getRpcUrl(),
+      );
       const pkToAccounts = { [pk]: filteredAccounts };
       get().addAccounts(pkToAccounts, {});
     });
@@ -220,7 +223,9 @@ export const createWalletTerminator: StateCreator<
     console.log("connectWithPrivateKey", { kp });
     const pubK = kp.getPublicKey().toString();
     const accounts = await getAccountsForPublicKey(pubK);
-    const filteredAccounts = (await filterMultisig(accounts, get().getRpcUrl())).filter(Boolean);
+    const filteredAccounts = (
+      await filterMultisig(accounts, get().getRpcUrl())
+    ).filter(Boolean);
 
     const newAccounts = { [pubK]: filteredAccounts };
     const newSources: Record<PublicKeyStr, Source> = {
@@ -234,7 +239,7 @@ export const createWalletTerminator: StateCreator<
     return { pubK: pubK, accounts: filteredAccounts };
   },
   connectWithMyNearWallet: () => {
-    const loginUrl = new URL(config.urls.myNearWallet + "/login");
+    const loginUrl = new URL(config.urls.myNearWalletUrl + "/login");
     loginUrl.searchParams.set(
       "success_url",
       `${window.location.origin}/wallet-redirects/my-near-wallet?connectStatus=Allowed&returnTo=${window.location.pathname}`,
@@ -383,7 +388,7 @@ export const createWalletTerminator: StateCreator<
     }
   },
   signWithMnw: (tx: Transaction) => {
-    const signUrl = new URL(config.urls.myNearWallet + "/sign");
+    const signUrl = new URL(config.urls.myNearWalletUrl + "/sign");
 
     const encodedTx = tx.encode();
     signUrl.searchParams.set(
