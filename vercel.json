@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "src/pages/api/**/*.ts": {
+      "runtime": "nodejs22.x"
+    }
+  },
+  "buildCommand": "npm run build"
+}
