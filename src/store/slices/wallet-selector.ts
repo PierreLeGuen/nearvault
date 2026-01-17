@@ -314,7 +314,6 @@ export const createWalletTerminator: StateCreator<
     return tx;
   },
   signAndSendTransaction: async (params) => {
-    console.log("signAndSendTransaction", params);
     try {
       // find a pk that can be used to sign for the senderId
       await get().canSignForAccount(params.senderId);
@@ -325,7 +324,6 @@ export const createWalletTerminator: StateCreator<
           publicKeyForTxn = pk;
         }
       }
-      console.log(publicKeyForTxn);
 
       const tx = await get().createTx(
         publicKeyForTxn,
@@ -334,7 +332,6 @@ export const createWalletTerminator: StateCreator<
         params.action,
         params.actions,
       );
-      console.log("signAndSendTransaction", { tx });
 
       const source = get().sources[publicKeyForTxn];
       if (source.type === "ledger") {
