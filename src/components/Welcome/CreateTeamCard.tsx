@@ -24,14 +24,17 @@ type Params = {
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export function CreateTeamCard(params: Params) {
-  const form = useZodForm(createTeamAndInviteUsers, {
+  const form = useZodForm<typeof createTeamAndInviteUsers>(
+    createTeamAndInviteUsers,
+    {
     defaultValues: {
       name: "",
       members: [""],
       wallets: [""],
       ...params.defaultValues,
     },
-  });
+    },
+  );
 
   useEffect(() => {
     form.reset(params.defaultValues);

@@ -50,7 +50,7 @@ const Stake: NextPageWithLayout = () => {
   const [useManualPool, setUseManualPool] = useState(false);
   const listWallets = useTeamsWalletsWithLockups();
 
-  const form = useZodForm(formSchema);
+  const form = useZodForm<typeof formSchema>(formSchema);
   const watchedWallet = form.watch("fromWallet");
   const wallet = listWallets.data?.find(
     (w) => w.walletDetails.walletAddress === watchedWallet,

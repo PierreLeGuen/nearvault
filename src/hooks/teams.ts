@@ -374,7 +374,7 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
   return useQuery({
     queryKey: ["balances", from, to],
     queryFn: async () => {
-      const balances = await Promise.all(
+      const balancePromises =
         wallets.data?.flatMap((wallet) => {
           return days.map(async (date) => {
             const balance = await getFtBalanceAtDate(
@@ -388,12 +388,9 @@ export function useGetBalancesForTeamBetweenDates(from: Date, to: Date) {
               balance,
             };
           });
-        }) || [],
-      );
-      const res = await Promise.all(balances.flat());
-      console.log(res);
+        }) ?? [];
 
-      return res;
+      return Promise.all(balancePromises);
     },
     enabled: !!wallets.data,
   });

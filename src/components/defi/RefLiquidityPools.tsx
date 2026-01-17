@@ -60,7 +60,7 @@ export const getUserBalanceForPool = (
 };
 
 const RefLiquidityPools = () => {
-  const form = useZodForm(formSchema, {
+  const form = useZodForm<typeof formSchema>(formSchema, {
     defaultValues: {
       enableEmptyPools: false,
       tokenAmounts: ["0", "0", "0", "0"],

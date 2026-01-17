@@ -26,7 +26,7 @@ const depositForm = z.object({
 });
 
 export const RefYourDeposits = () => {
-  const form = useZodForm(depositForm);
+  const form = useZodForm<typeof depositForm>(depositForm);
 
   const poolsQuery = useGetRefLiquidityPoolsForAccount(form.watch("funding"));
   const mySharesQuery = useGetRefPoolShares(

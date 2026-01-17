@@ -1,6 +1,7 @@
 import {
   type FieldPath,
   type FieldValues,
+  useFormContext,
   type UseControllerProps,
 } from "react-hook-form";
 import { type InputProps } from "~/lib/validation/inputs";
@@ -32,6 +33,7 @@ export function ThresholdInput<
   props: UseControllerProps<TFieldValues, TName> &
     InputProps & { maxThreshold: number },
 ) {
+  const formContext = useFormContext<TFieldValues>();
   const [open, setOpen] = useState(false);
   // create an array of strings from 1 to maxThreshold
   const thresholds = Array.from({ length: props.maxThreshold }, (_, i) =>
@@ -40,6 +42,7 @@ export function ThresholdInput<
 
   return (
     <FormField
+      control={props.control ?? formContext.control}
       {...props}
       render={({ field }) => (
         <FormItem className="flex flex-col">

@@ -34,7 +34,7 @@ export function WithdrawDialog(props: {
   wallet: WalletPretty;
   pool: StakedPool;
 }) {
-  const form = useZodForm(formSchema);
+  const form = useZodForm<typeof formSchema>(formSchema);
 
   const withdrawTxn = useWithdrawTransaction();
   const withdrawAllTxn = useWithdrawAllTransaction();

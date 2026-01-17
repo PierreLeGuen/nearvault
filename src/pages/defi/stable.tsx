@@ -39,7 +39,7 @@ const formSchema = z.object({
 });
 
 const StablePoolsRefDeposit: NextPageWithLayout = () => {
-  const form = useZodForm(formSchema);
+  const form = useZodForm<typeof formSchema>(formSchema);
   const { getProvider } = usePersistingStore();
   const depositStableMutation = useDepositToRefStableLiquidityPool();
   const poolsQuery = useGetRefLiquidityPools(true, "RATED_SWAP");

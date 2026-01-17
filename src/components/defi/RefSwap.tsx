@@ -86,7 +86,7 @@ export const getUserBalanceForPool = (
 };
 
 const RefSwap = () => {
-  const form = useZodForm(formSchema, {
+  const form = useZodForm<typeof formSchema>(formSchema, {
     defaultValues: {
       userAmountOut: "0",
       userMinAmountIn: "0",

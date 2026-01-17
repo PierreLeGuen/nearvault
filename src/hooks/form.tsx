@@ -8,7 +8,7 @@ import {
 } from "react-hook-form";
 import { type z } from "zod";
 
-export type UseZodFormParams<Schema extends z.Schema<FieldValues>> = Parameters<
+export type UseZodFormParams<Schema extends z.ZodTypeAny> = Parameters<
   typeof useForm<z.infer<Schema>>
 >[0];
 
@@ -18,12 +18,12 @@ export const useHookFormDefaultProps = {
   criteriaMode: "all",
   delayError: 300,
   shouldFocusError: true,
-} satisfies UseZodFormParams<z.ZodObject<FieldValues>>;
+} satisfies UseZodFormParams<z.ZodTypeAny>;
 
-export function useZodForm<Schema extends z.ZodObject<FieldValues>>(
+export function useZodForm<Schema extends z.ZodTypeAny>(
   schema: Schema,
-  props?: UseZodFormParams<Schema>
-) {
+  props?: UseZodFormParams<Schema>,
+): UseFormReturn<z.infer<Schema>> {
   return useForm<z.infer<Schema>>({
     ...useHookFormDefaultProps,
     ...props,
@@ -31,8 +31,9 @@ export function useZodForm<Schema extends z.ZodObject<FieldValues>>(
   });
 }
 
-export type ZodSubmitHandler<Schema extends z.ZodObject<FieldValues>> =
-  Parameters<ReturnType<typeof useZodForm<Schema>>["handleSubmit"]>[0];
+export type ZodSubmitHandler<Schema extends z.ZodTypeAny> = Parameters<
+  ReturnType<typeof useZodForm<Schema>>["handleSubmit"]
+>[0];
 
 export function updateFields<Schema extends z.ZodObject<FieldValues>>(
   form: UseFormReturn<z.infer<Schema>>,

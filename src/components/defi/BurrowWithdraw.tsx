@@ -34,7 +34,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 const BurrowWithdraw = () => {
-  const form = useZodForm(burrowWithdrawFormSchema);
+  const form = useZodForm<typeof burrowWithdrawFormSchema>(
+    burrowWithdrawFormSchema,
+  );
 
   const currentToken = form.watch("token");
 

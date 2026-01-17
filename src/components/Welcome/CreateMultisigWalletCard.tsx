@@ -31,14 +31,17 @@ type Params = {
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export function CreateMultisigWalletCard(params: Params) {
-  const form = useZodForm(multisigFactoryFormSchema, {
-    defaultValues: {
-      fundingAccountId: "",
-      accountId: "",
-      threshold: "",
-      owners: [""],
+  const form = useZodForm<typeof multisigFactoryFormSchema>(
+    multisigFactoryFormSchema,
+    {
+      defaultValues: {
+        fundingAccountId: "",
+        accountId: "",
+        threshold: "",
+        owners: [""],
+      },
     },
-  });
+  );
   const watched = form.watch();
   const createMultisigWithFactory = useCreateMultisigWithFactory();
   const createMultisigWithFactoryViaMultisig =

@@ -7,7 +7,9 @@ import { Button } from "../ui/button";
 import { Form } from "../ui/form";
 
 const BurrowClaim = () => {
-  const form = useZodForm(burrowClaimRewardsSchema);
+  const form = useZodForm<typeof burrowClaimRewardsSchema>(
+    burrowClaimRewardsSchema,
+  );
 
   const walletsQuery = useTeamsWalletsWithLockups();
   const burrowClaimMutation = useGetBurrowClaim();

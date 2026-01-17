@@ -30,11 +30,14 @@ import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 const BurrowSupply = () => {
-  const form = useZodForm(burrowSupplyFormSchema, {
+  const form = useZodForm<typeof burrowSupplyFormSchema>(
+    burrowSupplyFormSchema,
+    {
     defaultValues: {
       tokenAmount: 0,
     },
-  });
+    },
+  );
   const walletsQuery = useTeamsWalletsWithLockups();
 
   const tokensQuery = useGetAllTokensWithBalanceForWallet(

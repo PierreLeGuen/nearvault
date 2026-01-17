@@ -30,7 +30,7 @@ export const SignInButtons = ({
   }: {
     emailProvider: ClientSafeProvider;
   }) => {
-    const emailForm = useZodForm(emailFormSchema);
+    const emailForm = useZodForm<typeof emailFormSchema>(emailFormSchema);
 
     const onSubmit = async (data: z.infer<typeof emailFormSchema>) => {
       await sendEmail(data.email);

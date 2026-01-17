@@ -34,7 +34,6 @@ export async function explainAction(
   getNearConnection: () => Promise<naj.Near>,
 ): Promise<explanation> {
   const c = await getNearConnection();
-  c.connection;
   switch (action.type) {
     case MultiSigRequestActionType.CreateAccount:
       return {

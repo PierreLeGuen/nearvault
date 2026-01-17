@@ -34,7 +34,7 @@ export function UnstakeDialog(props: {
   wallet: WalletPretty;
   pool: StakedPool;
 }) {
-  const form = useZodForm(formSchema);
+  const form = useZodForm<typeof formSchema>(formSchema);
   const unstakeTxn = useUnstakeTransaction();
   const unstakeAllTxn = useUnstakeAllTransaction();
 

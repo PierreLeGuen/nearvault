@@ -50,11 +50,14 @@ const derivationPathFormSchema = z.object({
 
 const DerivationPath = () => {
   const wsStore = useWalletTerminator();
-  const form = useZodForm(derivationPathFormSchema, {
+  const form = useZodForm<typeof derivationPathFormSchema>(
+    derivationPathFormSchema,
+    {
     defaultValues: {
       derivationNumber: "0",
     },
-  });
+    },
+  );
 
   const generateDerivationPath = (path: string) => {
     return "44'/397'/0'/0'/" + path + "'";
@@ -110,7 +113,7 @@ const privateKeyFormSchema = z.object({
 
 const PrivateKey = () => {
   const wsStore = useWalletTerminator();
-  const form = useZodForm(privateKeyFormSchema);
+  const form = useZodForm<typeof privateKeyFormSchema>(privateKeyFormSchema);
 
   const onSubmit = async (values: z.infer<typeof privateKeyFormSchema>) => {
     console.log(values);

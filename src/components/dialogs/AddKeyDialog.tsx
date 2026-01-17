@@ -26,7 +26,7 @@ const addKeyFormSchema = z.object({
 });
 
 export const AddKey = ({ accountId }: { accountId: string }) => {
-  const form = useZodForm(addKeyFormSchema, {
+  const form = useZodForm<typeof addKeyFormSchema>(addKeyFormSchema, {
     defaultValues: {
       methodNames: {
         add_request: true,
