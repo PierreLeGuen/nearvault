@@ -667,6 +667,37 @@ interface Config {
   volatility_ratio: number;
 }
 
+export const useWrapNear = () => {
+  const wsStore = useWalletTerminator();
+
+  return useMutation({
+    mutationFn: async (params: { fundingAccId: string; amount: string }) => {
+      const wrapNearAccountId = "wrap.near";
+      const yoctoAmount = parseNearAmount(params.amount);
+
+      const wrapRequest = transactions.functionCall(
+        "add_request",
+        addMultisigRequestAction(wrapNearAccountId, [
+          functionCallAction(
+            "near_deposit",
+            {},
+            yoctoAmount,
+            (50 * TGas).toString(),
+          ),
+        ]),
+        new BN(100 * TGas),
+        new BN("0"),
+      );
+
+      await wsStore.signAndSendTransaction({
+        senderId: params.fundingAccId,
+        receiverId: params.fundingAccId,
+        actions: [wrapRequest],
+      });
+    },
+  });
+};
+
 export const burrowSupplyFormSchema = z.object({
   token: z.string(),
   tokenAmount: z.number(),
@@ -676,9 +707,13 @@ export const burrowSupplyFormSchema = z.object({
 export const useSupplyToBurrow = () => {
   const wsStore = useWalletTerminator();
   const { getProvider } = usePersistingStore();
+  const wrapNearMutation = useWrapNear();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof burrowSupplyFormSchema>) => {
+      // Check wallet connection early to avoid multiple error popups
+      await wsStore.canSignForAccount(params.funding);
+
       const burrowAccountId = "contract.main.burrow.near";
 
       const storageDepositRequest = transactions.functionCall(
@@ -698,38 +733,67 @@ export const useSupplyToBurrow = () => {
         new BN("0"),
       );
 
+      const provider = getProvider();
+      // Burrow uses wrap.near for native NEAR
+      const burrowTokenId = params.token === "near" ? "wrap.near" : params.token;
+
       const config = await viewCall<BurrowAssetConfig>(
         burrowAccountId,
         "get_asset",
-        { token_id: params.token },
-        getProvider()
+        { token_id: burrowTokenId },
+        provider,
       );
 
-      const ftMetadata = await viewCall<FungibleTokenMetadata>(
-        params.token,
-        "ft_metadata",
-        {},
-        getProvider()
-      );
+      let ftMetadata: FungibleTokenMetadata;
+
+      // Handle native NEAR specially - it doesn't have ft_metadata
+      if (params.token === "near") {
+        ftMetadata = {
+          spec: "ft-1.0.0",
+          name: "NEAR",
+          symbol: "NEAR",
+          icon: null,
+          reference: null,
+          reference_hash: null,
+          decimals: 24,
+        };
+      } else {
+        ftMetadata = await viewCall<FungibleTokenMetadata>(
+          params.token,
+          "ft_metadata",
+          {},
+          getProvider(),
+        );
+      }
 
       const indivisibleAmount = convertToIndivisibleFormat(
         params.tokenAmount.toString(),
         ftMetadata.decimals,
       );
 
+      // For native NEAR, use wrap.near for the transfer
+      const transferTokenId = params.token === "near" ? "wrap.near" : params.token;
+
+      // If native NEAR is selected, wrap it first before transferring to Burrow
+      if (params.token === "near") {
+        await wrapNearMutation.mutateAsync({
+          fundingAccId: params.funding,
+          amount: params.tokenAmount.toString(),
+        });
+      }
+
       const ftTransferCall = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(params.token, [
+        addMultisigRequestAction(transferTokenId, [
           functionCallAction(
             "ft_transfer_call",
             {
               receiver_id: burrowAccountId,
               amount: indivisibleAmount.toString(),
               msg: config.config.can_use_as_collateral
-                ? `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${params.token
-                }\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
-                  config.config.extra_decimals,
-                )}\"}}]}}`
+                ? `{\"Execute\":{\"actions\":[{\"IncreaseCollateral\":{\"token_id\":\"${burrowTokenId}\",\"max_amount\":\"${indivisibleAmount.toString()}${"0".repeat(
+                    config.config.extra_decimals,
+                  )}\"}}]}}`
                 : "",
             },
             "1",
