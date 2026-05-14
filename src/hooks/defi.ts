@@ -896,7 +896,7 @@ export const useWithdrawSupplyFromBurrow = () => {
                   },
                 ],
               },
-              "0",
+              "1",
               (200 * TGas).toString(),
             ),
           ]),
