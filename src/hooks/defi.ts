@@ -196,6 +196,7 @@ type DepositParams = {
 export const useDepositToRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
   const wrapNearMutation = useWrapNear();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async (params: DepositParams) => {
@@ -232,10 +233,19 @@ export const useDepositToRefLiquidityPool = () => {
         if (amounts[i] === "0") continue;
 
         if (tokenIds[i] === "wrap.near") {
-          await wrapNearMutation.mutateAsync({
-            fundingAccId: params.fundingAccId,
-            yoctoAmount: amounts[i],
-          });
+          const wnearBalance = await viewCall<string>(
+            "wrap.near",
+            "ft_balance_of",
+            { account_id: params.fundingAccId },
+            getProvider(),
+          );
+          const shortfall = BigInt(amounts[i]) - BigInt(wnearBalance);
+          if (shortfall > BigInt(0)) {
+            await wrapNearMutation.mutateAsync({
+              fundingAccId: params.fundingAccId,
+              yoctoAmount: shortfall.toString(),
+            });
+          }
         }
 
         const ftTransferCallRequest = transactions.functionCall(
@@ -300,6 +310,7 @@ const stablePoolsRefDeposit = z.object({
 export const useDepositToRefStableLiquidityPool = () => {
   const wsStore = useWalletTerminator();
   const wrapNearMutation = useWrapNear();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof stablePoolsRefDeposit>) => {
@@ -333,10 +344,19 @@ export const useDepositToRefStableLiquidityPool = () => {
         }
 
         if (params.tokens[i] === "wrap.near") {
-          await wrapNearMutation.mutateAsync({
-            fundingAccId: params.fundingAccId,
-            yoctoAmount: params.amounts[i],
-          });
+          const wnearBalance = await viewCall<string>(
+            "wrap.near",
+            "ft_balance_of",
+            { account_id: params.fundingAccId },
+            getProvider(),
+          );
+          const shortfall = BigInt(params.amounts[i]) - BigInt(wnearBalance);
+          if (shortfall > BigInt(0)) {
+            await wrapNearMutation.mutateAsync({
+              fundingAccId: params.fundingAccId,
+              yoctoAmount: shortfall.toString(),
+            });
+          }
         }
 
         const ftTransferCallRequest = transactions.functionCall(
