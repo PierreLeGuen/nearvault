@@ -49,9 +49,23 @@ export const getUserBalanceForPool = (
 
   if (pool && userTokens) {
     for (let i = 0; i < 4; i++) {
-      const token = userTokens.find(
-        (t) => t.account_id == pool.token_account_ids[i],
+      const poolTokenId = pool.token_account_ids[i];
+      let token = userTokens.find(
+        (t) => t.account_id == poolTokenId,
       );
+
+      if (poolTokenId === "wrap.near") {
+        const nativeNear = userTokens.find((t) => t.account_id === "near");
+        if (nativeNear && token) {
+          token = {
+            ...token,
+            balance: (BigInt(token.balance) + BigInt(nativeNear.balance)).toString(),
+          };
+        } else if (nativeNear && !token) {
+          token = { ...nativeNear, account_id: "wrap.near", symbol: "wNEAR" };
+        }
+      }
+
       tokens.push(token);
     }
   }
@@ -211,6 +225,12 @@ const RefLiquidityPools = () => {
             onChange={() => setLastUpdatedIndex(index)}
           />
         ))}
+
+        {liquidityPoolDetailsQuery.data?.token_account_ids.includes("wrap.near") && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Native NEAR will be automatically wrapped to wNEAR before depositing into the pool.
+          </p>
+        )}
 
         <SwitchInput
           control={form.control}

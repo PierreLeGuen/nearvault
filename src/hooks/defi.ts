@@ -195,6 +195,7 @@ type DepositParams = {
 
 export const useDepositToRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
+  const wrapNearMutation = useWrapNear();
 
   return useMutation({
     mutationFn: async (params: DepositParams) => {
@@ -229,6 +230,13 @@ export const useDepositToRefLiquidityPool = () => {
 
       for (let i = 0; i < tokenIds.length; i++) {
         if (amounts[i] === "0") continue;
+
+        if (tokenIds[i] === "wrap.near") {
+          await wrapNearMutation.mutateAsync({
+            fundingAccId: params.fundingAccId,
+            yoctoAmount: amounts[i],
+          });
+        }
 
         const ftTransferCallRequest = transactions.functionCall(
           "add_request",
@@ -291,6 +299,7 @@ const stablePoolsRefDeposit = z.object({
 
 export const useDepositToRefStableLiquidityPool = () => {
   const wsStore = useWalletTerminator();
+  const wrapNearMutation = useWrapNear();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof stablePoolsRefDeposit>) => {
@@ -322,6 +331,14 @@ export const useDepositToRefStableLiquidityPool = () => {
         if (params.amounts[i] === "0") {
           continue;
         }
+
+        if (params.tokens[i] === "wrap.near") {
+          await wrapNearMutation.mutateAsync({
+            fundingAccId: params.fundingAccId,
+            yoctoAmount: params.amounts[i],
+          });
+        }
+
         const ftTransferCallRequest = transactions.functionCall(
           "add_request",
           addMultisigRequestAction(params.tokens[i], [
@@ -671,9 +688,9 @@ export const useWrapNear = () => {
   const wsStore = useWalletTerminator();
 
   return useMutation({
-    mutationFn: async (params: { fundingAccId: string; amount: string }) => {
+    mutationFn: async (params: { fundingAccId: string; amount?: string; yoctoAmount?: string }) => {
       const wrapNearAccountId = "wrap.near";
-      const yoctoAmount = parseNearAmount(params.amount);
+      const yoctoAmount = params.yoctoAmount || parseNearAmount(params.amount);
 
       const wrapRequest = transactions.functionCall(
         "add_request",

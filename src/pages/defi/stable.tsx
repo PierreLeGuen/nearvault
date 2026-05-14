@@ -154,6 +154,12 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
             />
           ))}
 
+          {currentPool?.token_account_ids.includes("wrap.near") && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Native NEAR will be automatically wrapped to wNEAR before depositing into the pool.
+            </p>
+          )}
+
           <Button type="submit">Create liquidity deposit request</Button>
         </form>
       </Form>
