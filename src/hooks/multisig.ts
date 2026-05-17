@@ -11,6 +11,7 @@ import {
   MultiSigRequestActionType,
   initMultiSigContract,
 } from "~/lib/multisig/contract";
+import { summarizeDeployAction } from "~/lib/multisig/upgrade";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { RateLimiter } from "~/utils/rate-limiter";
@@ -76,6 +77,12 @@ export const useGetMultisigRequestRowsForTeam = () => {
                     return {
                       ...action,
                       args,
+                    };
+                  }
+                  if (action.type === MultiSigRequestActionType.DeployContract) {
+                    return {
+                      ...action,
+                      deploySummary: summarizeDeployAction(action),
                     };
                   }
                   return action;
