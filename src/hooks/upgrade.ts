@@ -12,7 +12,7 @@ import {
   checkExistingUpgradeProposals,
   fetchMultisigWasmBase64,
   getAccountCodeHash,
-  VULNERABLE_MULTISIG_HASH,
+  VULNERABLE_MULTISIG_HASHES,
   type UpgradeEligibility,
 } from "~/lib/multisig/upgrade";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
@@ -146,9 +146,9 @@ export function useUpgradeContract() {
       const { base64 } = await fetchMultisigWasmBase64();
 
       const currentHash = await getAccountCodeHash(walletAddress, rpcUrl);
-      if (currentHash !== VULNERABLE_MULTISIG_HASH) {
+      if (!currentHash || !VULNERABLE_MULTISIG_HASHES.has(currentHash)) {
         throw new Error(
-          `Wallet ${walletAddress} code hash is ${currentHash ?? "unknown"}, expected ${VULNERABLE_MULTISIG_HASH}. Aborting.`,
+          `Wallet ${walletAddress} code hash is ${currentHash ?? "unknown"}, not in the eligible set. Aborting.`,
         );
       }
 

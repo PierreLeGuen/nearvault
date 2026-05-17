@@ -17,7 +17,7 @@ import {
   type WalletUpgradeInfo,
 } from "~/hooks/upgrade";
 import {
-  VULNERABLE_MULTISIG_HASH,
+  VULNERABLE_MULTISIG_HASHES,
   NEW_MULTISIG_HASH,
 } from "~/lib/multisig/upgrade";
 import Link from "next/link";
@@ -54,12 +54,16 @@ const Upgrade: NextPageWithLayout = () => {
           <CardTitle className="text-base">Security Advisory</CardTitle>
           <CardDescription>
             A security vulnerability was found in NEAR multisig v1 contracts.
-            Wallets running the affected contract version should be upgraded as
-            soon as possible. Only wallets with code hash{" "}
-            <code className="rounded bg-slate-200 px-1 py-0.5 text-xs dark:bg-slate-700">
-              {VULNERABLE_MULTISIG_HASH}
-            </code>{" "}
-            are eligible for upgrade through this tool.
+            Wallets running an affected contract version should be upgraded as
+            soon as possible. Eligible contract hashes:
+            {Array.from(VULNERABLE_MULTISIG_HASHES).map((hash) => (
+              <code
+                key={hash}
+                className="mt-1 block rounded bg-slate-200 px-1 py-0.5 text-xs dark:bg-slate-700"
+              >
+                {hash}
+              </code>
+            ))}
           </CardDescription>
         </CardHeader>
       </Card>

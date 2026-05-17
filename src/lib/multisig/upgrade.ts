@@ -5,8 +5,10 @@ import { type CodeResult } from "near-api-js/lib/providers/provider";
 import { type ViewAccountQuery } from "~/lib/lockup/types";
 import { type MultiSigAction } from "./contract";
 
-export const VULNERABLE_MULTISIG_HASH =
-  "55E7imniT2uuYrECn17qJAk9fLcwQW4ftNSwmCJL5Di";
+export const VULNERABLE_MULTISIG_HASHES: ReadonlySet<string> = new Set([
+  "55E7imniT2uuYrECn17qJAk9fLcwQW4ftNSwmCJL5Di",
+  "5WFgvKK2DizfgEcey6xBkn4RdTe9cGNWzGK5VJuUtc8d",
+]);
 
 export const NEW_MULTISIG_HASH =
   "63AVHGvscPnyhXxW6dmC9Vmofx2QWiFKRLb2tojS95Pw";
@@ -16,7 +18,7 @@ export const MULTISIG_WASM_URL = "/wasm/multisig.wasm";
 export type UpgradeEligibility = "eligible" | "already-upgraded" | "ineligible";
 
 export function classifyWalletHash(codeHash: string): UpgradeEligibility {
-  if (codeHash === VULNERABLE_MULTISIG_HASH) return "eligible";
+  if (VULNERABLE_MULTISIG_HASHES.has(codeHash)) return "eligible";
   if (codeHash === NEW_MULTISIG_HASH) return "already-upgraded";
   return "ineligible";
 }
