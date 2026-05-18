@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { type RequestRow } from "~/lib/explain-transaction";
+import { MultiSigRequestActionType } from "~/lib/multisig/contract";
 import { type ApproveOrReject } from "~/pages/approval/pending";
 
 type Props = {
@@ -79,25 +80,61 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                         )}
                         <div>
                           <h3 className="text-lg font-bold">Actions</h3>
-                          {row.original.request.actions.map((action, index) => (
-                            <div
-                              key={row.id + "" + index}
-                              className="flex flex-col gap-1"
-                            >
-                              <strong>Action {index + 1}</strong>
-                              {row.original.explanations[index] && (
-                                <p>
-                                  {
-                                    row.original.explanations[index]
-                                      .full_description
-                                  }
-                                </p>
-                              )}
-                              <pre className="rounded-xl bg-slate-800 p-2 text-white">
-                                {JSON.stringify(action, null, 2)}
-                              </pre>
-                            </div>
-                          ))}
+                          {row.original.request.actions.map((action, index) => {
+                            const act = action as typeof action & {
+                              deploySummary?: {
+                                ok: boolean;
+                                byteLength?: number;
+                                codeHash?: string;
+                                error?: string;
+                              };
+                            };
+                            const isDeployWithSummary =
+                              act.type === MultiSigRequestActionType.DeployContract &&
+                              act.deploySummary;
+                            return (
+                              <div
+                                key={row.id + "" + index}
+                                className="flex flex-col gap-1"
+                              >
+                                <strong>Action {index + 1}</strong>
+                                {row.original.explanations[index] && (
+                                  <p>
+                                    {
+                                      row.original.explanations[index]
+                                        .full_description
+                                    }
+                                  </p>
+                                )}
+                                <pre className="rounded-xl bg-slate-800 p-2 text-white">
+                                  {isDeployWithSummary && act.deploySummary ? (
+                                    act.deploySummary.ok
+                                      ? JSON.stringify(
+                                          {
+                                            type: "DeployContract",
+                                            byteLength: act.deploySummary.byteLength,
+                                            sizeKB:
+                                              ((act.deploySummary.byteLength ?? 0) / 1024).toFixed(1) + " KB",
+                                            codeHash: act.deploySummary.codeHash,
+                                          },
+                                          null,
+                                          2,
+                                        )
+                                      : JSON.stringify(
+                                          {
+                                            type: "DeployContract",
+                                            error: act.deploySummary.error,
+                                          },
+                                          null,
+                                          2,
+                                        )
+                                  ) : (
+                                    JSON.stringify(action, null, 2)
+                                  )}
+                                </pre>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

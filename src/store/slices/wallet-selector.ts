@@ -369,6 +369,7 @@ export const createWalletTerminator: StateCreator<
       }
     } catch (e) {
       get().goToFailedToSendTransaction((e as Error).message);
+      throw e;
     }
   },
   signWithLedger: async (tx: Transaction, derivationPath: string) => {

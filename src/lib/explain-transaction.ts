@@ -11,6 +11,10 @@ import {
   type MultiSigAction,
   type MultisigRequest,
 } from "~/lib/multisig/contract";
+import {
+  NEW_MULTISIG_HASH,
+  summarizeDeployAction,
+} from "~/lib/multisig/upgrade";
 
 export type explanation = {
   full_description: string;
@@ -43,6 +47,25 @@ export async function explainAction(
       };
 
     case MultiSigRequestActionType.DeployContract:
+      if (to === from) {
+        const summary = summarizeDeployAction(action);
+        if (summary.ok && summary.codeHash === NEW_MULTISIG_HASH) {
+          return {
+            full_description: `Upgrades the multisig contract on ${from} by deploying the verified security patch.`,
+            short_description: `Upgrade Multisig Contract`,
+          };
+        }
+        if (summary.ok) {
+          return {
+            full_description: `Deploys contract code to self (code hash: ${summary.codeHash}).`,
+            short_description: `Deploy Contract Code to Multisig`,
+          };
+        }
+        return {
+          full_description: `Deploys contract code to self (unverified).`,
+          short_description: `Deploy Contract Code to Multisig`,
+        };
+      }
       return {
         full_description: `Deploys a contract to ${to} with the provided code.`,
         short_description: `Deploy Contract`,
