@@ -11,7 +11,7 @@ export const VULNERABLE_MULTISIG_HASHES: ReadonlySet<string> = new Set([
 ]);
 
 export const NEW_MULTISIG_HASH =
-  "63AVHGvscPnyhXxW6dmC9Vmofx2QWiFKRLb2tojS95Pw";
+  "2v9kZJHN4sogHuKtKHaqYAqQBazkqH2cjY1rrjQYvNQa";
 
 export const MULTISIG_WASM_URL = "/wasm/multisig.wasm";
 
