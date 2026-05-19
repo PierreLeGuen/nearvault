@@ -8,6 +8,7 @@ import { type MultiSigAction } from "./contract";
 export const VULNERABLE_MULTISIG_HASHES: ReadonlySet<string> = new Set([
   "55E7imniT2uuYrECn17qJAk9fLcwQW4ftNSwmCJL5Di",
   "5WFgvKK2DizfgEcey6xBkn4RdTe9cGNWzGK5VJuUtc8d",
+  "63AVHGvscPnyhXxW6dmC9Vmofx2QWiFKRLb2tojS95Pw",
 ]);
 
 export const NEW_MULTISIG_HASH =
