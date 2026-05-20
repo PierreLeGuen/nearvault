@@ -15,6 +15,7 @@ import "@near-wallet-selector/modal-ui/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import { WalletHome } from "~/components/Modal/ModalHome";
 import "~/styles/globals.css";
+import { useNewVersionCheck } from "~/hooks/useNewVersionCheck";
 
 config.autoAddCss = false;
 
@@ -38,6 +39,7 @@ const queryClient = new QueryClient({
 });
 
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
+  useNewVersionCheck();
   const { getLayout } = Component;
 
   const pageContent = <Component {...pageProps} />;

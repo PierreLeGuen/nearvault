@@ -6,6 +6,16 @@ import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";
+import {
+  BURROW_CONTRACT_ID,
+  REF_FINANCE_CONTRACT_ID,
+  buildBurrowWithdrawRequest,
+  buildRefRemoveLiquidityRequest,
+  buildRefWithdrawDepositRequest,
+  type BurrowPositionType,
+  type BurrowWithdrawParams,
+  type RefDeposit,
+} from "~/lib/defi/requests";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { type Token } from "~/lib/transformations";
 import {
@@ -67,8 +77,10 @@ export const useGetRefLiquidityPools = (
       ),
     ];
 
-    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds, getProvider());
-
+    const ftMetadatas = await getFtMetadataForAccounts(
+      tokenAccountIds,
+      getProvider(),
+    );
 
     return pools
       .filter((pool) => {
@@ -111,7 +123,10 @@ export const useGetPoolsForToken = (tokenId: string) => {
         }),
       ),
     ];
-    const ftMetadatas = await getFtMetadataForAccounts(tokenAccountIds, getProvider());
+    const ftMetadatas = await getFtMetadataForAccounts(
+      tokenAccountIds,
+      getProvider(),
+    );
 
     const accountIdToSymbol: Record<string, string> = {};
     ftMetadatas.forEach((ftMetadata) => {
@@ -224,9 +239,11 @@ export const useDepositToRefLiquidityPool = () => {
         actions: [storageDepositRequest],
       });
 
-      const tokenIds = params.tokenAccIds ||
+      const tokenIds =
+        params.tokenAccIds ||
         [params.tokenLeftAccId, params.tokenRightAccId].filter(Boolean);
-      const amounts = params.tokenAmounts ||
+      const amounts =
+        params.tokenAmounts ||
         [params.tokenLeftAmount, params.tokenRightAmount].filter(Boolean);
 
       for (let i = 0; i < tokenIds.length; i++) {
@@ -483,7 +500,7 @@ export const useGetRefPoolShares = (poolId?: string, accountId?: string) => {
           pool_id: parseInt(poolId),
           account_id: accountId,
         },
-        getProvider()
+        getProvider(),
       );
     },
     { enabled: !!poolId && !!accountId },
@@ -541,31 +558,12 @@ export const withdrawRef = z.object({
 
 export const useWithdrawFromRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
-  const viewQuery = useGetRefLiquidityPoolsForAccount();
 
   return useMutation({
     mutationFn: async (params: z.infer<typeof withdrawRef>) => {
-      const refAccountId = "v2.ref-finance.near";
-      const storageDepositRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "storage_deposit",
-            {
-              account_id: params.fundingAccId,
-              registration_only: false,
-            },
-            parseNearAmount("0.005"),
-            (50 * TGas).toString(),
-          ),
-        ]),
-        new BN(100 * TGas),
-        new BN("0"),
-      );
-
       const removeLiquidityRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(refAccountId, [
+        addMultisigRequestAction(REF_FINANCE_CONTRACT_ID, [
           functionCallAction(
             "remove_liquidity_by_tokens",
             {
@@ -584,45 +582,8 @@ export const useWithdrawFromRefLiquidityPool = () => {
       await wsStore.signAndSendTransaction({
         senderId: params.fundingAccId,
         receiverId: params.fundingAccId,
-        actions: [storageDepositRequest],
-      });
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
         actions: [removeLiquidityRequest],
       });
-
-      await viewQuery.refetch();
-
-      for (let i = 0; i < params.tokens.length; i++) {
-        if (params.amounts[i] === "0") {
-          continue;
-        }
-
-        const withdraw = transactions.functionCall(
-          "add_request",
-          addMultisigRequestAction(refAccountId, [
-            functionCallAction(
-              "withdraw",
-              {
-                token_id: params.tokens[i],
-                amount: "0",
-                unregister: false,
-              },
-              "1",
-              (200 * TGas).toString(),
-            ),
-          ]),
-          new BN(300 * TGas),
-          new BN("0"),
-        );
-
-        await wsStore.signAndSendTransaction({
-          senderId: params.fundingAccId,
-          receiverId: params.fundingAccId,
-          actions: [withdraw],
-        });
-      }
     },
   });
 };
@@ -642,22 +603,9 @@ export const useRemoveLiquidity = () => {
       shares: string;
       minAmounts: string[];
     }) => {
-      const refAccountId = "v2.ref-finance.near";
-
       const removeLiquidityRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "remove_liquidity",
-            {
-              pool_id: poolId,
-              shares,
-              min_amounts: minAmounts,
-            },
-            "1", // depositYocto
-            (100 * TGas).toString(),
-          ),
-        ]),
+        buildRefRemoveLiquidityRequest({ poolId, shares, minAmounts }),
         new BN(200 * TGas),
         new BN("0"),
       );
@@ -772,7 +720,8 @@ export const useSupplyToBurrow = () => {
 
       const provider = getProvider();
       // Burrow uses wrap.near for native NEAR
-      const burrowTokenId = params.token === "near" ? "wrap.near" : params.token;
+      const burrowTokenId =
+        params.token === "near" ? "wrap.near" : params.token;
 
       const config = await viewCall<BurrowAssetConfig>(
         burrowAccountId,
@@ -809,7 +758,8 @@ export const useSupplyToBurrow = () => {
       );
 
       // For native NEAR, use wrap.near for the transfer
-      const transferTokenId = params.token === "near" ? "wrap.near" : params.token;
+      const transferTokenId =
+        params.token === "near" ? "wrap.near" : params.token;
 
       // If native NEAR is selected, wrap it first before transferring to Burrow
       if (params.token === "near") {
@@ -865,81 +815,58 @@ export const burrowWithdrawFormSchema = z.object({
 export const useWithdrawSupplyFromBurrow = () => {
   const wsStore = useWalletTerminator();
   const { getProvider } = usePersistingStore();
+  const storageDeposit = useStorageDeposit();
 
   return useMutation({
-    mutationFn: async (params: z.infer<typeof burrowWithdrawFormSchema>) => {
-      const burrowAccountId = "contract.main.burrow.near";
-      const oracle = "pyth-oracle.near";
+    mutationFn: async (params: BurrowWithdrawParams) => {
+      const provider = getProvider();
+      const isRegistered = await getStorageBalance(
+        params.token,
+        params.funding,
+        provider,
+      );
+
+      if (isRegistered === null) {
+        toast.warn(
+          "The wallet is not registered to receive this token. A storage registration request was created; execute it before creating the Burrow withdraw request.",
+        );
+        await storageDeposit.mutateAsync({
+          fundingAccId: params.funding,
+          tokenAddress: params.token,
+          receiverAddress: params.funding,
+        });
+        return;
+      }
 
       const config = await viewCall<BurrowAssetConfig>(
-        burrowAccountId,
+        BURROW_CONTRACT_ID,
         "get_asset",
         { token_id: params.token },
-        getProvider()
+        provider,
       );
 
       const ftMetadata = await viewCall<FungibleTokenMetadata>(
         params.token,
         "ft_metadata",
         {},
-        getProvider()
+        provider,
       );
 
       const indivisibleAmount = convertToIndivisibleFormat(
-        params.tokenAmount.toString(),
+        params.amount.toString(),
         ftMetadata.decimals + config.config.extra_decimals,
       );
 
-      const ftTransferCall = config.config.can_use_as_collateral
-        ? transactions.functionCall(
-          "add_request",
-          addMultisigRequestAction(burrowAccountId, [
-            functionCallAction(
-              "execute_with_pyth",
-              {
-                actions: [
-                  {
-                    DecreaseCollateral: {
-                      token_id: params.token,
-                      amount: indivisibleAmount.toString()
-                    }
-                  },
-                  {
-                    Withdraw: {
-                      token_id: params.token
-                    }
-                  }
-                ]
-              },
-              "1",
-              (200 * TGas).toString(),
-            ),
-          ]),
-          new BN(300 * TGas),
-          new BN("0"),
-        )
-        : transactions.functionCall(
-          "add_request",
-          addMultisigRequestAction(burrowAccountId, [
-            functionCallAction(
-              "execute_with_pyth",
-              {
-                actions: [
-                  {
-                    Withdraw: {
-                      token_id: params.token,
-                      max_amount: indivisibleAmount.toString(),
-                    },
-                  },
-                ],
-              },
-              "0",
-              (200 * TGas).toString(),
-            ),
-          ]),
-          new BN(300 * TGas),
-          new BN("0"),
-        );
+      const ftTransferCall = transactions.functionCall(
+        "add_request",
+        buildBurrowWithdrawRequest({
+          tokenId: params.token,
+          positionType: params.positionType,
+          amount: indivisibleAmount.toString(),
+        }),
+        new BN(300 * TGas),
+        new BN("0"),
+      );
 
       await wsStore.signAndSendTransaction({
         senderId: params.funding,
@@ -984,70 +911,77 @@ type BurrowAccountInfo = {
 };
 
 // near contract call-function as-read-only contract.main.burrow.near get_account json-args '{"account_id":"pqla.near"}' network-config mainnet now
-export const useGetBurrowSuppliedTokens = (accountId: string) => {
+export const useGetBurrowSuppliedTokens = (accountId?: string) => {
   const { getProvider } = usePersistingStore();
 
-  return useQuery(["burrowHoldings", accountId], async () => {
-    const burrowAccountId = "contract.main.burrow.near";
-    const holdings = await viewCall<BurrowAccountInfo>(
-      burrowAccountId,
-      "get_account",
-      {
-        account_id: accountId,
-      },
-      getProvider()
-    );
+  return useQuery(
+    ["burrowHoldings", accountId],
+    async () => {
+      if (!accountId) {
+        throw new Error("Account ID is required");
+      }
 
-    let ftMetadatas = await getFtMetadataForAccounts(
-      holdings.collateral.map((t) => t.token_id),
-      getProvider()
-    );
-    let configs = await getBurrowConfigsForTokens(
-      holdings.collateral.map((t) => t.token_id),
-      getProvider()
-    );
-    const ft2 = await getFtMetadataForAccounts(
-      holdings.supplied.map((t) => t.token_id),
-      getProvider()
-    );
-    const c2 = await getBurrowConfigsForTokens(
-      holdings.supplied.map((t) => t.token_id),
-      getProvider()
-    );
-
-    ftMetadatas = ftMetadatas.concat(ft2);
-    configs = configs.concat(c2);
-
-    const suppliedAndCollat = [...holdings.supplied, ...holdings.collateral];
-
-    const tokens = suppliedAndCollat.map((token) => {
-      const b = BigNumber(token.balance);
-      // add some slippage
-      // const c = b.multipliedBy(0.999);
-      token.balance = b.toFixed();
-      const ftMetadata = ftMetadatas.find(
-        (ft) => ft.accountId === token.token_id,
+      const burrowAccountId = "contract.main.burrow.near";
+      const holdings = await viewCall<BurrowAccountInfo>(
+        burrowAccountId,
+        "get_account",
+        {
+          account_id: accountId,
+        },
+        getProvider(),
       );
-      const config = configs.find((c) => c.token_id === token.token_id);
-      console.log(token, ftMetadata, config);
 
-      const r = {
-        token,
-        ftMetadata,
-        config,
+      let ftMetadatas = await getFtMetadataForAccounts(
+        holdings.collateral.map((t) => t.token_id),
+        getProvider(),
+      );
+      let configs = await getBurrowConfigsForTokens(
+        holdings.collateral.map((t) => t.token_id),
+        getProvider(),
+      );
+      const ft2 = await getFtMetadataForAccounts(
+        holdings.supplied.map((t) => t.token_id),
+        getProvider(),
+      );
+      const c2 = await getBurrowConfigsForTokens(
+        holdings.supplied.map((t) => t.token_id),
+        getProvider(),
+      );
+
+      ftMetadatas = ftMetadatas.concat(ft2);
+      configs = configs.concat(c2);
+
+      const suppliedAndCollat = [...holdings.supplied, ...holdings.collateral];
+
+      const tokens = suppliedAndCollat.map((token) => {
+        const b = BigNumber(token.balance);
+        // add some slippage
+        // const c = b.multipliedBy(0.999);
+        token.balance = b.toFixed();
+        const ftMetadata = ftMetadatas.find(
+          (ft) => ft.accountId === token.token_id,
+        );
+        const config = configs.find((c) => c.token_id === token.token_id);
+        console.log(token, ftMetadata, config);
+
+        const r = {
+          token,
+          ftMetadata,
+          config,
+        };
+        console.log(r);
+        return r;
+      });
+
+      return {
+        tokens: tokens,
+        holdings: holdings,
+        ftMetadatas: ftMetadatas,
       };
-      console.log(r);
-      return r;
-    });
-
-    return {
-      tokens: tokens,
-      holdings: holdings,
-      ftMetadatas: ftMetadatas,
-    };
-  });
+    },
+    { enabled: !!accountId },
+  );
 };
-
 
 export const burrowClaimRewardsSchema = z.object({
   accountId: z.string(),
@@ -1105,17 +1039,18 @@ export const useRefSwap = () => {
       const isRegistered = await getStorageBalance(
         params.inAccId,
         params.fundingAccId,
-        getProvider()
+        getProvider(),
       );
       if (isRegistered === null) {
         toast.warn(
-          "Your wallet is not registered with the incoming token. Please add and execute the following transaction first for the swap to work.",
+          "Your wallet is not registered with the incoming token. A storage registration request was created; execute it before creating the swap request.",
         );
         await storageDeposit.mutateAsync({
           fundingAccId: params.fundingAccId,
           tokenAddress: params.inAccId,
           receiverAddress: params.fundingAccId,
         });
+        return;
       }
 
       const ftTransferCallRequest = transactions.functionCall(
@@ -1149,10 +1084,30 @@ type Deposits = {
   [tokenId: string]: string;
 };
 
-export const useGetRefDeposits = (accountId?: string) => {
+export const useGetTokenStorageBalance = (
+  tokenId?: string,
+  accountId?: string,
+) => {
   const { getProvider } = usePersistingStore();
 
   return useQuery(
+    ["tokenStorageBalance", tokenId, accountId],
+    async () => {
+      if (!tokenId || !accountId) return null;
+
+      return getStorageBalance(tokenId, accountId, getProvider());
+    },
+    {
+      enabled: !!tokenId && !!accountId,
+      staleTime: 30 * 1000,
+    },
+  );
+};
+
+export const useGetRefDeposits = (accountId?: string) => {
+  const { getProvider } = usePersistingStore();
+
+  return useQuery<Record<string, RefDeposit> | null>(
     ["refDeposits", accountId],
     async () => {
       if (!accountId) return null;
@@ -1161,40 +1116,45 @@ export const useGetRefDeposits = (accountId?: string) => {
         "v2.ref-finance.near",
         "get_deposits",
         { account_id: accountId },
-        getProvider()
+        getProvider(),
       );
 
       // Filter out zero deposits
-      const nonZeroDeposits = Object.entries(deposits)
-        .filter(([_, amount]) => amount !== "0");
+      const nonZeroDeposits = Object.entries(deposits).filter(
+        ([_, amount]) => amount !== "0",
+      );
 
       if (nonZeroDeposits.length === 0) return {};
 
       const ftMetadatas = await getFtMetadataForAccounts(
         nonZeroDeposits.map(([tokenId]) => tokenId),
-        getProvider()
+        getProvider(),
       );
 
       return Object.fromEntries(
         nonZeroDeposits.map(([tokenId, amount]) => {
-          const metadata = ftMetadatas.find(ft => ft.accountId === tokenId);
+          const metadata = ftMetadatas.find((ft) => ft.accountId === tokenId);
           const formattedAmount = metadata
-            ? (Number(amount) / Math.pow(10, metadata.decimals)).toString()
+            ? new BigNumber(amount)
+                .div(new BigNumber(10).pow(metadata.decimals))
+                .toString()
             : amount;
 
-          return [tokenId, { amount, formattedAmount, metadata }];
-        })
+          return [tokenId, { tokenId, amount, formattedAmount, metadata }];
+        }),
       );
     },
     {
       enabled: !!accountId,
       staleTime: 30 * 1000,
-    }
+    },
   );
 };
 
 export const useRefWithdraw = () => {
   const wsStore = useWalletTerminator();
+  const storageDeposit = useStorageDeposit();
+  const { getProvider } = usePersistingStore();
 
   return useMutation({
     mutationFn: async ({
@@ -1206,24 +1166,29 @@ export const useRefWithdraw = () => {
       tokenId: string;
       amount: string;
     }) => {
-      const refAccountId = "v2.ref-finance.near";
+      const isRegistered = await getStorageBalance(
+        tokenId,
+        fundingAccId,
+        getProvider(),
+      );
+
+      if (isRegistered === null) {
+        toast.warn(
+          "The wallet is not registered to receive this token. A storage registration request was created; execute it before withdrawing the Ref deposit.",
+        );
+        await storageDeposit.mutateAsync({
+          fundingAccId,
+          tokenAddress: tokenId,
+          receiverAddress: fundingAccId,
+        });
+        return { requestType: "storage_deposit" as const };
+      }
 
       const withdrawRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "withdraw",
-            {
-              token_id: tokenId,
-              amount,
-              unregister: false,
-            },
-            "1",
-            (200 * TGas).toString()
-          ),
-        ]),
+        buildRefWithdrawDepositRequest({ tokenId, amount }),
         new BN(300 * TGas),
-        new BN("0")
+        new BN("0"),
       );
 
       await wsStore.signAndSendTransaction({
@@ -1231,6 +1196,8 @@ export const useRefWithdraw = () => {
         receiverId: fundingAccId,
         actions: [withdrawRequest],
       });
+
+      return { requestType: "withdraw" as const };
     },
   });
 };
@@ -1245,7 +1212,13 @@ export const useRefWithdraw = () => {
 //   "393222484017"
 // ]
 // --------------
-export const usePredictRemoveLiquidity = ({ poolId, shares }: { poolId: string, shares: string }) => {
+export const usePredictRemoveLiquidity = ({
+  poolId,
+  shares,
+}: {
+  poolId: string;
+  shares: string;
+}) => {
   const { getProvider } = usePersistingStore();
 
   return useQuery({
@@ -1255,48 +1228,35 @@ export const usePredictRemoveLiquidity = ({ poolId, shares }: { poolId: string, 
         "v2.ref-finance.near",
         "predict_remove_liquidity",
         { pool_id: parseInt(poolId), shares: shares },
-        getProvider()
+        getProvider(),
       );
 
       return result;
-    }
+    },
+    enabled: !!poolId && !!shares,
   });
-}
+};
 
 export const useWithdrawAllSupplyFromBurrow = () => {
-  const wsStore = useWalletTerminator();
+  const withdrawMutation = useWithdrawSupplyFromBurrow();
 
   return useMutation({
-    mutationFn: async ({ token, funding }: { token: string; funding: string }) => {
-      const burrowAccountId = "contract.main.burrow.near";
-      const oracle = "priceoracle.near";
-
-      const withdrawRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(burrowAccountId, [
-          functionCallAction(
-            "execute_with_pyth",
-            {
-              actions: [
-                {
-                  Withdraw: {
-                    token_id: token
-                  }
-                }
-              ]
-            },
-            "1",
-            (200 * TGas).toString()
-          ),
-        ]),
-        new BN(300 * TGas),
-        new BN("0"),
-      );
-
-      await wsStore.signAndSendTransaction({
-        senderId: funding,
-        receiverId: funding,
-        actions: [withdrawRequest],
+    mutationFn: async ({
+      token,
+      funding,
+      amount,
+      positionType = "supplied",
+    }: {
+      token: string;
+      funding: string;
+      amount: string;
+      positionType?: BurrowPositionType;
+    }) => {
+      await withdrawMutation.mutateAsync({
+        token,
+        funding,
+        amount,
+        positionType,
       });
     },
   });

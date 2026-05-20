@@ -11,6 +11,7 @@ import {
   EyeIcon,
   PlusCircleIcon,
   QueueListIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/20/solid";
 import { PieChartIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
@@ -68,6 +69,9 @@ export function Sidebar() {
               <SidebarSectionItem href="/approval/create">
                 <PlusCircleIcon className={iconsClasses} /> Create multisig
                 wallets
+              </SidebarSectionItem>
+              <SidebarSectionItem href="/approval/upgrade">
+                <ShieldCheckIcon className={iconsClasses} /> Upgrade contract
               </SidebarSectionItem>
             </SidebarSectionBody>
           </SidebarSection>

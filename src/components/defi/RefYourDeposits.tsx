@@ -7,7 +7,7 @@ import {
   useGetRefPoolShares,
   usePredictRemoveLiquidity,
   useRemoveLiquidity,
-  type LiquidityPoolRef
+  type LiquidityPoolRef,
 } from "~/hooks/defi";
 import { useZodForm } from "~/hooks/form";
 import { useTeamsWalletsWithLockups } from "~/hooks/teams";
@@ -29,12 +29,13 @@ export const RefYourDeposits = () => {
   const form = useZodForm(depositForm);
 
   const poolsQuery = useGetRefLiquidityPoolsForAccount(form.watch("funding"));
+  const watchedPoolId = form.watch("poolId");
   const mySharesQuery = useGetRefPoolShares(
-    form.watch("poolId"),
+    watchedPoolId,
     form.watch("funding"),
   );
   const predictRemoveLiquidityQuery = usePredictRemoveLiquidity({
-    poolId: form.watch("poolId"),
+    poolId: watchedPoolId,
     shares: form.watch("sharesToWithdraw"),
   });
   const walletsQuery = useTeamsWalletsWithLockups();
@@ -43,7 +44,7 @@ export const RefYourDeposits = () => {
   useEffect(() => {
     // reset shares to withdraw to 0 when poolId changes
     form.setValue("sharesToWithdraw", "0");
-  }, [form.watch("poolId")]);
+  }, [form, watchedPoolId]);
 
   const onSubmit = async (values: z.infer<typeof depositForm>) => {
     const endpoint =
@@ -55,7 +56,6 @@ export const RefYourDeposits = () => {
       throw new Error("Pool not found");
     }
 
-
     try {
       await removeLiquidityMut.mutateAsync({
         fundingAccId: values.funding,
@@ -64,7 +64,9 @@ export const RefYourDeposits = () => {
         minAmounts: selectedPool.token_account_ids.map(() => "0"),
       });
 
-      toast.success("Remove liquidity request created");
+      toast.success(
+        "Remove liquidity request created. Execute it before withdrawing internal deposits.",
+      );
     } catch (error) {
       toast.error("Error creating remove liquidity request");
     }
@@ -104,10 +106,7 @@ export const RefYourDeposits = () => {
         {/* Available shares : */}
         {mySharesQuery.data && (
           <div>
-            <p>
-              Shares:{" "}
-              {BigNumber(mySharesQuery.data).toFixed(0)}
-            </p>
+            <p>Shares: {BigNumber(mySharesQuery.data).toFixed(0)}</p>
           </div>
         )}
 
@@ -115,8 +114,7 @@ export const RefYourDeposits = () => {
           name="sharesToWithdraw"
           control={form.control}
           label="Amount of shares to withdraw"
-          maxIndivisible={BigNumber(mySharesQuery.data)
-            .toFixed(0)}
+          maxIndivisible={BigNumber(mySharesQuery.data).toFixed(0)}
           description="Enter the amount of shares you want to withdraw."
           defaultValue="0"
         />
@@ -127,9 +125,7 @@ export const RefYourDeposits = () => {
             <p>
               Remaining shares:{" "}
               {BigNumber(mySharesQuery.data)
-                .minus(
-                  BigNumber(form.watch("sharesToWithdraw")),
-                )
+                .minus(BigNumber(form.watch("sharesToWithdraw")))
                 .toFixed(0)}
             </p>
           </div>
@@ -139,22 +135,38 @@ export const RefYourDeposits = () => {
           <div className="space-y-2">
             <h3 className="font-medium">Predicted tokens to receive:</h3>
             {predictRemoveLiquidityQuery.data.map((amount, index) => {
-              const pool = poolsQuery.data.find(p => p.id === form.watch("poolId"));
+              const pool = poolsQuery.data.find((p) => p.id === watchedPoolId);
               if (!pool) return null;
 
-              const displayAccountId = pool.token_account_ids[index].length > 30
-                ? `${pool.token_account_ids[index].slice(0, 30)}...`
-                : pool.token_account_ids[index];
+              const displayAccountId =
+                pool.token_account_ids[index].length > 30
+                  ? `${pool.token_account_ids[index].slice(0, 30)}...`
+                  : pool.token_account_ids[index];
 
               return (
-                <div key={pool.token_account_ids[index]} className="flex justify-between">
+                <div
+                  key={pool.token_account_ids[index]}
+                  className="flex justify-between"
+                >
                   <span>{`${pool.symbols[index]} (${displayAccountId})`}:</span>
-                  <span>{BigNumber(amount).div(10 ** pool.decimals[index]).toFixed(4)}</span>
+                  <span>
+                    {BigNumber(amount)
+                      .div(10 ** pool.decimals[index])
+                      .toFixed(4)}
+                  </span>
                 </div>
               );
             })}
           </div>
         )}
+
+        <div className="rounded-md border p-4 text-sm">
+          <div className="font-medium">Next action</div>
+          <div className="mt-1 text-muted-foreground">
+            Create remove liquidity request. After approval execution, token
+            deposits will appear below.
+          </div>
+        </div>
 
         <Button type="submit">Create remove liquidity request</Button>
       </form>

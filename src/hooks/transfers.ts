@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import BN from "bn.js";
 import { transactions } from "near-api-js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
 import { getStorageBalance } from "~/lib/client";
+import { buildFtStorageDepositRequest } from "~/lib/defi/requests";
 import { useWalletTerminator } from "~/store/slices/wallet-selector";
 import usePersistingStore from "~/store/useStore";
 import { functionCallAction, transferAction } from "./lockup";
@@ -51,17 +51,10 @@ export const useStorageDeposit = () => {
     }) => {
       const storageDepositRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(params.tokenAddress, [
-          functionCallAction(
-            "storage_deposit",
-            {
-              account_id: params.receiverAddress,
-              registration_only: false,
-            },
-            parseNearAmount("0.005"),
-            (50 * TGas).toString(),
-          ),
-        ]),
+        buildFtStorageDepositRequest({
+          tokenId: params.tokenAddress,
+          accountId: params.receiverAddress,
+        }),
         new BN(100 * TGas),
         new BN("0"),
       );
