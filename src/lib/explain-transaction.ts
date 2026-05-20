@@ -165,6 +165,7 @@ export async function explainAction(
           to,
           from,
           await c.account(""),
+          action,
         );
         desc = `${argsDescription.desc} ` + desc;
         actual_receiver = argsDescription.fnReceiverId;
@@ -261,6 +262,11 @@ type fnCallDetails = {
   fnReceiverId: string | undefined;
 };
 
+type FunctionCallMultisigAction = Extract<
+  MultiSigAction,
+  { type: MultiSigRequestActionType.FunctionCall }
+>;
+
 const parseFunctionCallArgs = (args: unknown) => {
   if (typeof args !== "string") return args;
 
@@ -327,9 +333,33 @@ const methodDescriptions: {
       contract: string,
       from_account: string,
       near_connection: naj.Account,
+      action: FunctionCallMultisigAction,
     ) => Promise<fnCallDetails>;
   };
 } = {
+  near_deposit: {
+    getExplanation: async (
+      _args: MethodArgs,
+      contract: string,
+      from_account: string,
+      _near_connection: naj.Account,
+      action: FunctionCallMultisigAction,
+    ) => {
+      if (contract !== "wrap.near") {
+        return {
+          desc: `Deposits NEAR into ${contract}.`,
+          fnReceiverId: contract,
+        };
+      }
+
+      return {
+        desc: `Wraps ${trimFormattedAmount(
+          formatNearAmount(action.deposit),
+        )} NEAR into wNEAR.`,
+        fnReceiverId: from_account,
+      };
+    },
+  },
   execute_with_pyth: {
     getExplanation: async (
       args: MethodArgs,

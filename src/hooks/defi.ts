@@ -652,13 +652,42 @@ interface Config {
   volatility_ratio: number;
 }
 
+type WrapNearParams =
+  | {
+      fundingAccId: string;
+      amount: string;
+      yoctoAmount?: never;
+    }
+  | {
+      fundingAccId: string;
+      amount?: never;
+      yoctoAmount: string;
+    };
+
+const getWrapNearYoctoAmount = (params: WrapNearParams) => {
+  const yoctoAmount =
+    "yoctoAmount" in params
+      ? params.yoctoAmount
+      : parseNearAmount(params.amount);
+
+  try {
+    if (!yoctoAmount || BigInt(yoctoAmount) <= BigInt(0)) {
+      throw new Error();
+    }
+  } catch {
+    throw new Error("Wrap amount must be greater than zero.");
+  }
+
+  return yoctoAmount;
+};
+
 export const useWrapNear = () => {
   const wsStore = useWalletTerminator();
 
   return useMutation({
-    mutationFn: async (params: { fundingAccId: string; amount?: string; yoctoAmount?: string }) => {
+    mutationFn: async (params: WrapNearParams) => {
       const wrapNearAccountId = "wrap.near";
-      const yoctoAmount = params.yoctoAmount || parseNearAmount(params.amount);
+      const yoctoAmount = getWrapNearYoctoAmount(params);
 
       const wrapRequest = transactions.functionCall(
         "add_request",
