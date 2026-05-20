@@ -49,9 +49,23 @@ export const getUserBalanceForPool = (
 
   if (pool && userTokens) {
     for (let i = 0; i < 4; i++) {
-      const token = userTokens.find(
-        (t) => t.account_id == pool.token_account_ids[i],
-      );
+      const poolTokenId = pool.token_account_ids[i];
+      let token = userTokens.find((t) => t.account_id == poolTokenId);
+
+      if (poolTokenId === "wrap.near") {
+        const nativeNear = userTokens.find((t) => t.account_id === "near");
+        if (nativeNear && token) {
+          token = {
+            ...token,
+            balance: (
+              BigInt(token.balance) + BigInt(nativeNear.balance)
+            ).toString(),
+          };
+        } else if (nativeNear && !token) {
+          token = { ...nativeNear, account_id: "wrap.near", symbol: "wNEAR" };
+        }
+      }
+
       tokens.push(token);
     }
   }
@@ -134,28 +148,31 @@ const RefLiquidityPools = () => {
       shouldValidate: false,
       shouldDirty: true,
     });
-
   }, [lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     const tokenAccIds = liquidityPoolDetailsQuery.data?.token_account_ids;
     const tokenCount = liquidityPoolDetailsQuery.data?.token_symbols.length;
 
-    const metadataPromises = tokenAccIds.slice(0, tokenCount).map((accId) =>
-      viewCall<FungibleTokenMetadata>(accId, "ft_metadata", {}, getProvider()),
-    );
+    const metadataPromises = tokenAccIds
+      .slice(0, tokenCount)
+      .map((accId) =>
+        viewCall<FungibleTokenMetadata>(
+          accId,
+          "ft_metadata",
+          {},
+          getProvider(),
+        ),
+      );
     const metadatas = await Promise.all(metadataPromises);
 
-    const indivisibleAmounts = values.tokenAmounts.slice(0, tokenCount).map((amount, index) =>
-      convertToIndivisibleFormat(amount, metadatas[index].decimals),
-    );
+    const indivisibleAmounts = values.tokenAmounts
+      .slice(0, tokenCount)
+      .map((amount, index) =>
+        convertToIndivisibleFormat(amount, metadatas[index].decimals),
+      );
 
-    console.log(
-      indivisibleAmounts,
-      values.poolId,
-      tokenAccIds,
-      values.funding,
-    );
+    console.log(indivisibleAmounts, values.poolId, tokenAccIds, values.funding);
 
     await depositMutation.mutateAsync({
       fundingAccId: values.funding,
@@ -211,6 +228,15 @@ const RefLiquidityPools = () => {
             onChange={() => setLastUpdatedIndex(index)}
           />
         ))}
+
+        {liquidityPoolDetailsQuery.data?.token_account_ids.includes(
+          "wrap.near",
+        ) && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            If this wallet needs more wNEAR, NearVault will create a wrap request
+            for the shortfall.
+          </p>
+        )}
 
         <SwitchInput
           control={form.control}

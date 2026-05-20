@@ -59,7 +59,10 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
 
     // shares_total_supply/sum(c_amounts)*your token amount;
     // near contract call-function as-read-only v2.ref-finance.near get_rated_pool json-args '{"pool_id":4179}' network-config mainnet now
-    const ratedPool = await getRatedPool(parseInt(values.poolId), getProvider());
+    const ratedPool = await getRatedPool(
+      parseInt(values.poolId),
+      getProvider(),
+    );
     const shares_total_supply = BigNumber(ratedPool.shares_total_supply);
     const c_amounts = ratedPool.c_amounts.map((a) => BigNumber(a));
     // sum(c_amounts)
@@ -153,6 +156,13 @@ const StablePoolsRefDeposit: NextPageWithLayout = () => {
               defaultValue="0"
             />
           ))}
+
+          {currentPool?.token_account_ids.includes("wrap.near") && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              If this wallet needs more wNEAR, NearVault will create a wrap
+              request for the shortfall.
+            </p>
+          )}
 
           <Button type="submit">Create liquidity deposit request</Button>
         </form>
