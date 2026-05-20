@@ -8,6 +8,12 @@ await import("./src/env.mjs");
 const config = {
   reactStrictMode: true,
   swcMinify: true,
+  generateBuildId: async () => {
+    return process.env.VERCEL_GIT_COMMIT_SHA ?? crypto.randomUUID();
+  },
+  publicRuntimeConfig: {
+    buildId: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  },
   i18n: {
     locales: ["en"],
     defaultLocale: "en",
