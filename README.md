@@ -39,17 +39,26 @@ nearvault is an open-source treasury app for teams and companies operating on [N
 
 ## Getting started
 
-Prerequisites: Node.js 18+, npm.
+Prerequisites: Node.js 22+, npm, and a running PostgreSQL instance.
 
 ```bash
 git clone https://github.com/PierreLeGuen/nearvault.git
 cd nearvault
+cp .env.example .env       # then fill in the values, see below
 npm install
-cp .env.example .env   # fill in NEXTAUTH_SECRET and Google OAuth credentials
+npx prisma migrate dev     # create the database schema
 npm run dev
 ```
 
-The app runs at http://localhost:3000. Prisma uses the `DATABASE_URL` from `.env` (SQLite by default for local development).
+The app runs at http://localhost:3000. Required environment variables (see `.env.example` for the full annotated list):
+
+- `DATABASE_URL`: PostgreSQL connection string.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Google OAuth login.
+- `EMAIL_SERVER` / `EMAIL_FROM`: SMTP settings for magic-link email login.
+- `PIKESPEAK_API_KEY`: [Pikespeak](https://pikespeak.ai) API key for on-chain data.
+- `NEXT_PUBLIC_NETWORK_ID`: `mainnet` or `testnet`.
+
+To build without a fully populated environment, set `SKIP_ENV_VALIDATION=1`.
 
 Built with the [T3 stack](https://create.t3.gg/): Next.js, tRPC, Prisma, NextAuth, and Tailwind CSS.
 
