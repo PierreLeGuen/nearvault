@@ -30,7 +30,7 @@ const Default = () => {
         MyNearWallet connect
       </Button>
       <Button onClick={() => wsStore.goToPrivateKeyShare()}>
-        Private key connect
+        Private key / seed phrase connect
       </Button>
       <hr />
       <Button onClick={() => wsStore.goToCurrentlyImportedKeys()}>
@@ -105,18 +105,18 @@ const DerivationPath = () => {
 };
 
 const privateKeyFormSchema = z.object({
-  privateKey: z.string(),
+  secret: z.string().trim().min(1, "Required"),
 });
 
 const PrivateKey = () => {
   const wsStore = useWalletTerminator();
-  const form = useZodForm(privateKeyFormSchema);
+  const form = useZodForm(privateKeyFormSchema, {
+    defaultValues: { secret: "" },
+  });
 
   const onSubmit = async (values: z.infer<typeof privateKeyFormSchema>) => {
-    console.log(values);
-
     try {
-      const res = await wsStore.connectWithPrivateKey(values.privateKey);
+      const res = await wsStore.connectWithPrivateKey(values.secret);
       wsStore.goToPrivateKeyConnectSuccess(res.pubK, res.accounts);
     } catch (e) {
       wsStore.goToPrivateKeyShare((e as Error).message);
@@ -134,9 +134,10 @@ const PrivateKey = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <TextInput
               control={form.control}
-              name="privateKey"
-              label="Private Key"
-              placeholder="ed25519:2v4YqugbGpUmAJVn5kCWETaYYBanAmsYoyK5wpxZygnzSrCsr6PHkTWGES553cr6xsNah6rqTyPGYuyC2WWRjDYd"
+              name="secret"
+              label="Private key or seed phrase"
+              placeholder="ed25519:2v4Yqug… or twelve word seed phrase"
+              description="Paste a NEAR private key (ed25519:…) or a 12/24-word seed phrase. Seed phrases are converted to a key in your browser and never leave this device."
               rules={{ required: true }}
             />
             <Button className="w-full" type="submit">
