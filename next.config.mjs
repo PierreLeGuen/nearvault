@@ -21,5 +21,22 @@ const config = {
   images: {
     domains: ["lh3.googleusercontent.com"],
   },
+  webpack: (config, { isServer, webpack }) => {
+    // Seed-phrase derivation (near-seed-phrase -> bip39-light / near-hd-key)
+    // relies on a global `Buffer`, which webpack 5 does not provide in the
+    // browser bundle. Provide it, and stub out the Node-only crypto/stream
+    // modules those packages reference behind browser-safe code paths.
+    if (!isServer) {
+      config.plugins.push(
+        new webpack.ProvidePlugin({ Buffer: ["buffer", "Buffer"] }),
+      );
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        crypto: false,
+        stream: false,
+      };
+    }
+    return config;
+  },
 };
 export default config;

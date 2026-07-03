@@ -18,6 +18,7 @@ import { config } from "~/config/config";
 import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
 import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
 import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
+import { toPrivateKey } from "~/lib/keys";
 import {
   filterMultisig,
   getAccessKey,
@@ -69,8 +70,9 @@ interface WsActions {
     actions: Action[],
   ) => Promise<Transaction>;
   connectWithLedger: (derivationPath?: string) => Promise<PublicKeyStr>;
+  // Accepts either a NEAR private key (`ed25519:...`) or a BIP-39 seed phrase.
   connectWithPrivateKey: (
-    privateKey: string,
+    secret: string,
   ) => Promise<{ pubK: PublicKeyStr; accounts: string[] }>;
   connectWithMyNearWallet: () => void;
   handleMnwRedirect: (router: NextRouter) => Promise<void>;
@@ -218,9 +220,12 @@ export const createWalletTerminator: StateCreator<
 
     return pkStr;
   },
-  connectWithPrivateKey: async (privateKey: string) => {
+  connectWithPrivateKey: async (secret: string) => {
+    // `secret` may be a raw private key or a seed phrase; normalise to a
+    // private key so the rest of the flow (and the persisted source) is
+    // identical regardless of what the user pasted.
+    const privateKey = toPrivateKey(secret);
     const kp = KeyPair.fromString(privateKey);
-    console.log("connectWithPrivateKey", { kp });
     const pubK = kp.getPublicKey().toString();
     const accounts = await getAccountsForPublicKey(pubK);
     const filteredAccounts = (
