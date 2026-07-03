@@ -1,28 +1,67 @@
-# Create T3 App
+<p align="center">
+  <img src="public/logo.png" alt="nearvault logo" width="120" />
+</p>
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+<h1 align="center">nearvault</h1>
 
-## What's next? How do I make an app with this?
+<p align="center">
+  <b>Treasury management for NEAR teams: multisig approvals, payments, staking, and DeFi in one dashboard.</b>
+</p>
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+<p align="center">
+  <a href="https://nearvault.org">nearvault.org</a> ·
+  <a href="docs/onboarding.md">Onboarding guide</a> ·
+  <a href="docs/connect-key.md">Connect a key</a>
+</p>
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
+  <img src="https://img.shields.io/badge/NEAR-mainnet-black" alt="NEAR mainnet" />
+</p>
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+![nearvault dashboard](public/webpage.png)
 
-## Learn More
+## What is nearvault?
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+nearvault is an open-source treasury app for teams and companies operating on [NEAR](https://near.org). It wraps NEAR multisig wallets in a clean web UI, so finance workflows that normally require CLI gymnastics become a couple of clicks with an approval trail.
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Features
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+- **Multisig wallets**: create and manage `*.multisignature.near` wallets with custom signer sets and voting thresholds.
+- **Approvals**: every transaction becomes a request that signers confirm or reject from a shared pending-requests queue.
+- **Payments**: token transfers with history and a team address book.
+- **Teams**: invite members by email; viewers can follow requests without gaining write access to funds.
+- **Staking**: stake, unstake, and withdraw from validator pools, including from lockup contracts.
+- **Lockups**: create and manage NEAR lockup contracts.
+- **DeFi**: swaps, Ref Finance liquidity pools, and stablecoin strategies straight from the treasury.
+- **Accounting**: transaction reports for bookkeeping and audits.
+- **Signing options**: Ledger hardware wallets or private key.
 
-## How do I deploy this?
+## Getting started
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Prerequisites: Node.js 18+, npm.
+
+```bash
+git clone https://github.com/PierreLeGuen/nearvault.git
+cd nearvault
+npm install
+cp .env.example .env   # fill in NEXTAUTH_SECRET and Google OAuth credentials
+npm run dev
+```
+
+The app runs at http://localhost:3000. Prisma uses the `DATABASE_URL` from `.env` (SQLite by default for local development).
+
+Built with the [T3 stack](https://create.t3.gg/): Next.js, tRPC, Prisma, NextAuth, and Tailwind CSS.
+
+## Documentation
+
+- [Onboarding](docs/onboarding.md): first login, creating a multisig wallet, setting up a team.
+- [Connect your key](docs/connect-key.md): Ledger and private key signing.
+
+## Contributing
+
+Issues and pull requests are welcome. If you run a NEAR treasury and something is missing, open an issue describing your workflow.
+
+## License
+
+[MIT](LICENSE) © Arcus Pluvius Limited
