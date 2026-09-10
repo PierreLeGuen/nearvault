@@ -115,7 +115,7 @@ export function Sidebar() {
               </SidebarSectionItem>
               <SidebarSectionItem href="/defi/stable">
                 <ArrowUpTrayIcon className={iconsClasses} />
-                Ref Stable deposit
+                Stable &amp; ALMM deposit
               </SidebarSectionItem>
               <SidebarSectionItem href="/defi/withdraw">
                 <ArrowDownTrayIcon className={iconsClasses} />

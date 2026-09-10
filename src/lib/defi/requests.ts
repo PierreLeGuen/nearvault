@@ -7,6 +7,62 @@ export const REF_FINANCE_CONTRACT_ID = "v2.ref-finance.near";
 const T_GAS = 1000000000000;
 const ONE_YOCTO = "1";
 const FT_STORAGE_DEPOSIT = parseNearAmount("0.005") ?? "0";
+// Attached to add_liquidity / add_stable_liquidity to pay for the LP share
+// storage; the exchange refunds whatever it does not use.
+const LP_STORAGE_DEPOSIT = parseNearAmount("0.01") ?? "0";
+
+export const REF_POOL_KINDS = [
+  "SIMPLE_POOL",
+  "STABLE_SWAP",
+  "RATED_SWAP",
+  "DEGEN_SWAP",
+] as const;
+export type RefPoolKind = (typeof REF_POOL_KINDS)[number];
+
+/**
+ * Pool kinds built on Rhea's StableSwap engine. They must be funded with
+ * `add_stable_liquidity` (any token combination, guarded by `min_shares`).
+ * Calling the classic `add_liquidity` on them panics on-chain with
+ * "not implemented" (ref-exchange/src/pool.rs). DEGEN_SWAP is the kind Rhea
+ * markets as "ALMM" pools (e.g. wNEAR/USDt #6063).
+ */
+export const STABLE_LIKE_POOL_KINDS: readonly RefPoolKind[] = [
+  "STABLE_SWAP",
+  "RATED_SWAP",
+  "DEGEN_SWAP",
+];
+
+export const isStableLikePool = (poolKind: string) =>
+  (STABLE_LIKE_POOL_KINDS as readonly string[]).includes(poolKind);
+
+const REF_POOL_KIND_LABELS: Record<RefPoolKind, string> = {
+  SIMPLE_POOL: "Classic",
+  STABLE_SWAP: "Stable",
+  RATED_SWAP: "Rated",
+  DEGEN_SWAP: "ALMM",
+};
+
+export const getRefPoolKindLabel = (poolKind: string) =>
+  REF_POOL_KIND_LABELS[poolKind as RefPoolKind] ?? poolKind;
+
+/** Default tolerated drop between predicted and minted LP shares, in percent. */
+export const DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT = 1;
+
+/**
+ * Lowers an indivisible amount by `slippagePercent`, rounding down.
+ * Percentages with up to four decimals are applied exactly.
+ */
+export const applySlippage = (amount: string, slippagePercent: number) => {
+  if (
+    !Number.isFinite(slippagePercent) ||
+    slippagePercent < 0 ||
+    slippagePercent >= 100
+  ) {
+    throw new Error("Slippage must be between 0 and 100 percent.");
+  }
+  const keep = BigInt(Math.round((100 - slippagePercent) * 10000));
+  return ((BigInt(amount) * keep) / BigInt(1000000)).toString();
+};
 
 export type BurrowPositionType = "supplied" | "collateral";
 
@@ -101,6 +157,57 @@ export const buildBurrowWithdrawRequest = ({
     },
   };
 };
+
+/** Classic (SIMPLE_POOL) pools only; other kinds panic on this method. */
+export const buildRefAddLiquidityRequest = ({
+  poolId,
+  amounts,
+}: {
+  poolId: number;
+  amounts: string[];
+}): MultisigRequestPayload => ({
+  request: {
+    receiver_id: REF_FINANCE_CONTRACT_ID,
+    actions: [
+      functionCallAction(
+        "add_liquidity",
+        {
+          pool_id: poolId,
+          amounts,
+        },
+        LP_STORAGE_DEPOSIT,
+        tGas(50),
+      ),
+    ],
+  },
+});
+
+/** Stable, rated and ALMM (DEGEN_SWAP) pools. */
+export const buildRefAddStableLiquidityRequest = ({
+  poolId,
+  amounts,
+  minShares,
+}: {
+  poolId: number;
+  amounts: string[];
+  minShares: string;
+}): MultisigRequestPayload => ({
+  request: {
+    receiver_id: REF_FINANCE_CONTRACT_ID,
+    actions: [
+      functionCallAction(
+        "add_stable_liquidity",
+        {
+          pool_id: poolId,
+          amounts,
+          min_shares: minShares,
+        },
+        LP_STORAGE_DEPOSIT,
+        tGas(100),
+      ),
+    ],
+  },
+});
 
 export const buildRefRemoveLiquidityRequest = ({
   poolId,
