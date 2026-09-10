@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 import { DropdownFormField } from "~/components/inputs/dropdown";
 import { TokenWithMaxInput } from "~/components/inputs/near";
 import { SenderFormField } from "~/components/inputs/sender";
 import { SwitchInput } from "~/components/inputs/switch";
+import { TextInput } from "~/components/inputs/text";
 import { Button } from "~/components/ui/button";
 import { Form } from "~/components/ui/form";
 import {
@@ -19,6 +21,12 @@ import {
   useTeamsWalletsWithLockups,
 } from "~/hooks/teams";
 import { viewCall } from "~/lib/client";
+import {
+  DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT,
+  getRefPoolKindLabel,
+  isStableLikePool,
+  type RefPoolKind,
+} from "~/lib/defi/requests";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { type Token } from "~/lib/transformations";
 import { convertToIndivisibleFormat } from "~/lib/utils";
@@ -29,15 +37,24 @@ const formSchema = z.object({
   tokenAmounts: z.array(z.string()).length(4),
   enableEmptyPools: z.boolean(),
   funding: z.string(),
+  slippage: z.string().refine((value) => {
+    const percent = Number(value);
+    return Number.isFinite(percent) && percent >= 0 && percent < 100;
+  }, "Enter a slippage between 0 and 100 percent."),
 });
 
 export const getFormattedPoolBalance = (pool: {
   amounts: string[];
   token_symbols: string[];
   id: string;
+  pool_kind?: string;
 }) => {
-  return `${pool.token_symbols.join("-")} (${Object.keys(pool.amounts)
-    .map((_, idx) => `${pool.amounts[idx]} ${pool.token_symbols[idx]}`)
+  const kind =
+    pool.pool_kind && pool.pool_kind !== "SIMPLE_POOL"
+      ? ` [${getRefPoolKindLabel(pool.pool_kind)}]`
+      : "";
+  return `${pool.token_symbols.join("-")}${kind} (${pool.amounts
+    .map((amount, idx) => `${amount} ${pool.token_symbols[idx]}`)
     .join(" | ")}) ID: ${pool.id}`;
 };
 
@@ -73,16 +90,23 @@ export const getUserBalanceForPool = (
   return tokens;
 };
 
-const RefLiquidityPools = () => {
+type RefLiquidityPoolsProps = {
+  /** Restrict the pool list to these kinds (default: every kind). */
+  poolKinds?: readonly RefPoolKind[];
+};
+
+const RefLiquidityPools = ({ poolKinds }: RefLiquidityPoolsProps) => {
   const form = useZodForm(formSchema, {
     defaultValues: {
       enableEmptyPools: false,
       tokenAmounts: ["0", "0", "0", "0"],
+      slippage: DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT.toString(),
     },
   });
   const walletsQuery = useTeamsWalletsWithLockups();
   const liquidityPoolsQuery = useGetRefLiquidityPools(
     form.watch("enableEmptyPools"),
+    poolKinds,
   );
 
   const tokensQuery = useGetAllTokensWithBalanceForWallet(
@@ -94,8 +118,13 @@ const RefLiquidityPools = () => {
   const tokenPricesQuery = useGetTokenPrices();
   const depositMutation = useDepositToRefLiquidityPool();
 
+  const selectedPool = liquidityPoolDetailsQuery.data;
+  // Stable, rated and ALMM pools accept any token combination (including a
+  // single token), so amounts are never auto-balanced for them.
+  const stableLike = !!selectedPool && isStableLikePool(selectedPool.pool_kind);
+
   const userTokensForPool = getUserBalanceForPool(
-    liquidityPoolDetailsQuery.data,
+    selectedPool,
     tokensQuery.data,
   );
   const { getProvider } = usePersistingStore();
@@ -104,8 +133,9 @@ const RefLiquidityPools = () => {
 
   useEffect(() => {
     if (
+      stableLike ||
       !tokenPricesQuery.data ||
-      !liquidityPoolDetailsQuery.data ||
+      !selectedPool ||
       lastUpdatedIndex === null ||
       !watchedAmounts[lastUpdatedIndex]
     ) {
@@ -113,8 +143,8 @@ const RefLiquidityPools = () => {
     }
 
     const prices = tokenPricesQuery.data;
-    const tokenIds = liquidityPoolDetailsQuery.data.token_account_ids;
-    const tokenCount = liquidityPoolDetailsQuery.data.token_symbols.length;
+    const tokenIds = selectedPool.token_account_ids;
+    const tokenCount = selectedPool.token_symbols.length;
     const amount = watchedAmounts[lastUpdatedIndex];
 
     // Skip if the amount is invalid
@@ -148,38 +178,54 @@ const RefLiquidityPools = () => {
       shouldValidate: false,
       shouldDirty: true,
     });
-  }, [lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
+  }, [stableLike, lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const tokenAccIds = liquidityPoolDetailsQuery.data?.token_account_ids;
-    const tokenCount = liquidityPoolDetailsQuery.data?.token_symbols.length;
+    if (!selectedPool) {
+      toast.error("Select a liquidity pool first.");
+      return;
+    }
 
-    const metadataPromises = tokenAccIds
-      .slice(0, tokenCount)
-      .map((accId) =>
-        viewCall<FungibleTokenMetadata>(
-          accId,
-          "ft_metadata",
-          {},
-          getProvider(),
+    const provider = getProvider();
+    const tokenAccIds = selectedPool.token_account_ids;
+
+    try {
+      const metadatas = await Promise.all(
+        tokenAccIds.map((accId) =>
+          viewCall<FungibleTokenMetadata>(accId, "ft_metadata", {}, provider),
         ),
       );
-    const metadatas = await Promise.all(metadataPromises);
 
-    const indivisibleAmounts = values.tokenAmounts
-      .slice(0, tokenCount)
-      .map((amount, index) =>
-        convertToIndivisibleFormat(amount, metadatas[index].decimals),
+      const tokens = tokenAccIds.map((accountId, index) => ({
+        accountId,
+        amount: convertToIndivisibleFormat(
+          values.tokenAmounts[index] || "0",
+          metadatas[index].decimals,
+        ).toString(),
+        decimals: metadatas[index].decimals,
+        symbol: metadatas[index].symbol,
+      }));
+
+      const result = await depositMutation.mutateAsync({
+        fundingAccId: values.funding,
+        poolId: values.poolId,
+        tokens,
+        slippagePercent: stableLike ? Number(values.slippage) : undefined,
+      });
+
+      toast.success(
+        `Liquidity deposit requests created for ${getRefPoolKindLabel(
+          result.poolKind,
+        )} pool #${values.poolId} (${result.method}).`,
       );
-
-    console.log(indivisibleAmounts, values.poolId, tokenAccIds, values.funding);
-
-    await depositMutation.mutateAsync({
-      fundingAccId: values.funding,
-      tokenAccIds: tokenAccIds.slice(0, tokenCount),
-      tokenAmounts: indivisibleAmounts.map((amt) => amt.toString()),
-      poolId: values.poolId,
-    });
+    } catch (error) {
+      console.error("Error creating liquidity deposit requests:", error);
+      toast.error(
+        `Failed to create liquidity deposit requests: ${
+          (error as Error).message
+        }`,
+      );
+    }
   };
 
   return (
@@ -214,7 +260,7 @@ const RefLiquidityPools = () => {
           label="Liquidity pool"
         />
 
-        {liquidityPoolDetailsQuery.data?.token_symbols.map((symbol, index) => (
+        {selectedPool?.token_symbols.map((symbol, index) => (
           <TokenWithMaxInput
             key={index}
             control={form.control}
@@ -229,12 +275,27 @@ const RefLiquidityPools = () => {
           />
         ))}
 
-        {liquidityPoolDetailsQuery.data?.token_account_ids.includes(
-          "wrap.near",
-        ) && (
+        {stableLike && (
+          <>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {getRefPoolKindLabel(selectedPool.pool_kind)} pools accept any
+              combination of their tokens, including a single one. Leave the
+              others at 0 for a one-sided deposit.
+            </p>
+            <TextInput
+              control={form.control}
+              name="slippage"
+              label="Max slippage (%)"
+              placeholder={DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT.toString()}
+              description="The request fails on-chain if the pool would mint fewer LP shares than today's estimate minus this margin, for example because the pool rebalanced or its prices moved while signers were confirming. Raise it if confirmations may take a while."
+            />
+          </>
+        )}
+
+        {selectedPool?.token_account_ids.includes("wrap.near") && (
           <p className="text-sm text-amber-600 dark:text-amber-400">
-            If this wallet needs more wNEAR, NearVault will create a wrap request
-            for the shortfall.
+            If this wallet needs more wNEAR, NearVault will create a wrap
+            request for the shortfall.
           </p>
         )}
 

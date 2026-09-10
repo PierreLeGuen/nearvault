@@ -5,6 +5,8 @@ import { formatNearAmount } from "near-api-js/lib/utils/format";
 import {
   BURROW_CONTRACT_ID,
   REF_FINANCE_CONTRACT_ID,
+  getRefPoolKindLabel,
+  isStableLikePool,
 } from "~/lib/defi/requests";
 import {
   initFungibleTokenContract,
@@ -227,6 +229,11 @@ type ExecuteWithPythParams = {
     };
   }>;
 };
+type RefAddLiquidityParams = {
+  pool_id: number | string;
+  amounts?: string[];
+  min_shares?: string;
+};
 type RefRemoveLiquidityParams = {
   pool_id: number | string;
   shares: string;
@@ -253,6 +260,7 @@ type MethodArgs =
   | FtTransferParams
   | FtTransferCallParams
   | ExecuteWithPythParams
+  | RefAddLiquidityParams
   | RefRemoveLiquidityParams
   | RefWithdrawParams
   | StorageDepositParams;
@@ -323,6 +331,69 @@ const getBurrowAmountDecimals = async (
     return metadata.decimals + (asset.config?.extra_decimals ?? 0);
   } catch {
     return metadata.decimals;
+  }
+};
+
+const LP_SHARE_DECIMALS = 24;
+
+const explainRefAddLiquidity = async (
+  args: MethodArgs,
+  contract: string,
+  near_connection: naj.Account,
+  methodName: "add_liquidity" | "add_stable_liquidity",
+): Promise<fnCallDetails> => {
+  const params = args as RefAddLiquidityParams;
+  if (contract !== REF_FINANCE_CONTRACT_ID) {
+    return {
+      desc: `Adds liquidity on ${contract}.`,
+      fnReceiverId: contract,
+    };
+  }
+
+  const poolId = Number(params.pool_id);
+  try {
+    const pool = (await near_connection.viewFunction({
+      contractId: REF_FINANCE_CONTRACT_ID,
+      methodName: "get_pool",
+      args: { pool_id: poolId },
+    })) as { pool_kind: string; token_account_ids: string[] };
+
+    const amounts = await Promise.all(
+      pool.token_account_ids.map((tokenId, i) =>
+        formatTokenAmount(near_connection, tokenId, params.amounts?.[i] ?? "0"),
+      ),
+    );
+    const kindLabel = getRefPoolKindLabel(pool.pool_kind);
+
+    const minShares = params.min_shares
+      ? ` Minimum LP shares: ${trimFormattedAmount(
+          new BigNumber(params.min_shares)
+            .div(new BigNumber(10).pow(LP_SHARE_DECIMALS))
+            .decimalPlaces(6, BigNumber.ROUND_DOWN)
+            .toFormat(),
+        )}.`
+      : "";
+
+    // add_liquidity only exists for classic pools and add_stable_liquidity only
+    // for the StableSwap-based kinds; a mismatch panics on-chain.
+    const methodMatchesPool =
+      isStableLikePool(pool.pool_kind) ===
+      (methodName === "add_stable_liquidity");
+    const warning = methodMatchesPool
+      ? ""
+      : ` WARNING: ${methodName} is not supported by ${kindLabel} pools, this request will fail on-chain.`;
+
+    return {
+      desc: `Adds liquidity to Rhea ${kindLabel} pool #${poolId} (${amounts.join(
+        " + ",
+      )}).${minShares}${warning}`,
+      fnReceiverId: REF_FINANCE_CONTRACT_ID,
+    };
+  } catch {
+    return {
+      desc: `Adds liquidity to Rhea pool #${poolId}.`,
+      fnReceiverId: REF_FINANCE_CONTRACT_ID,
+    };
   }
 };
 
@@ -404,6 +475,29 @@ const methodDescriptions: {
         fnReceiverId: from_account,
       };
     },
+  },
+  add_liquidity: {
+    getExplanation: async (
+      args: MethodArgs,
+      contract: string,
+      _from_account: string,
+      near_connection: naj.Account,
+    ) =>
+      explainRefAddLiquidity(args, contract, near_connection, "add_liquidity"),
+  },
+  add_stable_liquidity: {
+    getExplanation: async (
+      args: MethodArgs,
+      contract: string,
+      _from_account: string,
+      near_connection: naj.Account,
+    ) =>
+      explainRefAddLiquidity(
+        args,
+        contract,
+        near_connection,
+        "add_stable_liquidity",
+      ),
   },
   remove_liquidity: {
     getExplanation: async (args: MethodArgs) => {

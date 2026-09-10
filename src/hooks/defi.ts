@@ -8,13 +8,19 @@ import { z } from "zod";
 import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";
 import {
   BURROW_CONTRACT_ID,
+  DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT,
   REF_FINANCE_CONTRACT_ID,
+  applySlippage,
   buildBurrowWithdrawRequest,
+  buildRefAddLiquidityRequest,
+  buildRefAddStableLiquidityRequest,
   buildRefRemoveLiquidityRequest,
   buildRefWithdrawDepositRequest,
+  isStableLikePool,
   type BurrowPositionType,
   type BurrowWithdrawParams,
   type RefDeposit,
+  type RefPoolKind,
 } from "~/lib/defi/requests";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { type Token } from "~/lib/transformations";
@@ -61,54 +67,57 @@ export interface LiquidityPool {
 
 export const useGetRefLiquidityPools = (
   includeEmptyPools: boolean,
-  poolType?: "SIMPLE_POOL" | "RATED_SWAP",
+  poolKinds?: readonly RefPoolKind[],
 ) => {
   const { getProvider } = usePersistingStore();
-  return useQuery(["liquidityPools", includeEmptyPools], async () => {
-    const pools = await fetchJson<LiquidityPool[]>(
-      "https://api.ref.finance/list-pools",
-    );
+  return useQuery(
+    ["liquidityPools", includeEmptyPools, poolKinds ?? "all"],
+    async () => {
+      const pools = await fetchJson<LiquidityPool[]>(
+        "https://api.ref.finance/list-pools",
+      );
 
-    const tokenAccountIds = [
-      ...new Set(
-        pools.flatMap((pool) => {
-          return pool.token_account_ids;
-        }),
-      ),
-    ];
+      const tokenAccountIds = [
+        ...new Set(
+          pools.flatMap((pool) => {
+            return pool.token_account_ids;
+          }),
+        ),
+      ];
 
-    const ftMetadatas = await getFtMetadataForAccounts(
-      tokenAccountIds,
-      getProvider(),
-    );
+      const ftMetadatas = await getFtMetadataForAccounts(
+        tokenAccountIds,
+        getProvider(),
+      );
 
-    return pools
-      .filter((pool) => {
-        return includeEmptyPools || pool.tvl !== "0";
-      })
-      .filter((pool) => {
-        if (!poolType) {
-          return true;
-        }
-        return pool.pool_kind === poolType;
-      })
-      .map((pool) => {
-        const amounts = pool.amounts.map((amount, i) => {
-          const accId = pool.token_account_ids[i];
-          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
-          if (!ftMetadata) {
-            return "0";
+      return pools
+        .filter((pool) => {
+          return includeEmptyPools || pool.tvl !== "0";
+        })
+        .filter((pool) => {
+          if (!poolKinds) {
+            return true;
           }
-          const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
-          return formattedAmount.toString();
+          return (poolKinds as readonly string[]).includes(pool.pool_kind);
+        })
+        .map((pool) => {
+          const amounts = pool.amounts.map((amount, i) => {
+            const accId = pool.token_account_ids[i];
+            const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+            if (!ftMetadata) {
+              return "0";
+            }
+            const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
+            return formattedAmount.toString();
+          });
+          pool.amounts = amounts;
+          return pool;
+        })
+        .sort((a, b) => {
+          return Number(a.id) - Number(b.id);
         });
-        pool.amounts = amounts;
-        return pool;
-      })
-      .sort((a, b) => {
-        return Number(a.id) - Number(b.id);
-      });
-  });
+    },
+  );
 };
 export const useGetPoolsForToken = (tokenId: string) => {
   const { getProvider } = usePersistingStore();
@@ -197,17 +206,46 @@ export const useGetTokenPrices = () => {
   });
 };
 
-type DepositParams = {
-  fundingAccId: string;
-  tokenLeftAccId?: string;
-  tokenLeftAmount?: string;
-  tokenRightAccId?: string;
-  tokenRightAmount?: string;
-  tokenAccIds?: string[];
-  tokenAmounts?: string[];
-  poolId: string;
+export type RefDepositToken = {
+  accountId: string;
+  /** Amount in indivisible units. */
+  amount: string;
+  decimals: number;
+  symbol: string;
 };
 
+type DepositParams = {
+  fundingAccId: string;
+  poolId: string;
+  /** Pool tokens, in the pool's own token order. */
+  tokens: RefDepositToken[];
+  /** Stable-like pools only: tolerated drop between predicted and minted shares. */
+  slippagePercent?: number;
+};
+
+type RefPoolInfo = {
+  pool_kind: string;
+  token_account_ids: string[];
+  amounts: string[];
+  shares_total_supply: string;
+};
+
+const formatIndivisibleAmount = (amount: string, decimals: number) =>
+  new BigNumber(amount)
+    .div(new BigNumber(10).pow(decimals))
+    .decimalPlaces(6, BigNumber.ROUND_DOWN)
+    .toFormat();
+
+/**
+ * Creates the multisig requests that move tokens into Rhea (Ref Finance) and
+ * add them to a liquidity pool:
+ *   1. storage_deposit on the exchange,
+ *   2. a wrap request if wNEAR is short, then one ft_transfer_call per token
+ *      that is not already sitting in the wallet's Rhea internal deposits,
+ *   3. add_liquidity for classic pools, or add_stable_liquidity with a
+ *      min_shares guard for stable, rated and ALMM (DEGEN_SWAP) pools.
+ * The pool kind and token order are read from the contract, not from the UI.
+ */
 export const useDepositToRefLiquidityPool = () => {
   const wsStore = useWalletTerminator();
   const wrapNearMutation = useWrapNear();
@@ -215,10 +253,74 @@ export const useDepositToRefLiquidityPool = () => {
 
   return useMutation({
     mutationFn: async (params: DepositParams) => {
-      const refAccountId = "v2.ref-finance.near";
+      const provider = getProvider();
+      const poolId = parseInt(params.poolId);
+      if (!Number.isInteger(poolId)) {
+        throw new Error(`Invalid pool id: ${params.poolId}`);
+      }
+
+      const pool = await viewCall<RefPoolInfo>(
+        REF_FINANCE_CONTRACT_ID,
+        "get_pool",
+        { pool_id: poolId },
+        provider,
+      );
+      const tokenIds = params.tokens.map((token) => token.accountId);
+      if (
+        pool.token_account_ids.length !== tokenIds.length ||
+        pool.token_account_ids.some((id, i) => id !== tokenIds[i])
+      ) {
+        throw new Error(
+          `Token list does not match pool #${poolId} on-chain (${pool.token_account_ids.join(
+            ", ",
+          )}). Reload the page and try again.`,
+        );
+      }
+
+      const amounts = params.tokens.map((token) => token.amount || "0");
+      if (amounts.every((amount) => amount === "0")) {
+        throw new Error("Enter an amount for at least one token.");
+      }
+
+      const stableLike = isStableLikePool(pool.pool_kind);
+      let predictedShares: string | undefined;
+      let minShares: string | undefined;
+      if (stableLike) {
+        predictedShares = await viewCall<string>(
+          REF_FINANCE_CONTRACT_ID,
+          "predict_add_stable_liquidity",
+          { pool_id: poolId, amounts },
+          provider,
+        );
+        minShares = applySlippage(
+          predictedShares,
+          params.slippagePercent ?? DEFAULT_LIQUIDITY_SLIPPAGE_PERCENT,
+        );
+      }
+
+      // Tokens already held in the wallet's Rhea internal deposits (left over
+      // from a failed add-liquidity request or a liquidity removal) are reused,
+      // so only the shortfall is transferred.
+      const deposits = await viewCall<Record<string, string>>(
+        REF_FINANCE_CONTRACT_ID,
+        "get_deposits",
+        { account_id: params.fundingAccId },
+        provider,
+      ).catch(() => ({}) as Record<string, string>);
+
+      const transfers = params.tokens.map((token, i) => {
+        const wanted = BigInt(amounts[i]);
+        const deposited = BigInt(deposits[token.accountId] ?? "0");
+        const reused = wanted < deposited ? wanted : deposited;
+        return { token, amount: wanted - reused, reused };
+      });
+
+      // Fail before creating any request if the wallet cannot sign.
+      await wsStore.canSignForAccount(params.fundingAccId);
+
       const storageDepositRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(refAccountId, [
+        addMultisigRequestAction(REF_FINANCE_CONTRACT_ID, [
           functionCallAction(
             "storage_deposit",
             {
@@ -239,24 +341,28 @@ export const useDepositToRefLiquidityPool = () => {
         actions: [storageDepositRequest],
       });
 
-      const tokenIds =
-        params.tokenAccIds ||
-        [params.tokenLeftAccId, params.tokenRightAccId].filter(Boolean);
-      const amounts =
-        params.tokenAmounts ||
-        [params.tokenLeftAmount, params.tokenRightAmount].filter(Boolean);
+      for (const { token, amount, reused } of transfers) {
+        if (reused > BigInt(0)) {
+          toast.info(
+            `${formatIndivisibleAmount(reused.toString(), token.decimals)} ${
+              token.symbol
+            } already deposited in Rhea by ${
+              params.fundingAccId
+            } will be reused.`,
+          );
+        }
+        if (amount <= BigInt(0)) {
+          continue;
+        }
 
-      for (let i = 0; i < tokenIds.length; i++) {
-        if (amounts[i] === "0") continue;
-
-        if (tokenIds[i] === "wrap.near") {
+        if (token.accountId === "wrap.near") {
           const wnearBalance = await viewCall<string>(
             "wrap.near",
             "ft_balance_of",
             { account_id: params.fundingAccId },
-            getProvider(),
+            provider,
           );
-          const shortfall = BigInt(amounts[i]) - BigInt(wnearBalance);
+          const shortfall = amount - BigInt(wnearBalance);
           if (shortfall > BigInt(0)) {
             await wrapNearMutation.mutateAsync({
               fundingAccId: params.fundingAccId,
@@ -267,12 +373,12 @@ export const useDepositToRefLiquidityPool = () => {
 
         const ftTransferCallRequest = transactions.functionCall(
           "add_request",
-          addMultisigRequestAction(tokenIds[i], [
+          addMultisigRequestAction(token.accountId, [
             functionCallAction(
               "ft_transfer_call",
               {
-                receiver_id: refAccountId,
-                amount: amounts[i],
+                receiver_id: REF_FINANCE_CONTRACT_ID,
+                amount: amount.toString(),
                 msg: "",
               },
               "1",
@@ -292,18 +398,10 @@ export const useDepositToRefLiquidityPool = () => {
 
       const addLiquidityRequest = transactions.functionCall(
         "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "add_liquidity",
-            {
-              pool_id: parseInt(params.poolId),
-              amounts: amounts,
-            },
-            parseNearAmount("0.01"),
-            (50 * TGas).toString(),
-          ),
-        ]),
-        new BN(100 * TGas),
+        stableLike
+          ? buildRefAddStableLiquidityRequest({ poolId, amounts, minShares })
+          : buildRefAddLiquidityRequest({ poolId, amounts }),
+        new BN(200 * TGas),
         new BN("0"),
       );
 
@@ -312,118 +410,15 @@ export const useDepositToRefLiquidityPool = () => {
         receiverId: params.fundingAccId,
         actions: [addLiquidityRequest],
       });
-    },
-  });
-};
 
-const stablePoolsRefDeposit = z.object({
-  poolId: z.number(),
-  tokens: z.array(z.string()),
-  amounts: z.array(z.string()),
-  shares: z.string(),
-  fundingAccId: z.string(),
-});
-
-export const useDepositToRefStableLiquidityPool = () => {
-  const wsStore = useWalletTerminator();
-  const wrapNearMutation = useWrapNear();
-  const { getProvider } = usePersistingStore();
-
-  return useMutation({
-    mutationFn: async (params: z.infer<typeof stablePoolsRefDeposit>) => {
-      const refAccountId = "v2.ref-finance.near";
-      const storageDepositRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "storage_deposit",
-            {
-              account_id: params.fundingAccId,
-              registration_only: false,
-            },
-            parseNearAmount("0.125"),
-            (50 * TGas).toString(),
-          ),
-        ]),
-        new BN(100 * TGas),
-        new BN("0"),
-      );
-
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
-        actions: [storageDepositRequest],
-      });
-
-      for (let i = 0; i < params.tokens.length; i++) {
-        if (params.amounts[i] === "0") {
-          continue;
-        }
-
-        if (params.tokens[i] === "wrap.near") {
-          const wnearBalance = await viewCall<string>(
-            "wrap.near",
-            "ft_balance_of",
-            { account_id: params.fundingAccId },
-            getProvider(),
-          );
-          const shortfall = BigInt(params.amounts[i]) - BigInt(wnearBalance);
-          if (shortfall > BigInt(0)) {
-            await wrapNearMutation.mutateAsync({
-              fundingAccId: params.fundingAccId,
-              yoctoAmount: shortfall.toString(),
-            });
-          }
-        }
-
-        const ftTransferCallRequest = transactions.functionCall(
-          "add_request",
-          addMultisigRequestAction(params.tokens[i], [
-            functionCallAction(
-              "ft_transfer_call",
-              {
-                receiver_id: refAccountId,
-                amount: params.amounts[i],
-                msg: "",
-              },
-              "1",
-              (50 * TGas).toString(),
-            ),
-          ]),
-          new BN(100 * TGas),
-          new BN("0"),
-        );
-
-        await wsStore.signAndSendTransaction({
-          senderId: params.fundingAccId,
-          receiverId: params.fundingAccId,
-          actions: [ftTransferCallRequest],
-        });
-      }
-
-      const addStableLiquidityRequest = transactions.functionCall(
-        "add_request",
-        addMultisigRequestAction(refAccountId, [
-          functionCallAction(
-            "add_stable_liquidity",
-            {
-              pool_id: params.poolId,
-              amounts: params.amounts,
-              min_shares: params.shares,
-            },
-            parseNearAmount("0.01"),
-            (100 * TGas).toString(),
-          ),
-        ]),
-        new BN(200 * TGas),
-        new BN("0"),
-      );
-
-      await wsStore.signAndSendTransaction({
-        senderId: params.fundingAccId,
-        receiverId: params.fundingAccId,
-        actions: [addStableLiquidityRequest],
-      });
+      return {
+        poolKind: pool.pool_kind,
+        method: stableLike
+          ? ("add_stable_liquidity" as const)
+          : ("add_liquidity" as const),
+        predictedShares,
+        minShares,
+      };
     },
   });
 };
