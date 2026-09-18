@@ -31,6 +31,8 @@ const server = z.object({
  */
 const client = z.object({
   NEXT_PUBLIC_NETWORK_ID: z.enum(["testnet", "mainnet"]),
+  // WalletConnect (Reown) project id, used by /tools/fireblocks-lockup.
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: z.string().optional(),
 });
 
 /**
@@ -47,6 +49,8 @@ const processEnv = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   NEXT_PUBLIC_NETWORK_ID: process.env.NEXT_PUBLIC_NETWORK_ID,
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
   EMAIL_FROM: process.env.EMAIL_FROM,
   EMAIL_SERVER: process.env.EMAIL_SERVER,
   PIKESPEAK_API_KEY: process.env.PIKESPEAK_API_KEY,
