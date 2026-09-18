@@ -42,6 +42,7 @@ import { type NextPageWithLayout } from "../_app";
 
 type LockupAction =
   | "transfer"
+  | "check_transfers_vote"
   | "unstake_all"
   | "withdraw_all_from_staking_pool";
 
@@ -54,6 +55,12 @@ const ACTIONS: Record<
     description:
       "Calls `transfer` on the lockup, which sends unlocked NEAR to the receiver account.",
     gas: "100000000000000",
+  },
+  check_transfers_vote: {
+    label: "Enable transfers on the lockup",
+    description:
+      "Calls `check_transfers_vote`. Only needed once, on lockups created before transfers were enabled on mainnet; it asks the vote contract and unlocks `transfer`.",
+    gas: "125000000000000",
   },
   unstake_all: {
     label: "Unstake everything from the staking pool",
@@ -87,6 +94,12 @@ interface LockupState {
   locked: string;
   balance: string;
   deposited: string;
+  /** Balances of the lockup inside its staking pool; null if no pool or unreadable. */
+  pool: {
+    staked: string;
+    unstaked: string;
+    unstakedAvailable: boolean;
+  } | null;
 }
 
 interface WcAccount {
@@ -134,6 +147,24 @@ async function loadLockup(lockupId: string): Promise<LockupState> {
     viewFunction<string>(lockupId, "get_balance"),
     viewFunction<string>(lockupId, "get_known_deposited_balance"),
   ]);
+  let pool: LockupState["pool"] = null;
+  if (stakingPool) {
+    try {
+      const args = { account_id: lockupId };
+      const [staked, unstaked, unstakedAvailable] = await Promise.all([
+        viewFunction<string>(stakingPool, "get_account_staked_balance", args),
+        viewFunction<string>(stakingPool, "get_account_unstaked_balance", args),
+        viewFunction<boolean>(
+          stakingPool,
+          "is_account_unstaked_balance_available",
+          args,
+        ),
+      ]);
+      pool = { staked, unstaked, unstakedAvailable };
+    } catch {
+      pool = null;
+    }
+  }
   return {
     owner,
     transfersEnabled,
@@ -143,7 +174,35 @@ async function loadLockup(lockupId: string): Promise<LockupState> {
     locked,
     balance,
     deposited,
+    pool,
   };
+}
+
+// NEAR account id rules: 2..64 chars, lowercase alphanumerics separated by
+// single `.`, `-` or `_`, never starting or ending a segment with a separator.
+const ACCOUNT_ID_RE = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
+function isValidAccountId(id: string): boolean {
+  return id.length >= 2 && id.length <= 64 && ACCOUNT_ID_RE.test(id);
+}
+
+/** Returns a description of the first failed status in a final outcome, or null. */
+function findFailure(
+  outcome: nearAPI.providers.FinalExecutionOutcome,
+): string | null {
+  const statuses: unknown[] = [
+    outcome.status,
+    ...outcome.receipts_outcome.map((r) => r.outcome.status),
+  ];
+  for (const st of statuses) {
+    if (typeof st === "object" && st !== null && "Failure" in st) {
+      return JSON.stringify((st as { Failure: unknown }).Failure);
+    }
+  }
+  return null;
+}
+
+function maxTransferAmount(state: LockupState): string {
+  return formatNear(state.liquid, 24).replace(/,/g, "");
 }
 
 /** Fireblocks returns the signed bytes as a Uint8Array, a plain array or an object of indices. */
@@ -182,6 +241,10 @@ const FireblocksLockup: NextPageWithLayout = () => {
   const [lockup, setLockup] = useState<LockupState | null>(null);
   const [lockupError, setLockupError] = useState<string | null>(null);
   const [lockupLoading, setLockupLoading] = useState(false);
+  // Whether receiver / amount were filled in by us (from the lockup) rather
+  // than by the user or the URL. Auto values are re-derived on lockup change.
+  const receiverIsAuto = useRef(true);
+  const amountIsAuto = useRef(true);
 
   // Shared init promise so concurrent callers (mount effect + button click,
   // React strict-mode double effects) never initialise WalletConnect twice.
@@ -206,8 +269,12 @@ const FireblocksLockup: NextPageWithLayout = () => {
     if (!router.isReady) return;
     const q = router.query;
     setLockupId(firstString(q.lockup).trim());
-    setReceiver(firstString(q.receiver).trim());
-    setAmount(firstString(q.amount).trim());
+    const urlReceiver = firstString(q.receiver).trim();
+    const urlAmount = firstString(q.amount).trim();
+    receiverIsAuto.current = !urlReceiver;
+    amountIsAuto.current = !urlAmount;
+    setReceiver(urlReceiver);
+    setAmount(urlAmount);
     const a = firstString(q.action);
     if (a in ACTIONS) setAction(a as LockupAction);
     setProjectId(
@@ -219,21 +286,21 @@ const FireblocksLockup: NextPageWithLayout = () => {
 
   // Load lockup state whenever the lockup id changes.
   useEffect(() => {
-    if (!lockupId) {
-      setLockup(null);
-      return;
-    }
+    // Invalidate everything derived from the previous lockup first so the
+    // checklist and the sign button never describe a stale contract.
+    setLockup(null);
+    setLockupError(null);
+    if (receiverIsAuto.current) setReceiver("");
+    if (amountIsAuto.current) setAmount("");
+    if (!lockupId) return;
     let cancelled = false;
     setLockupLoading(true);
-    setLockupError(null);
     loadLockup(lockupId)
       .then((state) => {
         if (cancelled) return;
         setLockup(state);
-        setReceiver((r) => r || state.owner);
-        if (action === "transfer") {
-          setAmount((a) => a || formatNear(state.liquid, 24).replace(/,/g, ""));
-        }
+        if (receiverIsAuto.current) setReceiver(state.owner);
+        if (amountIsAuto.current) setAmount(maxTransferAmount(state));
       })
       .catch((e: Error) => {
         if (cancelled) return;
@@ -246,7 +313,6 @@ const FireblocksLockup: NextPageWithLayout = () => {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockupId]);
 
   const yoctoAmount = useMemo(() => {
@@ -268,12 +334,13 @@ const FireblocksLockup: NextPageWithLayout = () => {
           : "Lockup is not terminated.",
       },
     ];
+    const poolState = lockup.pool;
     if (action === "transfer") {
       list.push({
         ok: lockup.transfersEnabled,
         text: lockup.transfersEnabled
           ? "Transfers are enabled."
-          : "Transfers are not enabled on this lockup (call check_transfers_vote first).",
+          : 'Transfers are not enabled on this lockup. Run the "Enable transfers" action first.',
       });
       const liquidOk =
         !!yoctoAmount &&
@@ -286,27 +353,65 @@ const FireblocksLockup: NextPageWithLayout = () => {
         )} NEAR available).`,
       });
       list.push({
-        ok: !!receiver && /^[a-z0-9._-]{2,64}$/.test(receiver),
-        text: receiver
+        ok: isValidAccountId(receiver),
+        text: !receiver
+          ? "Receiver account is required."
+          : isValidAccountId(receiver)
           ? `Receiver: ${receiver}`
-          : "Receiver account is required.",
+          : `"${receiver}" is not a valid NEAR account id.`,
       });
+      // Informational only: the liquid balance already excludes anything in
+      // the staking pool, so a staked remainder does not block a transfer.
+      if (lockup.stakingPool && !new BN(lockup.deposited).isZero()) {
+        list.push({
+          ok: true,
+          text: `${formatNear(
+            lockup.deposited,
+          )} NEAR is still in staking pool ${
+            lockup.stakingPool
+          } and is not part of the liquid balance. Use the unstake / withdraw actions to move it.`,
+        });
+      }
+    } else if (action === "check_transfers_vote") {
       list.push({
-        ok: !lockup.stakingPool || new BN(lockup.deposited).isZero(),
-        text: lockup.stakingPool
-          ? new BN(lockup.deposited).isZero()
-            ? `Staking pool ${lockup.stakingPool} selected but nothing deposited.`
-            : `${formatNear(lockup.deposited)} NEAR is still in staking pool ${
-                lockup.stakingPool
-              }. Unstake and withdraw first if you want to move it.`
-          : "No staking pool selected.",
+        ok: !lockup.transfersEnabled,
+        text: lockup.transfersEnabled
+          ? "Transfers are already enabled; nothing to do."
+          : "Transfers are disabled; this call will enable them.",
+      });
+    } else if (!lockup.stakingPool) {
+      list.push({
+        ok: false,
+        text: "No staking pool selected; nothing to unstake or withdraw.",
+      });
+    } else if (!poolState) {
+      list.push({
+        ok: false,
+        text: `Could not read balances from staking pool ${lockup.stakingPool}.`,
+      });
+    } else if (action === "unstake_all") {
+      const staked = new BN(poolState.staked);
+      list.push({
+        ok: staked.gtn(0),
+        text: staked.gtn(0)
+          ? `${formatNear(poolState.staked)} NEAR staked in ${
+              lockup.stakingPool
+            }.`
+          : `Nothing staked in ${lockup.stakingPool}.`,
       });
     } else {
+      const unstaked = new BN(poolState.unstaked);
       list.push({
-        ok: !!lockup.stakingPool,
-        text: lockup.stakingPool
-          ? `Staking pool: ${lockup.stakingPool}`
-          : "No staking pool selected; nothing to unstake or withdraw.",
+        ok: unstaked.gtn(0) && poolState.unstakedAvailable,
+        text: unstaked.isZero()
+          ? `Nothing unstaked in ${lockup.stakingPool}; run "Unstake" first.`
+          : poolState.unstakedAvailable
+          ? `${formatNear(
+              poolState.unstaked,
+            )} NEAR unstaked and ready to withdraw.`
+          : `${formatNear(
+              poolState.unstaked,
+            )} NEAR unstaked but still locked by the pool (4 epochs). Try again later.`,
       });
     }
     if (account) {
@@ -529,6 +634,11 @@ const FireblocksLockup: NextPageWithLayout = () => {
       pushLog("Signature received, broadcasting.");
       const outcome = await provider.sendTransaction(signed);
       const hash = (outcome.transaction as { hash: string }).hash;
+      // sendTransaction resolves even when the contract call failed on chain.
+      const failure = findFailure(outcome);
+      if (failure) {
+        throw new Error(`Transaction ${hash} failed on chain: ${failure}`);
+      }
       setTxHash(hash);
       pushLog(`Done: ${hash}`);
       // refresh balances
@@ -601,7 +711,10 @@ const FireblocksLockup: NextPageWithLayout = () => {
                   Receiver account (where the NEAR goes)
                   <Input
                     value={receiver}
-                    onChange={(e) => setReceiver(e.target.value.trim())}
+                    onChange={(e) => {
+                      receiverIsAuto.current = false;
+                      setReceiver(e.target.value.trim());
+                    }}
                     placeholder={lockup?.owner ?? "your-main-wallet.near"}
                     disabled={!!busy}
                   />
@@ -611,7 +724,10 @@ const FireblocksLockup: NextPageWithLayout = () => {
                   <div className="flex gap-2">
                     <Input
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value.trim())}
+                      onChange={(e) => {
+                        amountIsAuto.current = false;
+                        setAmount(e.target.value.trim());
+                      }}
                       placeholder="0"
                       disabled={!!busy}
                     />
@@ -619,12 +735,11 @@ const FireblocksLockup: NextPageWithLayout = () => {
                       type="button"
                       variant="outline"
                       disabled={!lockup || !!busy}
-                      onClick={() =>
-                        lockup &&
-                        setAmount(
-                          formatNear(lockup.liquid, 24).replace(/,/g, ""),
-                        )
-                      }
+                      onClick={() => {
+                        if (!lockup) return;
+                        amountIsAuto.current = true;
+                        setAmount(maxTransferAmount(lockup));
+                      }}
                     >
                       Max
                     </Button>
@@ -757,7 +872,14 @@ const FireblocksLockup: NextPageWithLayout = () => {
           <CardContent className="flex flex-col gap-3">
             <Button
               onClick={signAndSend}
-              disabled={!session || !account || !allChecksOk || !!busy}
+              disabled={
+                !session ||
+                !account ||
+                !lockup ||
+                lockupLoading ||
+                !allChecksOk ||
+                !!busy
+              }
             >
               {busy ?? "Send to Fireblocks for signing"}
             </Button>
