@@ -10,7 +10,10 @@
  *      `near_signTransaction` (approved through their normal policy flow),
  *   4. broadcasts the signed transaction and links to the explorer.
  *
- * Share as: /tools/fireblocks-lockup?lockup=<id>.lockup.near&receiver=<acct>&amount=<NEAR>
+ * Share as: /tools/fireblocks-lockup?lockup=<id>.lockup.near&receiver=<acct>[&amount=<NEAR>]
+ * Without `amount` the page moves the whole liquid balance (re-read from the
+ * contract at signing time). The lockup's `transfer` needs an explicit positive
+ * amount, so "everything" is resolved client-side right before signing.
  * The WalletConnect project id comes from NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
  * or the `wc` query parameter.
  */
@@ -201,9 +204,7 @@ function findFailure(
   return null;
 }
 
-function maxTransferAmount(state: LockupState): string {
-  return formatNear(state.liquid, 24).replace(/,/g, "");
-}
+type AmountMode = "all" | "custom";
 
 /** Fireblocks returns the signed bytes as a Uint8Array, a plain array or an object of indices. */
 function toBytes(result: unknown): Uint8Array {
@@ -235,16 +236,16 @@ const FireblocksLockup: NextPageWithLayout = () => {
   const [lockupId, setLockupId] = useState("");
   const [action, setAction] = useState<LockupAction>("transfer");
   const [receiver, setReceiver] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amountMode, setAmountMode] = useState<AmountMode>("all");
+  const [customAmount, setCustomAmount] = useState("");
   const [projectId, setProjectId] = useState("");
 
   const [lockup, setLockup] = useState<LockupState | null>(null);
   const [lockupError, setLockupError] = useState<string | null>(null);
   const [lockupLoading, setLockupLoading] = useState(false);
-  // Whether receiver / amount were filled in by us (from the lockup) rather
-  // than by the user or the URL. Auto values are re-derived on lockup change.
+  // Whether the receiver was filled in by us (lockup owner) rather than by the
+  // user or the URL. Auto values are re-derived on lockup change.
   const receiverIsAuto = useRef(true);
-  const amountIsAuto = useRef(true);
 
   // Shared init promise so concurrent callers (mount effect + button click,
   // React strict-mode double effects) never initialise WalletConnect twice.
@@ -272,9 +273,9 @@ const FireblocksLockup: NextPageWithLayout = () => {
     const urlReceiver = firstString(q.receiver).trim();
     const urlAmount = firstString(q.amount).trim();
     receiverIsAuto.current = !urlReceiver;
-    amountIsAuto.current = !urlAmount;
     setReceiver(urlReceiver);
-    setAmount(urlAmount);
+    setAmountMode(urlAmount ? "custom" : "all");
+    setCustomAmount(urlAmount);
     const a = firstString(q.action);
     if (a in ACTIONS) setAction(a as LockupAction);
     setProjectId(
@@ -291,7 +292,6 @@ const FireblocksLockup: NextPageWithLayout = () => {
     setLockup(null);
     setLockupError(null);
     if (receiverIsAuto.current) setReceiver("");
-    if (amountIsAuto.current) setAmount("");
     if (!lockupId) return;
     let cancelled = false;
     setLockupLoading(true);
@@ -300,7 +300,6 @@ const FireblocksLockup: NextPageWithLayout = () => {
         if (cancelled) return;
         setLockup(state);
         if (receiverIsAuto.current) setReceiver(state.owner);
-        if (amountIsAuto.current) setAmount(maxTransferAmount(state));
       })
       .catch((e: Error) => {
         if (cancelled) return;
@@ -315,14 +314,17 @@ const FireblocksLockup: NextPageWithLayout = () => {
     };
   }, [lockupId]);
 
+  // Amount shown in the checklist / summary. In "all" mode the exact value is
+  // re-read from the contract right before signing.
   const yoctoAmount = useMemo(() => {
     if (action !== "transfer") return null;
+    if (amountMode === "all") return lockup?.liquid ?? null;
     try {
-      return nearAPI.utils.format.parseNearAmount(amount || "0");
+      return nearAPI.utils.format.parseNearAmount(customAmount || "0");
     } catch {
       return null;
     }
-  }, [amount, action]);
+  }, [customAmount, amountMode, action, lockup]);
 
   const checks = useMemo(() => {
     if (!lockup) return [];
@@ -348,9 +350,14 @@ const FireblocksLockup: NextPageWithLayout = () => {
         new BN(yoctoAmount).lte(new BN(lockup.liquid));
       list.push({
         ok: liquidOk,
-        text: `Amount ≤ liquid owner's balance (${formatNear(
-          lockup.liquid,
-        )} NEAR available).`,
+        text:
+          amountMode === "all"
+            ? `Will move everything available: ${formatNear(
+                lockup.liquid,
+              )} NEAR.`
+            : `Amount ≤ liquid owner's balance (${formatNear(
+                lockup.liquid,
+              )} NEAR available).`,
       });
       list.push({
         ok: isValidAccountId(receiver),
@@ -424,7 +431,7 @@ const FireblocksLockup: NextPageWithLayout = () => {
       });
     }
     return list;
-  }, [lockup, action, yoctoAmount, receiver, account]);
+  }, [lockup, action, amountMode, yoctoAmount, receiver, account]);
 
   const allChecksOk = checks.length > 0 && checks.every((c) => c.ok);
 
@@ -584,12 +591,21 @@ const FireblocksLockup: NextPageWithLayout = () => {
     setTxHash(null);
     try {
       const client = await getClient();
-      const args: Record<string, unknown> =
-        action === "transfer"
-          ? { amount: yoctoAmount, receiver_id: receiver }
-          : {};
-
       setBusy("Building transaction…");
+      let args: Record<string, unknown> = {};
+      if (action === "transfer") {
+        // "Everything" means the liquid balance as of now, not as of page load.
+        const amount =
+          amountMode === "all"
+            ? await viewFunction<string>(lockupId, "get_liquid_owners_balance")
+            : yoctoAmount;
+        if (!amount || new BN(amount).isZero()) {
+          throw new Error("Nothing to transfer: the liquid balance is zero.");
+        }
+        args = { amount, receiver_id: receiver };
+        pushLog(`Transferring ${formatNear(amount)} NEAR to ${receiver}.`);
+      }
+
       const [block, accessKey] = await Promise.all([
         provider.block({ finality: "final" }),
         provider.query<AccessKeyView>({
@@ -719,32 +735,38 @@ const FireblocksLockup: NextPageWithLayout = () => {
                     disabled={!!busy}
                   />
                 </label>
-                <label className="flex flex-col gap-1 text-sm">
-                  Amount (NEAR)
-                  <div className="flex gap-2">
-                    <Input
-                      value={amount}
-                      onChange={(e) => {
-                        amountIsAuto.current = false;
-                        setAmount(e.target.value.trim());
-                      }}
-                      placeholder="0"
+                <fieldset className="flex flex-col gap-2 text-sm">
+                  <legend className="mb-1">Amount</legend>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="amountMode"
+                      checked={amountMode === "all"}
+                      onChange={() => setAmountMode("all")}
                       disabled={!!busy}
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={!lockup || !!busy}
-                      onClick={() => {
-                        if (!lockup) return;
-                        amountIsAuto.current = true;
-                        setAmount(maxTransferAmount(lockup));
-                      }}
-                    >
-                      Max
-                    </Button>
-                  </div>
-                </label>
+                    Everything available
+                    {lockup ? ` (${formatNear(lockup.liquid)} NEAR)` : ""}
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="amountMode"
+                      checked={amountMode === "custom"}
+                      onChange={() => setAmountMode("custom")}
+                      disabled={!!busy}
+                    />
+                    A specific amount
+                  </label>
+                  {amountMode === "custom" && (
+                    <Input
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value.trim())}
+                      placeholder="Amount in NEAR"
+                      disabled={!!busy}
+                    />
+                  )}
+                </fieldset>
               </>
             )}
 
@@ -862,7 +884,9 @@ const FireblocksLockup: NextPageWithLayout = () => {
               to <span className="font-mono">{lockupId || "the lockup"}</span>,
               method <span className="font-mono">{action}</span>
               {action === "transfer" && yoctoAmount
-                ? `, moving ${formatNear(yoctoAmount)} NEAR to ${
+                ? `, moving ${
+                    amountMode === "all" ? "everything available, about " : ""
+                  }${formatNear(yoctoAmount)} NEAR to ${
                     receiver || "the receiver"
                   }`
                 : ""}
