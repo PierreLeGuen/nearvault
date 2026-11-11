@@ -9,11 +9,11 @@ export const testnet: Config = {
   networkId: "testnet",
   urls: {
     rpc: "https://rpc.testnet.near.org",
-    nearBlocksApiUrl: "https://api3.nearblocks.io",
+    nearBlocksApiUrl: "https://api-testnet.nearblocks.io",
     myNearWalletUrl: "https://testnet.mynearwallet.com",
     kitWallet: createKitWalletUrls("https://testnet-api.kitwallet.app"),
     nearBlocksApiUI: createNearBlocksUrls("https://testnet.nearblocks.io"),
-    nearBlocksApi: newNearNearBlocksApiNew("https://api3.nearblocks.io"),
+    nearBlocksApi: newNearNearBlocksApiNew("https://api-testnet.nearblocks.io"),
     fastNearApi: newFastNearApi(),
     pikespeakApi: newPikeSpeakApi(),
   },

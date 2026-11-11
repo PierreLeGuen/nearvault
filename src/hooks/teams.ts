@@ -211,8 +211,7 @@ export function useGetTokensForWallet(walletId: string) {
 
       const [nbdata, fndata, psdata] = await Promise.all([
         fetchData(
-          async () =>
-            (await getNearBlocksApi().getTokensForAccount(walletId)).tokens.fts,
+          async () => await getNearBlocksApi().getTokensForAccount(walletId),
           "NearBlocks",
         ),
         fetchData(
