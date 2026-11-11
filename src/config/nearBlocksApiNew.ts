@@ -3,29 +3,33 @@ import { fetchJson } from "~/lib/client";
 
 export const baseUrl = "https://api.nearblocks.io";
 
+// NearBlocks API v3 (v1/v2 are switched off on 2026-11-22).
+// Migration guide: https://api.nearblocks.io/api-docs/migration
+
 type PublicKeyEntry = {
   public_key: string;
   account_id: string;
   permission_kind: string;
-  created: TransactionInfo;
-  deleted: TransactionInfo | null;
-};
-
-type TransactionInfo = {
-  transaction_hash: string | null;
-  block_timestamp: number | null;
 };
 
 type KeysObject = {
-  keys: PublicKeyEntry[];
+  data: PublicKeyEntry[];
 };
 
-type TokensObject = {
-  tokens: {
-    fts: string[];
-    nfts: string[];
-  };
+type FtAsset = {
+  contract: string;
+  amount: string;
 };
+
+type Paginated<T> = {
+  data: T[];
+  meta?: { next_page?: string; prev_page?: string };
+};
+
+// v3 page size is capped at 100; stop after this many pages so one wallet
+// can't drain the rate limiter.
+const FT_PAGE_LIMIT = 100;
+const FT_MAX_PAGES = 10;
 
 type ValidatorDeposit = {
   deposit: string;
@@ -85,48 +89,47 @@ export class NearBlocksApi {
     return NearBlocksApi.instance;
   }
 
+  private get<T>(path: string) {
+    return this.limiter.schedule(() =>
+      fetchJson<T>(
+        `${this.baseUrl}${path}`,
+        this.apiKey
+          ? { headers: { Authorization: `Bearer ${this.apiKey}` } }
+          : undefined,
+      ),
+    );
+  }
+
   getAccountsForPublicKey(publicKey: string) {
-    return this.limiter.schedule(() =>
-      fetchJson<KeysObject>(
-        `${this.baseUrl}/v1/keys/${publicKey}`,
-        this.apiKey
-          ? { headers: { Authorization: `Bearer ${this.apiKey}` } }
-          : undefined,
-      ),
-    );
+    return this.get<KeysObject>(`/v3/keys/${publicKey}`);
   }
 
-  getTokensForAccount(accountId: string) {
-    return this.limiter.schedule(() =>
-      fetchJson<TokensObject>(
-        `${this.baseUrl}/v1/account/${accountId}/tokens`,
-        this.apiKey
-          ? { headers: { Authorization: `Bearer ${this.apiKey}` } }
-          : undefined,
-      ),
-    );
+  // Returns the FT contract ids the account holds.
+  async getTokensForAccount(accountId: string): Promise<string[]> {
+    const contracts: string[] = [];
+    let next: string | undefined;
+    for (let page = 0; page < FT_MAX_PAGES; page++) {
+      const params = new URLSearchParams({ limit: String(FT_PAGE_LIMIT) });
+      if (next) params.set("next", next);
+      const res = await this.get<Paginated<FtAsset>>(
+        `/v3/accounts/${accountId}/assets/fts?${params.toString()}`,
+      );
+      contracts.push(...res.data.map((t) => t.contract));
+      next = res.meta?.next_page;
+      if (!next) break;
+    }
+    return contracts;
   }
 
+  // Kitwallet endpoints kept their v1 response shape in v3.
   getStakingDeposits(accountId: string) {
-    return this.limiter.schedule(() =>
-      fetchJson<ValidatorDeposits>(
-        `${this.baseUrl}/v1/kitwallet/staking-deposits/${accountId}`,
-        this.apiKey
-          ? { headers: { Authorization: `Bearer ${this.apiKey}` } }
-          : undefined,
-      ),
+    return this.get<ValidatorDeposits>(
+      `/v3/kitwallet/staking-deposits/${accountId}`,
     );
   }
 
   getStakingPools() {
-    return this.limiter.schedule(() =>
-      fetchJson<string[]>(
-        `${this.baseUrl}/v1/kitwallet/stakingPools`,
-        this.apiKey
-          ? { headers: { Authorization: `Bearer ${this.apiKey}` } }
-          : undefined,
-      ),
-    );
+    return this.get<string[]>(`/v3/kitwallet/stakingPools`);
   }
 }
 

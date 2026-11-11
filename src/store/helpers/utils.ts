@@ -75,7 +75,7 @@ export const getAccountsForPublicKey = async (
 
   const uniqueAccounts = new Set([
     ...accounts.account_ids,
-    ...accountsNb.keys.flatMap((k) => k.account_id),
+    ...accountsNb.data.map((k) => k.account_id),
   ]);
 
   return [...uniqueAccounts];
