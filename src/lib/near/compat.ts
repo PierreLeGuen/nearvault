@@ -200,13 +200,54 @@ export type Finality = "optimistic" | "near-final" | "final";
 export type BlockQuery = { finality: Finality } | { blockId: string | number };
 export type QueryParams = { request_type: string; [key: string]: unknown };
 
-// Retry timing of the near-api-js 2.x HTTP layer: up to 10 attempts, waiting
-// 1s and then 1.5x longer after each failure.
-const REQUEST_OPTIONS = { retries: 10, wait: 1000, backoff: 1.5 };
+// near-api-js 2.x retried an RPC request only when the node answered HTTP 503,
+// the request failed at the network level, or the node reported a timeout;
+// anything else (HTTP 429, 500, 408, 502, RPC errors) was thrown at once.
+// near-api-js 7 also retries 500 and 408, which keeps rate-limited fan-outs
+// (for example the staking pool list) pending for minutes. Keep the 2.x rule:
+// up to 10 attempts, waiting 1s and then 1.5x longer after each failure.
+const RETRY = { attempts: 10, firstWaitMs: 1000, multiplier: 1.5 };
 
-/** A near-api-js 7 provider with this app's retry settings. */
+function isRetryableLike2x(error: unknown): boolean {
+  const { cause, name } = (error ?? {}) as { cause?: unknown; name?: string };
+  const text = String(error);
+  return (
+    cause === 503 ||
+    text.includes("FetchError") ||
+    text.includes("Failed to fetch") ||
+    text.includes("Timeout error") ||
+    text.includes("query has timed out") ||
+    name === "TimeoutError" ||
+    name === "TransactionTimeoutError"
+  );
+}
+
+type SendJsonRpc = (method: string, params: unknown) => Promise<unknown>;
+
+/** A near-api-js 7 provider that retries requests the way 2.x did. */
 export function createJsonRpcProvider(url: string): JsonRpcProvider {
-  return new JsonRpcProvider({ url }, REQUEST_OPTIONS);
+  // One attempt per call inside near-api-js; retries happen in the wrapper.
+  const provider = new JsonRpcProvider(
+    { url },
+    { retries: 1, wait: 0, backoff: 1 },
+  );
+  const singleAttempt = provider.sendJsonRpc.bind(provider) as SendJsonRpc;
+  const withRetries: SendJsonRpc = async (method, params) => {
+    let wait = RETRY.firstWaitMs;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await singleAttempt(method, params);
+      } catch (error) {
+        if (attempt >= RETRY.attempts || !isRetryableLike2x(error)) throw error;
+        await new Promise((resolve) => setTimeout(resolve, wait));
+        wait *= RETRY.multiplier;
+      }
+    }
+  };
+  // Every provider method goes through `this.sendJsonRpc`.
+  (provider as unknown as { sendJsonRpc: SendJsonRpc }).sendJsonRpc =
+    withRetries;
+  return provider;
 }
 
 /** The near-api-js 2.x `JsonRpcProvider` methods this app calls. */
