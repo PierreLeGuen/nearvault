@@ -15,6 +15,7 @@ import "@near-wallet-selector/modal-ui/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 import { WalletHome } from "~/components/Modal/ModalHome";
 import "~/styles/globals.css";
+import "~/lib/zod-messages";
 import { useNewVersionCheck } from "~/hooks/useNewVersionCheck";
 
 config.autoAddCss = false;
