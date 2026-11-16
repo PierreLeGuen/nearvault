@@ -42,8 +42,8 @@
     "@trpc/react-query": "^11.28.3",
     "@trpc/server": "^11.28.3",
     "@vercel/analytics": "^1.2.2",
-    "@walletconnect/sign-client": "2.26.0",
-    "@walletconnect/types": "2.26.0",
+    "@walletconnect/sign-client": "2.19.2",
+    "@walletconnect/types": "2.19.2",
     "bignumber.js": "^9.1.2",
     "bn.js": "^5.2.5",
     "bottleneck": "^2.19.5",
@@ -99,6 +99,12 @@
   },
   "overrides": {
     "bn.js": "$bn.js",
-    "nodemailer": "$nodemailer"
+    "nodemailer": "$nodemailer",
+    "@walletconnect/utils": {
+      "query-string": "^10.0.0"
+    },
+    "viem": {
+      "ws": "^8.21.0"
+    }
   }
 }
