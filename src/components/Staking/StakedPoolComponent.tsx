@@ -1,7 +1,4 @@
-import {
-  formatNearAmount,
-  parseNearAmount,
-} from "near-api-js/lib/utils/format";
+import { formatNearAmount, parseNearAmount } from "~/lib/near/compat";
 import { useState } from "react";
 import { type StakedPool, type WalletData } from "./AllStaked";
 

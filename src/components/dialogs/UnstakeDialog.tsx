@@ -1,4 +1,4 @@
-import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { formatNearAmount } from "~/lib/near/compat";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { useZodForm } from "~/hooks/form";

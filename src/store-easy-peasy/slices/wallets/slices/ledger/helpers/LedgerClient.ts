@@ -1,6 +1,7 @@
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
-import { utils } from "near-api-js";
+import { PublicKey } from "near-api-js";
 import { Buffer } from "buffer";
+import { base_encode } from "~/lib/near/compat";
 
 // Further reading regarding APDU Ledger API:
 // - https://gist.github.com/Wollac/49f0c4e318e42f463b8306298dfb4f4a
@@ -131,13 +132,11 @@ export class LedgerClient {
       parseDerivationPath(derivationPath),
     );
 
-    return utils.PublicKey.from(
-      utils.serialize.base_encode(res.subarray(0, -2)),
-    );
+    return PublicKey.from(base_encode(res.subarray(0, -2)));
   };
 
   sign = async ({ data, derivationPath }: SignParams) => {
-    console.log("sign", { data, derivationPath });
+    console.log("sign", { bytes: data.length });
 
     this.ifNotConnected();
     // NOTE: getVersion call resets state to avoid starting from partially filled buffer

@@ -1,4 +1,4 @@
-import * as nearAPI from "near-api-js";
+import { Contract, type ReadOnlyAccount } from "~/lib/near/compat";
 
 export type RewardFeeFraction = {
   numerator: number;
@@ -14,7 +14,7 @@ export type HumanReadableAccount = {
 
 export type Base58PublicKey = string; // Assuming it is a Base58 encoded string
 
-export interface StakingContract extends nearAPI.Contract {
+export interface StakingContract extends Contract {
   get_account_staked_balance(params: { account_id: string }): Promise<string>;
   get_account_unstaked_balance(params: { account_id: string }): Promise<string>;
   get_account_total_balance(params: { account_id: string }): Promise<string>;
@@ -57,10 +57,10 @@ export interface StakingContract extends nearAPI.Contract {
 }
 
 export function initStakingContract(
-  account: nearAPI.Account,
+  account: ReadOnlyAccount,
   contractName: string
 ): StakingContract {
-  return new nearAPI.Contract(account, contractName, {
+  return new Contract(account, contractName, {
     viewMethods: [
       "get_account_staked_balance",
       "get_account_unstaked_balance",

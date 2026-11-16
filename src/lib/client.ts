@@ -1,11 +1,10 @@
-import type * as nearAPI from "near-api-js";
-import { providers } from "near-api-js";
 import {
   type AccessKeyList,
   type CodeResult,
   type QueryResponseKind,
-} from "near-api-js/lib/providers/provider";
+} from "near-api-js";
 import { config } from "~/config/config";
+import { type NearConnection, NearRpcProvider } from "~/lib/near/compat";
 import { RateLimiter } from "~/utils/rate-limiter";
 import { type FungibleTokenMetadata } from "./ft/contract";
 import { initLockupContract } from "./lockup/contract";
@@ -13,7 +12,7 @@ import { initLockupContract } from "./lockup/contract";
 export async function getSelectedPool(
   accountId: string,
   contractId: string,
-  near: nearAPI.Near,
+  near: NearConnection,
 ) {
   const c = await initLockupContract(accountId, contractId, near);
   return await c.get_staking_pool_account_id();
@@ -23,23 +22,23 @@ const TTA_URL = "http://65.21.11.6:8080";
 
 export class RpcClient {
   private rateLimiter: RateLimiter;
-  private _rpcClient: providers.JsonRpcProvider;
+  private _rpcClient: NearRpcProvider;
   private static instance: RpcClient | null = null;
   private static currentUrl: string | null = null;
 
   private constructor(url: string) {
     if (url === config.urls.rpc) {
-      console.log("using FREE rpc url", url);
+      console.log("using FREE rpc url");
       this.rateLimiter = new RateLimiter(1);
     } else {
-      console.log("using PRO rpc url", url);
+      console.log("using PRO rpc url");
       this.rateLimiter = new RateLimiter(100);
     }
-    this._rpcClient = new providers.JsonRpcProvider({ url });
+    this._rpcClient = new NearRpcProvider({ url });
   }
 
   // Add getter for the provider
-  get rpcClient(): providers.JsonRpcProvider {
+  get rpcClient(): NearRpcProvider {
     return this._rpcClient;
   }
 
@@ -54,7 +53,7 @@ export class RpcClient {
 
   async sendJsonRpc(method: string, params: any): Promise<any> {
     await this.rateLimiter.acquire();
-    const result = await this._rpcClient.sendJsonRpc(method, params);
+    const result = await this._rpcClient.sendJsonRpc<unknown>(method, params);
     return result;
   }
 
@@ -172,8 +171,6 @@ export async function viewCall<T>(
 
   blockId?: number,
 ) {
-  console.log("provider", provider);
-
   const opt = {};
   if (blockId) {
     opt["block_id"] = blockId;
@@ -211,7 +208,7 @@ type AccessKeyResult = {
 };
 
 export const viewAccessKeyList = async (accountId: string, rpcUrl: string) => {
-  const provider = new providers.JsonRpcProvider({ url: rpcUrl });
+  const provider = new NearRpcProvider({ url: rpcUrl });
 
   const result = await provider.query<AccessKeyList>({
     request_type: "view_access_key_list",

@@ -1,8 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import BigNumber from "~/lib/bignumber";
 import BN from "bn.js";
-import { transactions } from "near-api-js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount, transactions } from "~/lib/near/compat";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { fetchJson, getStorageBalance, viewCall } from "~/lib/client";

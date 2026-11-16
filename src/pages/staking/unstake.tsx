@@ -1,5 +1,5 @@
 import { type Wallet } from "@prisma/client";
-import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { formatNearAmount } from "~/lib/near/compat";
 import ContentCentered from "~/components/ContentCentered";
 import { getSidebarLayout } from "~/components/Layout";
 import { UnstakeDialog } from "~/components/dialogs/UnstakeDialog";

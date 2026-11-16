@@ -1,8 +1,8 @@
 import bs58 from "bs58";
 import { sha256 } from "js-sha256";
-import { providers } from "near-api-js";
-import { type CodeResult } from "near-api-js/lib/providers/provider";
+import { type CodeResult } from "near-api-js";
 import { type ViewAccountQuery } from "~/lib/lockup/types";
+import { NearRpcProvider } from "~/lib/near/compat";
 import { type MultiSigAction } from "./contract";
 
 export const VULNERABLE_MULTISIG_HASHES: ReadonlySet<string> = new Set([
@@ -65,14 +65,13 @@ export async function getAccountCodeHash(
   accountId: string,
   rpcUrl: string,
 ): Promise<string | null> {
-  const provider = new providers.JsonRpcProvider({ url: rpcUrl });
+  const provider = new NearRpcProvider({ url: rpcUrl });
   try {
     const result = await provider.query<ViewAccountQuery>({
       request_type: "view_account",
       finality: "optimistic",
       account_id: accountId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
     return result.code_hash;
   } catch (e) {
     const msg = (e as Error).message || "";
@@ -98,7 +97,7 @@ export async function checkExistingUpgradeProposals(
   options?: { strict?: boolean },
 ): Promise<{ id: number; isVerifiedUpgrade: boolean }[]> {
   const strict = options?.strict ?? false;
-  const provider = new providers.JsonRpcProvider({ url: rpcUrl });
+  const provider = new NearRpcProvider({ url: rpcUrl });
 
   let requestIds: number[];
   try {
@@ -108,8 +107,7 @@ export async function checkExistingUpgradeProposals(
       account_id: accountId,
       method_name: "list_request_ids",
       args_base64: Buffer.from(JSON.stringify({})).toString("base64"),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
     requestIds = JSON.parse(
       Buffer.from(result.result).toString(),
     ) as number[];
@@ -136,8 +134,7 @@ export async function checkExistingUpgradeProposals(
           args_base64: Buffer.from(
             JSON.stringify({ request_id: id }),
           ).toString("base64"),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        });
         const req = JSON.parse(
           Buffer.from(result.result).toString(),
         ) as MultisigRequestRaw;

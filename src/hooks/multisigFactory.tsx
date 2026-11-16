@@ -1,8 +1,7 @@
 import { actionCreators } from "@near-js/transactions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import BN from "bn.js";
-import { transactions } from "near-api-js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount, transactions } from "~/lib/near/compat";
 import { useState } from "react";
 import { z } from "zod";
 import { config } from "~/config/config";

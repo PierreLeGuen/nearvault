@@ -1,8 +1,8 @@
-import { connect, type Near } from "near-api-js";
 import { type StateCreator } from "zustand";
 import { config } from "~/config/config";
 import { NearBlocksApi } from "~/config/nearBlocksApiNew";
 import { RpcClient } from "~/lib/client";
+import { NearConnection } from "~/lib/near/compat";
 
 export interface NearState {
   rpcUrl: string;
@@ -11,7 +11,7 @@ export interface NearState {
   setRpcUrl: (rpcUrl: string) => void;
   setNearBlocksApiUrl: (nearblocksApiUrl: string) => void;
   setNearBlocksApiKey: (apiKey: string | null) => void;
-  newNearConnection: () => Promise<Near>;
+  newNearConnection: () => Promise<NearConnection>;
   getProvider: () => RpcClient;
   getNearBlocksApi: () => NearBlocksApi;
 }
@@ -29,13 +29,13 @@ export const createNearSlice: StateCreator<NearState> = (set, get) => ({
   setNearBlocksApiKey: (apiKey: string | null) => {
     set({ nearBlocksApiKey: apiKey });
   },
-  newNearConnection: async () => {
+  newNearConnection: () => {
     const rpcUrl = get().rpcUrl;
-    const nearConnection = await connect({
+    const nearConnection = new NearConnection({
       networkId: config.networkId,
       nodeUrl: rpcUrl,
     });
-    return nearConnection;
+    return Promise.resolve(nearConnection);
   },
   getProvider: () => {
     return RpcClient.getInstance(get().rpcUrl);

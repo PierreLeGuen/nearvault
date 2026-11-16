@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount } from "~/lib/near/compat";
 
 export const MULTISIG_STORAGE_KEY = "__multisigRequest";
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

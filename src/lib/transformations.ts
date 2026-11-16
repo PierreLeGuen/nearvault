@@ -1,7 +1,7 @@
 import { type Wallet } from "@prisma/client";
-import type * as naj from "near-api-js";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 import { calculateLockup } from "~/lib/lockup/lockup";
+import { type NearConnection } from "~/lib/near/compat";
 import { type WalletPretty } from "~/pages/staking/stake";
 import { config } from "~/config/config";
 
@@ -10,7 +10,7 @@ export const dbDataToTransfersData = async ({
   getNearConnection,
 }: {
   data: Wallet[];
-  getNearConnection: () => Promise<naj.Near>;
+  getNearConnection: () => Promise<NearConnection>;
 }) => {
   const nearConn = await getNearConnection();
   const promises = data.map(async (wallet) => {
