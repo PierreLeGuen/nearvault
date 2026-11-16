@@ -39,7 +39,7 @@ nearvault is an open-source treasury app for teams and companies operating on [N
 
 ## Getting started
 
-Prerequisites: Node.js 22+, npm, and a running PostgreSQL instance.
+Prerequisites: Node.js 26 (LTS), npm 11+, and a running PostgreSQL instance.
 
 ```bash
 git clone https://github.com/PierreLeGuen/nearvault.git

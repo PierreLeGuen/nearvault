@@ -4,22 +4,23 @@
  */
 await import("./src/env.mjs");
 
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA ?? "dev";
+
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
-  swcMinify: true,
-  generateBuildId: async () => {
-    return process.env.VERCEL_GIT_COMMIT_SHA ?? "dev";
-  },
-  publicRuntimeConfig: {
-    buildId: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  generateBuildId: async () => buildId,
+  // Inlined at build time so /api/version reports the same id the client
+  // bundle was built with (replaces the removed publicRuntimeConfig).
+  env: {
+    NEXT_PUBLIC_BUILD_ID: buildId,
   },
   i18n: {
     locales: ["en"],
     defaultLocale: "en",
   },
   images: {
-    domains: ["lh3.googleusercontent.com"],
+    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com" }],
   },
 };
 export default config;
