@@ -1,3 +1,4 @@
+import { actionCreators } from "@near-js/transactions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import BN from "bn.js";
 import { transactions } from "near-api-js";
@@ -43,19 +44,16 @@ export function useCreateMultisigWithFactory() {
       await wallet.signAndSendTransaction({
         receiverId: factory,
         actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              methodName: "create",
-              args: {
-                name: data.accountId,
-                members: data.owners,
-                num_confirmations: threshold,
-              },
-              gas: "300000000000000",
-              deposit: parseNearAmount("5")!,
+          actionCreators.functionCall(
+            "create",
+            {
+              name: data.accountId,
+              members: data.owners,
+              num_confirmations: threshold,
             },
-          },
+            BigInt("300000000000000"),
+            BigInt(parseNearAmount("5")!),
+          ),
         ],
       });
       return data.accountId + "." + config.accounts.multisigFactory;
