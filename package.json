@@ -115,5 +115,10 @@
     "@typescript-eslint/typescript-estree": {
       "minimatch": "^11.0.8"
     }
+  },
+  "allowScripts": {
+    "@prisma/client": true,
+    "@prisma/engines": true,
+    "prisma": true
   }
 }
