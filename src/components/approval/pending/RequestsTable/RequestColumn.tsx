@@ -6,6 +6,7 @@ import {
   ChevronRightIcon,
 } from "@radix-ui/react-icons";
 import { type Row } from "@tanstack/react-table";
+import { type RequestTableFeatures } from "~/components/approval/pending/RequestsTable/getColumns";
 import { Button } from "~/components/ui/button";
 import { useUsableKeysForSigning } from "~/hooks/multisig";
 import { type RequestRow } from "~/lib/explain-transaction";
@@ -15,7 +16,7 @@ export const RequestColumn = ({
   wallet,
   approveRejectFn,
 }: {
-  row: Row<RequestRow>;
+  row: Row<RequestTableFeatures, RequestRow>;
   wallet: Wallet;
   approveRejectFn: (
     multisigWallet: Wallet,

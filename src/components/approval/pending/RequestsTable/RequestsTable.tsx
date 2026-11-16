@@ -1,10 +1,9 @@
 import { type Wallet } from "@prisma/client";
+import { flexRender, useTable } from "@tanstack/react-table";
 import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { getColumns } from "~/components/approval/pending/RequestsTable/getColumns";
+  getColumns,
+  requestTableFeatures,
+} from "~/components/approval/pending/RequestsTable/getColumns";
 import {
   Table,
   TableBody,
@@ -30,10 +29,13 @@ type Props = {
 export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
   const columns = getColumns({ wallet, approveRejectFn });
 
-  const table = useReactTable({
+  const table = useTable({
+    features: requestTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
+    // Every request row can open its details; v9 ignores toggleExpanded on
+    // rows without sub-rows unless this says otherwise.
+    getRowCanExpand: () => true,
   });
 
   return (
@@ -90,7 +92,8 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                               };
                             };
                             const isDeployWithSummary =
-                              act.type === MultiSigRequestActionType.DeployContract &&
+                              act.type ===
+                                MultiSigRequestActionType.DeployContract &&
                               act.deploySummary;
                             return (
                               <div
@@ -107,15 +110,20 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                                   </p>
                                 )}
                                 <pre className="rounded-xl bg-slate-800 p-2 text-white">
-                                  {isDeployWithSummary && act.deploySummary ? (
-                                    act.deploySummary.ok
+                                  {isDeployWithSummary && act.deploySummary
+                                    ? act.deploySummary.ok
                                       ? JSON.stringify(
                                           {
                                             type: "DeployContract",
-                                            byteLength: act.deploySummary.byteLength,
+                                            byteLength:
+                                              act.deploySummary.byteLength,
                                             sizeKB:
-                                              ((act.deploySummary.byteLength ?? 0) / 1024).toFixed(1) + " KB",
-                                            codeHash: act.deploySummary.codeHash,
+                                              (
+                                                (act.deploySummary.byteLength ??
+                                                  0) / 1024
+                                              ).toFixed(1) + " KB",
+                                            codeHash:
+                                              act.deploySummary.codeHash,
                                           },
                                           null,
                                           2,
@@ -128,9 +136,7 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
                                           null,
                                           2,
                                         )
-                                  ) : (
-                                    JSON.stringify(action, null, 2)
-                                  )}
+                                    : JSON.stringify(action, null, 2)}
                                 </pre>
                               </div>
                             );
