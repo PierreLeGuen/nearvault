@@ -160,7 +160,7 @@ const CreateLockup: NextPageWithLayout = () => {
   ]);
 
   return (
-    <div className="flex flex-grow flex-col p-12">
+    <div className="flex grow flex-col p-12">
       <Card>
         <CardHeader>
           <CardTitle>Create Lockup</CardTitle>
@@ -197,7 +197,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   placeholder="Select a wallet"
                   label="Receiver Account"
                 />
-                <div className="flex flex-grow flex-row">
+                <div className="flex grow flex-row">
                   <FormItem className="flex flex-col">
                     <FormLabel>Token</FormLabel>
                     <Button
@@ -217,7 +217,7 @@ const CreateLockup: NextPageWithLayout = () => {
                     control={form.control}
                     name="amount"
                     render={({ field }) => (
-                      <FormItem className="flex flex-grow flex-col">
+                      <FormItem className="flex grow flex-col">
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
                           <Input
@@ -250,7 +250,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   control={form.control}
                   name="cancelable"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
                       <div className="space-y-0.5">
                         <FormLabel>Allow Cancellation</FormLabel>
                         <FormDescription>
@@ -301,7 +301,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   control={form.control}
                   name="allowStaking"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
                       <div className="space-y-0.5">
                         <FormLabel>Allow Staking</FormLabel>
                         <FormDescription>

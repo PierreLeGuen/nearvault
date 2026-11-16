@@ -50,7 +50,7 @@ const Manage: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex flex-grow flex-col gap-10 px-24 py-10">
+    <div className="flex grow flex-col gap-10 px-24 py-10">
       <div className="flex flex-row justify-between">
         <HeaderTitle level="h1" text="Address Book" />
         <AddBeneficiaryDialog />

@@ -57,7 +57,7 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
 
   if (getStakingDetailsForWallets.isPending) {
     return (
-      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+      <div className="flex grow flex-col gap-10 px-36 py-10">
         <HeaderTitle level="h1" text="Withdraw" />
         <div className="text-gray-500">Loading staking data...</div>
       </div>
@@ -66,7 +66,7 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
 
   if (getStakingDetailsForWallets.isError) {
     return (
-      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+      <div className="flex grow flex-col gap-10 px-36 py-10">
         <HeaderTitle level="h1" text="Withdraw" />
         <div className="space-y-4">
           <div className="text-red-500">
@@ -89,7 +89,7 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
 
   return (
     <>
-      <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+      <div className="flex grow flex-col gap-10 px-36 py-10">
         <HeaderTitle level="h1" text="Withdraw" />
 
         {errors.length > 0 && (

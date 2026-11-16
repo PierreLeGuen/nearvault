@@ -208,7 +208,7 @@ const TransfersPage: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+    <div className="flex grow flex-col items-center gap-10 py-10 ">
       <Card className="w-[600px]">
         <CardHeader>
           <CardTitle>Transfer tokens</CardTitle>
@@ -243,7 +243,7 @@ const TransfersPage: NextPageWithLayout = () => {
                 placeholder="Select a wallet"
                 label="Receiver"
               />
-              <div className="flex flex-grow flex-row">
+              <div className="flex grow flex-row">
                 <FormField
                   control={form.control}
                   name="token"
@@ -314,7 +314,7 @@ const TransfersPage: NextPageWithLayout = () => {
                   control={form.control}
                   name="amount"
                   render={({ field }) => (
-                    <FormItem className="flex flex-grow flex-col">
+                    <FormItem className="flex grow flex-col">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
                         <Input

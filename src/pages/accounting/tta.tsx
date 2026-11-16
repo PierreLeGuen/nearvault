@@ -62,7 +62,7 @@ const Tta: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+    <div className="flex grow flex-col items-center gap-10 py-10 ">
       <Card className="max-w-[600px]">
         <CardHeader>
           <CardTitle>Reporting</CardTitle>

@@ -156,7 +156,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="flex flex-grow flex-col gap-10 px-36 py-10">
+    <div className="flex grow flex-col gap-10 px-36 py-10">
       <HeaderTitle level="h1" text="Manage team" />
 
       <div className="flex flex-row justify-between">
@@ -291,7 +291,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
               value={rpcUrlInput}
               onChange={(e) => setRpcUrlInput(e.target.value)}
               placeholder={currentTeamQuery.data?.rpcUrl || "Enter RPC URL"}
-              className="flex-grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              className="grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-hidden"
             />
             <Button onClick={handleSetRpcUrl} disabled={isSettingRpcUrl}>
               {isSettingRpcUrl ? "Saving..." : "Save RPC URL"}
@@ -328,7 +328,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
                   ? "••••••••"
                   : "Enter API Key"
               }
-              className="flex-grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              className="grow rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-hidden"
             />
             <Button onClick={handleSetApiKey} disabled={isSettingApiKey}>
               {isSettingApiKey ? "Saving..." : "Save API Key"}

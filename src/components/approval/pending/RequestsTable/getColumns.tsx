@@ -45,7 +45,7 @@ const confirmations = columnHelper.accessor("request", {
   id: "confirmations",
   header: "Confirmations",
   cell: (row) => (
-    <div className="break-words">
+    <div className="wrap-break-word">
       {row.getValue().confirmations.length +
         "/" +
         row.getValue().requiredConfirmations}

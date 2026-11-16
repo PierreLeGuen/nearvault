@@ -61,14 +61,14 @@ export const CreateTeamDialog = ({
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       placeholder="Enter team name"
-                      className="focus:shadow-outline w-full px-3 py-2 leading-tight text-gray-700 focus:outline-none"
+                      className="focus:shadow-outline w-full px-3 py-2 leading-tight text-gray-700 focus:outline-hidden"
                     />
                   </div>
 
                   <div className="mt-4">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
                       onClick={() => {
                         console.log(`Creating team: ${teamName}`);
 
@@ -98,7 +98,7 @@ export const CreateTeamDialog = ({
                     </button>
                     <button
                       type="button"
-                      className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                       onClick={() => setIsOpen(false)}
                     >
                       Cancel

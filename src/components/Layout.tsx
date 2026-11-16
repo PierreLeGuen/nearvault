@@ -21,7 +21,7 @@ const SidebarLayout: FC<{
     <div className="relative flex min-h-screen flex-row overflow-visible">
       <Sidebar />
       <div className="flex flex-1 flex-col">
-        <div className="flex h-full max-w-full flex-grow">{children}</div>
+        <div className="flex h-full max-w-full grow">{children}</div>
       </div>
     </div>
   );

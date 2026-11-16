@@ -201,7 +201,7 @@ const RefSwap = () => {
           label="Sender"
         />
 
-        <div className="flex flex-grow flex-row">
+        <div className="flex grow flex-row">
           <FormField
             control={form.control}
             name="tokenOutId"
@@ -269,7 +269,7 @@ const RefSwap = () => {
             control={form.control}
             name="userAmountOut"
             render={({ field }) => (
-              <FormItem className="flex flex-grow flex-col">
+              <FormItem className="flex grow flex-col">
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
                   <Input
@@ -293,7 +293,7 @@ const RefSwap = () => {
         </div>
 
         {/* In amount */}
-        <div className="flex flex-grow flex-row">
+        <div className="flex grow flex-row">
           <FormField
             control={form.control}
             name="tokenInId"
@@ -371,7 +371,7 @@ const RefSwap = () => {
             control={form.control}
             name="userMinAmountIn"
             render={({ field }) => (
-              <FormItem className="flex flex-grow flex-col">
+              <FormItem className="flex grow flex-col">
                 <FormLabel>Amount in</FormLabel>
                 <FormControl>
                   <Input

@@ -151,7 +151,7 @@ const BurrowSupply = () => {
               control={form.control}
               name="tokenAmount"
               render={({ field }) => (
-                <FormItem className="flex flex-grow flex-col">
+                <FormItem className="flex grow flex-col">
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
                     <Input
