@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import { useEffect } from "react";
 import { z } from "zod";
 import { SenderFormField } from "~/components/inputs/sender";

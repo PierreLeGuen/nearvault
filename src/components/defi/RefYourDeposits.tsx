@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { z } from "zod";

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";

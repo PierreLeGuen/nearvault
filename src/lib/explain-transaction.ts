@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/require-await */
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import type * as naj from "near-api-js";
 import { formatNearAmount } from "near-api-js/lib/utils/format";
 import {
