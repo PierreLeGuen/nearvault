@@ -6,8 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "lint": "next lint",
-    "start": "next start"
+    "lint": "eslint .",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
@@ -54,13 +55,13 @@
     "date-fns": "^4.4.0",
     "js-sha256": "^1.0.0",
     "near-api-js": "2.1.4",
-    "next": "^14.0.1",
+    "next": "^16.4.6",
     "next-auth": "^4.24.15",
     "nodemailer": "^10.6.0",
     "qrcode": "^1.5.4",
-    "react": "18.2.0",
+    "react": "^19.3.1",
     "react-day-picker": "^10.0.2",
-    "react-dom": "18.2.0",
+    "react-dom": "^19.3.1",
     "react-hook-form": "^7.92.0",
     "react-toastify": "^11.2.0",
     "recharts": "^3.10.1",
@@ -68,28 +69,26 @@
     "superjson": "^2.2.6",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
+    "typescript-eslint": "^8.72.2",
     "zod": "^4.6.7",
     "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
     "@types/bn.js": "^5.2.0",
-    "@types/eslint": "^8.44.7",
     "@types/node": "^26.6.6",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "^18.2.37",
-    "@types/react-dom": "^18.2.15",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "@typescript-eslint/parser": "^6.10.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.16",
-    "eslint": "^8.53.0",
-    "eslint-config-next": "^14.0.1",
+    "eslint": "^10.15.0",
+    "eslint-config-next": "^16.4.6",
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.6",
     "prisma": "^6.19.3",
     "tailwindcss": "^3.3.5",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.3"
   },
   "engines": {
     "node": "26.x"

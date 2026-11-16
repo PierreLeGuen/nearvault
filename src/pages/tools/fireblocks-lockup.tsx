@@ -195,7 +195,7 @@ function findFailure(
   ];
   for (const st of statuses) {
     if (typeof st === "object" && st !== null && "Failure" in st) {
-      return JSON.stringify((st as { Failure: unknown }).Failure);
+      return JSON.stringify((st).Failure);
     }
   }
   return null;

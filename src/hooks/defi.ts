@@ -329,7 +329,7 @@ export const useDepositToRefLiquidityPool = () => {
         "get_deposits",
         { account_id: params.fundingAccId },
         provider,
-      ).catch(() => ({}) as Record<string, string>);
+      ).catch(() => ({}));
 
       const transfers = params.tokens.map((token, i) => {
         const wanted = BigInt(amounts[i]);

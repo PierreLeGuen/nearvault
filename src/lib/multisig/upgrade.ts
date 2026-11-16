@@ -34,7 +34,7 @@ function toBase64(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i += chunk) {
     bin += String.fromCharCode.apply(
       null,
-      bytes.subarray(i, i + chunk) as unknown as number[],
+      bytes.subarray(i, i + chunk),
     );
   }
   return typeof btoa === "function"

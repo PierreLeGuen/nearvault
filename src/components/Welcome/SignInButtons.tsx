@@ -1,4 +1,4 @@
-import { type BuiltInProviderType } from "next-auth/providers";
+import { type BuiltInProviderType } from "next-auth/providers/index";
 import {
   signIn,
   type ClientSafeProvider,
