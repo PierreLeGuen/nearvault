@@ -58,11 +58,15 @@ import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
   fromWallet: z.string({
-    required_error: "Please select a wallet.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a wallet." : undefined,
   }),
   toWallet: z.string().min(2),
   token: z.string({
-    required_error: "Please select a token.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a token." : undefined,
   }),
   amount: z.number().gt(0),
   memo: z.string(),
