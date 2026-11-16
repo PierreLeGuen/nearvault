@@ -60,6 +60,8 @@ The app runs at http://localhost:3000. Required environment variables (see `.env
 
 To build without a fully populated environment, set `SKIP_ENV_VALIDATION=1`.
 
+Checks: `npm run lint` (ESLint), `npm run typecheck` (TypeScript) and `npm run build`.
+
 Built with the [T3 stack](https://create.t3.gg/): Next.js, tRPC, Prisma, NextAuth, and Tailwind CSS.
 
 ## Documentation

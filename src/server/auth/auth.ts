@@ -60,7 +60,10 @@ export const authOptions: NextAuthOptions = {
           },
         });
       } catch (err) {
-        console.log(err);
+        console.error(
+          "createUser: default team setup failed",
+          (err as { code?: string })?.code ?? "unknown",
+        );
       }
     },
   },

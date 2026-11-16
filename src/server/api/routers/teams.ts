@@ -608,7 +608,6 @@ export const teamsRouter = createTRPCRouter({
           message: "Invitation not found.",
         });
       }
-      console.log(invitation);
 
       // Check if the logged-in user is the invited user
       if (invitation.invitedEmail !== ctx.session.user.email) {
