@@ -77,7 +77,7 @@ export const getUserBalanceForPool = (
       if (token) {
         tokens.push(token);
       } else {
-        tokens.push(undefined);
+        tokens.push(undefined as unknown as Token);
       }
     }
   }
@@ -189,7 +189,7 @@ const RefSwap = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="funding"
           control={form.control}
@@ -218,14 +218,14 @@ const RefSwap = () => {
                           "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
                           !field.value && "text-muted-foreground",
                         )}
-                        disabled={tokensQuery.isLoading}
+                        disabled={tokensQuery.isPending}
                       >
-                        {tokensQuery.isLoading && "Loading..."}
-                        {!tokensQuery.isLoading &&
+                        {tokensQuery.isPending && "Loading..."}
+                        {!tokensQuery.isPending &&
                           (field.value
                             ? tokensQuery.data?.find(
-                              (token) => token.account_id === field.value,
-                            )?.symbol
+                                (token) => token.account_id === field.value,
+                              )?.symbol
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -236,8 +236,8 @@ const RefSwap = () => {
                       <CommandInput placeholder="Search token..." />
                       <CommandEmpty>No token found.</CommandEmpty>
                       <CommandGroup>
-                        {tokensQuery.isLoading && "Loading..."}
-                        {!tokensQuery.isLoading &&
+                        {tokensQuery.isPending && "Loading..."}
+                        {!tokensQuery.isPending &&
                           tokensQuery.data?.map((token) => (
                             <CommandItem
                               value={token.account_id}
@@ -310,14 +310,14 @@ const RefSwap = () => {
                           "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
                           !field.value && "text-muted-foreground",
                         )}
-                        disabled={poolsForTokenQuery.isLoading}
+                        disabled={poolsForTokenQuery.isPending}
                       >
-                        {poolsForTokenQuery.isLoading && "Loading..."}
-                        {!poolsForTokenQuery.isLoading &&
+                        {poolsForTokenQuery.isPending && "Loading..."}
+                        {!poolsForTokenQuery.isPending &&
                           (field.value
                             ? poolsForTokenQuery.data?.accountIdToSymbol[
-                            field.value
-                            ]
+                                field.value
+                              ]
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -329,8 +329,8 @@ const RefSwap = () => {
                       <ScrollArea className="h-[300px]">
                         <CommandEmpty>No token found.</CommandEmpty>
                         <CommandGroup>
-                          {poolsForTokenQuery.isLoading && "Loading..."}
-                          {!poolsForTokenQuery.isLoading &&
+                          {poolsForTokenQuery.isPending && "Loading..."}
+                          {!poolsForTokenQuery.isPending &&
                             poolsForTokenQuery.data?.pools.map((pool) => {
                               const tokenAccIds = pool.token_account_ids.filter(
                                 (tokenId) =>

@@ -75,7 +75,7 @@ export function ReceiverFormField<
                   {isLoading && "Loading..."}
                   {!isLoading &&
                     (field.value
-                      ? currentReceiverFmt(receivers, field.value)
+                      ? currentReceiverFmt(receivers!, field.value)
                       : `${props.placeholder}`)}
                   <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>

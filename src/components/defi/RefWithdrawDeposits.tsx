@@ -58,7 +58,7 @@ export function RefWithdrawDeposits() {
               handleWithdraw(wallet.walletAddress, tokenId, amount)
             }
             withdrawingTokenId={
-              withdrawMutation.isLoading
+              withdrawMutation.isPending
                 ? withdrawMutation.variables?.tokenId
                 : null
             }
@@ -80,7 +80,7 @@ function WalletDeposits({
   onWithdraw,
   withdrawingTokenId,
 }: WalletDepositsProps) {
-  const { data, isLoading } = useGetRefDeposits(accountId);
+  const { data, isPending: isLoading } = useGetRefDeposits(accountId);
 
   if (isLoading) {
     return <div>Loading deposits...</div>;
@@ -137,7 +137,7 @@ function WalletDepositRow({
         </div>
         <div className="mt-1 text-xs text-gray-500">
           Storage:{" "}
-          {storageBalanceQuery.isLoading
+          {storageBalanceQuery.isPending
             ? "checking..."
             : needsStorageRegistration
             ? "registration needed"
@@ -147,7 +147,7 @@ function WalletDepositRow({
       <Button
         onClick={() => onWithdraw(tokenId, amount)}
         variant="outline"
-        disabled={isWithdrawing || storageBalanceQuery.isLoading}
+        disabled={isWithdrawing || storageBalanceQuery.isPending}
       >
         {isWithdrawing
           ? "Creating request..."

@@ -44,7 +44,8 @@ const formSchema = z.object({
 });
 
 const Stake: NextPageWithLayout = () => {
-  const { data: pools, isLoading } = useListAllStakingPoolsWithDetails();
+  const { data: pools, isPending: isLoading } =
+    useListAllStakingPoolsWithDetails();
 
   const [filteredPools, setFilteredPools] = useState(new Map());
   const [useManualPool, setUseManualPool] = useState(false);
@@ -68,20 +69,21 @@ const Stake: NextPageWithLayout = () => {
       });
       return;
     }
-    
+
     if (!values.useManualPool && !values.poolId) {
       // Show a general error message since poolId is set by clicking table buttons
       alert("Please select a pool from the list");
       return;
     }
-    
-    const poolId = values.useManualPool && values.manualPoolId 
-      ? values.manualPoolId 
-      : values.poolId;
-      
+
+    const poolId =
+      values.useManualPool && values.manualPoolId
+        ? values.manualPoolId
+        : values.poolId;
+
     addRequestStakeToPool.mutate({
-      selectedWallet: wallet,
-      poolId: poolId,
+      selectedWallet: wallet!,
+      poolId: poolId!,
       amountNear: values.amountNear,
     });
   }
@@ -119,7 +121,7 @@ const Stake: NextPageWithLayout = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <SenderFormField
-            isLoading={listWallets.isLoading}
+            isLoading={listWallets.isPending}
             wallets={listWallets.data}
             name="fromWallet"
             control={form.control}
@@ -138,9 +140,9 @@ const Stake: NextPageWithLayout = () => {
             rules={{ required: true }}
             disabled={false}
           />
-          
+
           {/* Manual Pool Entry Section */}
-          <div className="space-y-4 rounded-lg border p-4 bg-gray-50">
+          <div className="space-y-4 rounded-lg border bg-gray-50 p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="manual-pool-toggle">Manual Pool Entry</Label>
@@ -160,7 +162,7 @@ const Stake: NextPageWithLayout = () => {
                 }}
               />
             </div>
-            
+
             {useManualPool && (
               <div className="space-y-2">
                 <TextInput
@@ -168,67 +170,68 @@ const Stake: NextPageWithLayout = () => {
                   name="manualPoolId"
                   label="Pool ID"
                   placeholder="example.pool.near"
-                  rules={{ 
+                  rules={{
                     required: useManualPool ? "Pool ID is required" : false,
                     pattern: {
                       value: /^[a-z0-9-_.]+$/,
-                      message: "Invalid pool ID format"
-                    }
+                      message: "Invalid pool ID format",
+                    },
                   }}
                   description="Enter the exact pool ID (e.g., zavodil.poolv1.near)"
                 />
                 <p className="text-sm text-yellow-600">
-                  ⚠️ Warning: Make sure you enter the correct pool ID. Invalid pool IDs may result in failed transactions.
+                  ⚠️ Warning: Make sure you enter the correct pool ID. Invalid
+                  pool IDs may result in failed transactions.
                 </p>
               </div>
             )}
           </div>
 
           {!useManualPool && (
-          <div className="rounded-md border shadow-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pool ID</TableHead>
-                  <TableHead>Fees</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from(filteredPools).map((key, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <p className="break-all">{key[1].id}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="break-all">{`${key[1].fees}%`}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="break-all capitalize">{key[1].status}</p>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          form.setValue("poolId", key[1].id);
-                          void form.handleSubmit(onSubmit)();
-                        }}
-                      >
-                        <div className="inline-flex items-center">
-                          {wallet && wallet.isLockup && !isPoolSelected.data
-                            ? "Select pool"
-                            : "Create stake request"}
-                        </div>
-                      </Button>
-                    </TableCell>
+            <div className="rounded-md border shadow-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pool ID</TableHead>
+                    <TableHead>Fees</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(filteredPools).map((key, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <p className="break-all">{key[1].id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="break-all">{`${key[1].fees}%`}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="break-all capitalize">{key[1].status}</p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            form.setValue("poolId", key[1].id);
+                            void form.handleSubmit(onSubmit)();
+                          }}
+                        >
+                          <div className="inline-flex items-center">
+                            {wallet && wallet.isLockup && !isPoolSelected.data
+                              ? "Select pool"
+                              : "Create stake request"}
+                          </div>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-          
+
           {useManualPool && (
             <Button type="submit" className="w-full">
               Create stake request with manual pool

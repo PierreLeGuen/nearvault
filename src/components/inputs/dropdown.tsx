@@ -74,7 +74,7 @@ export function DropdownFormField<
                   {isLoading && "Loading..."}
                   {!isLoading &&
                     (field.value
-                      ? getCurrentItem(field.value, items).name
+                      ? getCurrentItem(field.value, items!)!.name
                       : `${props.placeholder}`)}
                   <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>

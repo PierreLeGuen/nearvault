@@ -53,7 +53,7 @@ export function useCreateMultisigWithFactory() {
                 num_confirmations: threshold,
               },
               gas: "300000000000000",
-              deposit: parseNearAmount("5"),
+              deposit: parseNearAmount("5")!,
             },
           },
         ],
@@ -80,7 +80,7 @@ export function useCreateMultisigWithFactoryViaMultisig() {
               members: data.owners,
               num_confirmations: new Number(data.threshold),
             },
-            parseNearAmount("5"),
+            parseNearAmount("5")!,
             (200 * TGas).toString(),
           ),
         ]),
@@ -100,14 +100,15 @@ export function useCreateMultisigWithFactoryViaMultisig() {
 
 export const useGetTransactionStatus = () => {
   const { newNearConnection } = usePersistingStore();
-  const [transactionHashes, setTransactionHashes] =
-    useState<string[]>(undefined);
+  const [transactionHashes, setTransactionHashes] = useState<
+    string[] | undefined
+  >(undefined);
 
   const transactionStatusQuery = useQuery({
     queryKey: ["isTransactionComplete", transactionHashes],
     queryFn: async () => {
       const transactions = await Promise.all(
-        transactionHashes.map(async (transactionHash) => {
+        transactionHashes!.map(async (transactionHash) => {
           const near = await newNearConnection();
           const txStatus = await near.connection.provider.txStatus(
             transactionHash,
@@ -135,7 +136,7 @@ export const useIsMultisigWalletSuccessfullyCreated = () => {
   const query = useQuery({
     queryKey: ["isMultisigWalletSuccessfullyCreated", transactionStatusQuery],
     queryFn: () => {
-      for (const tx of transactionStatusQuery.data) {
+      for (const tx of transactionStatusQuery.data!) {
         const matchingReceipt = tx.receipts_outcome.find((receipt) =>
           receipt.outcome.executor_id.includes(
             "." + config.accounts.multisigFactory,

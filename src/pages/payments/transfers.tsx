@@ -91,12 +91,13 @@ const TransfersPage: NextPageWithLayout = () => {
   const lockupTransferMut = useLockupTransfer();
   const nearTransferMut = useNearTransfer();
 
-  const { data: senderWallets, isLoading } = useTeamsWalletsWithLockups();
+  const { data: senderWallets, isPending: isLoading } =
+    useTeamsWalletsWithLockups();
 
-  const { data: addressBook, isLoading: addrBookLoading } =
+  const { data: addressBook, isPending: addrBookLoading } =
     useListAddressBook();
 
-  const { data: tokens, isLoading: tokensIsLoading } =
+  const { data: tokens, isPending: tokensIsLoading } =
     useGetAllTokensWithBalanceForWallet(watchedSender);
 
   // Updates the formatted balance when the token or the wallet changes
@@ -174,14 +175,14 @@ const TransfersPage: NextPageWithLayout = () => {
             fundingAccId: senderAddress,
             lockupAddress: lockupAddress,
             receiverAddress: receiver.walletAddress,
-            indivAmount: yoctoAmount,
+            indivAmount: yoctoAmount!,
           });
         } else {
           // from multisig wallet
           await nearTransferMut.mutateAsync({
             fundingAccId: senderAddress,
             receiverAddress: receiver.walletAddress,
-            indivAmount: yoctoAmount,
+            indivAmount: yoctoAmount!,
           });
         }
       } else {

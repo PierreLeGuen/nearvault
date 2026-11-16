@@ -69,7 +69,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     try {
       await deleteTeamMember.mutateAsync({
         memberId: id,
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
       });
       await refetchTeamMembers();
       toast.success("Member deleted");
@@ -98,7 +98,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     try {
       await deleteWalletMutation.mutateAsync({
         walletId: id,
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
       });
       toast.success("Wallet deleted");
     } catch (error) {
@@ -122,7 +122,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     setIsSettingRpcUrl(true);
     try {
       await setRpcUrl.mutateAsync({
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
         rpcUrl: rpcUrlInput.trim(),
       });
       toast.success("RPC URL updated successfully");
@@ -143,7 +143,7 @@ const ManageTeamPage: NextPageWithLayout = () => {
     setIsSettingApiKey(true);
     try {
       await setNearBlocksApiKey.mutateAsync({
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
         apiKey: apiKeyInput.trim(),
       });
       toast.success("NearBlocks API key updated successfully");

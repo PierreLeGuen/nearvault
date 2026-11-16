@@ -94,7 +94,7 @@ const CreateLockup: NextPageWithLayout = () => {
   const listAddressBookQuery = useListAddressBook();
 
   function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
-    const fromWallet = walletsWithLockupQuery.data.find(
+    const fromWallet = walletsWithLockupQuery.data!.find(
       (w) => w.walletDetails.walletAddress == values.fromWallet,
     );
     if (!fromWallet) {
@@ -104,7 +104,7 @@ const CreateLockup: NextPageWithLayout = () => {
     createLockup.mutate({
       fundingAccountId: values.fromWallet,
       ownerId: values.toWallet,
-      yoctoDeposit: parseNearAmount(values.amount.toString()),
+      yoctoDeposit: parseNearAmount(values.amount.toString())!,
       start: values.startDate,
       end: values.endDate,
       cliff: values.cliffDate,
@@ -170,7 +170,7 @@ const CreateLockup: NextPageWithLayout = () => {
                 className="space-y-8"
               >
                 <SenderFormField
-                  isLoading={walletsWithLockupQuery.isLoading}
+                  isLoading={walletsWithLockupQuery.isPending}
                   wallets={walletsWithLockupQuery.data}
                   name="fromWallet"
                   control={form.control}
@@ -182,7 +182,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   label="Sender Wallet"
                 />
                 <ReceiverFormField
-                  isLoading={listAddressBookQuery.isLoading}
+                  isLoading={listAddressBookQuery.isPending}
                   receivers={listAddressBookQuery.data}
                   name="toWallet"
                   control={form.control}
@@ -233,7 +233,7 @@ const CreateLockup: NextPageWithLayout = () => {
                         </FormControl>
                         <FormDescription>
                           Balance:{" "}
-                          {nearBalanceQuery.isLoading
+                          {nearBalanceQuery.isPending
                             ? "Loading..."
                             : nearBalanceQuery.data}
                         </FormDescription>

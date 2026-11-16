@@ -28,19 +28,21 @@ const Dashboard: NextPageWithLayout = () => {
 
   const query = useGetBalancesForTeamBetweenDates(old, today);
 
-  if (query.isLoading) return <div>Loading...</div>;
+  if (query.isPending) return <div>Loading...</div>;
   console.log(query.data);
 
   return (
     <ContentCentered>
       <HeaderTitle level="h1" text="Dashboard" />
-      <PlotBalances params={query.data} />
+      <PlotBalances params={query.data!} />
     </ContentCentered>
   );
 };
 
 const PlotBalances = ({ params }: { params: Param }) => {
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState<{ date: string; total: number }[]>(
+    [],
+  );
 
   useEffect(() => {
     const dates = params
@@ -114,7 +116,7 @@ type Param = {
 }[];
 
 const getXandY = (days: Date[], balances: Param) => {
-  const chartData = [];
+  const chartData: { date: string; total: number }[] = [];
 
   // Map to store total balance per day
   const totalsPerDay = new Map();

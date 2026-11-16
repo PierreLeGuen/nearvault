@@ -93,17 +93,13 @@ export function WithdrawDialog(props: {
               </Button>
             </span>
             {withdrawTxn.isError && (
-              <div className="text-red-500">
-                {(withdrawTxn.error as Error).message}
-              </div>
+              <div className="text-red-500">{withdrawTxn.error.message}</div>
             )}
             {withdrawTxn.isSuccess && (
               <div className="text-green-500">Successfully sent request!</div>
             )}
             {withdrawAllTxn.isError && (
-              <div className="text-red-500">
-                {(withdrawAllTxn.error as Error).message}
-              </div>
+              <div className="text-red-500">{withdrawAllTxn.error.message}</div>
             )}
             {withdrawAllTxn.isSuccess && (
               <div className="text-green-500">Successfully sent request!</div>

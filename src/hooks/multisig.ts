@@ -34,7 +34,7 @@ export const useGetMultisigRequestRowsForTeam = () => {
       }
 
       await Promise.all(
-        walletsQuery.data.map(async (wallet) => {
+        walletsQuery.data!.map(async (wallet) => {
           await rateLimiter.acquire();
           const near = await newNearConnection();
           const multisig = initMultiSigContract(
@@ -79,7 +79,9 @@ export const useGetMultisigRequestRowsForTeam = () => {
                       args,
                     };
                   }
-                  if (action.type === MultiSigRequestActionType.DeployContract) {
+                  if (
+                    action.type === MultiSigRequestActionType.DeployContract
+                  ) {
                     return {
                       ...action,
                       deploySummary: summarizeDeployAction(action),
@@ -108,9 +110,11 @@ export const useGetMultisigRequestRowsForTeam = () => {
               return {
                 request: processedRequest,
                 actual_receiver:
-                  explanations.find((e) => e?.actual_receiver)?.actual_receiver ||
-                  processedRequest.receiver_id,
-                explanations: explanations.filter((e): e is explanation => e !== null),
+                  explanations.find((e) => e?.actual_receiver)
+                    ?.actual_receiver || processedRequest.receiver_id,
+                explanations: explanations.filter(
+                  (e): e is explanation => e !== null,
+                ),
               };
             }),
           );
@@ -165,7 +169,7 @@ export function useUsableKeysForSigning(
 
       const keysData = keysQuery.data;
 
-      const remainingKeys = keysData.keys.filter((key) => {
+      const remainingKeys = keysData!.keys.filter((key) => {
         return !confirmations.some(
           (confirmation) => confirmation === key.public_key,
         );

@@ -72,9 +72,9 @@ const WithdrawPoolComponent = ({
             disabled={isAmountTooHigh}
             onClick={() => {
               void unstakeFn(
-                wallet.wallet.isLockup
+                (wallet.wallet.isLockup
                   ? wallet.wallet.ownerAccountId
-                  : wallet.wallet.walletDetails.walletAddress,
+                  : wallet.wallet.walletDetails.walletAddress)!,
                 isLockup,
                 pool.validator_id,
                 amountToWithdraw,

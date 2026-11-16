@@ -48,14 +48,14 @@ const WithdrawFromStakingPool: NextPageWithLayout = () => {
         };
       })
       .filter((walletData) => walletData.stakedPools.length > 0);
-    setFilteredPools(tmp);
+    setFilteredPools(tmp as WalletData[]);
   }, [getStakingDetailsForWallets.data]);
 
   const handleRetry = () => {
     void getStakingDetailsForWallets.refetch();
   };
 
-  if (getStakingDetailsForWallets.isLoading) {
+  if (getStakingDetailsForWallets.isPending) {
     return (
       <div className="flex flex-grow flex-col gap-10 px-36 py-10">
         <HeaderTitle level="h1" text="Withdraw" />

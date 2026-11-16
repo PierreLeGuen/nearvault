@@ -26,7 +26,7 @@ const Manage: NextPageWithLayout = () => {
 
   const {
     data: benefs,
-    isLoading,
+    isPending: isLoading,
     refetch: refetchBook,
   } = useListAddressBook();
 
@@ -34,7 +34,7 @@ const Manage: NextPageWithLayout = () => {
     deleteMut.mutate(
       {
         beneficiaryId: b.id,
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
       },
       {
         onSettled: () => {

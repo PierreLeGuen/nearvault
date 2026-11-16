@@ -170,7 +170,7 @@ export async function explainAction(
           action,
         );
         desc = `${argsDescription.desc} ` + desc;
-        actual_receiver = argsDescription.fnReceiverId;
+        actual_receiver = argsDescription.fnReceiverId!;
       }
 
       return {

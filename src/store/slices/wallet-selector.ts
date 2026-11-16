@@ -258,7 +258,7 @@ export const createWalletTerminator: StateCreator<
     const returnTo = searchParams.get("returnTo");
 
     if (connectStatus === "Allowed") {
-      const publicKey = searchParams.get("all_keys").split(",")[0];
+      const publicKey = searchParams.get("all_keys")!.split(",")[0];
       if (!publicKey) {
         throw new Error("No public key found in the URL");
       }
@@ -283,7 +283,7 @@ export const createWalletTerminator: StateCreator<
         sources: get().sources,
       });
 
-      await router.replace(returnTo);
+      await router.replace(returnTo!);
       return;
     }
     throw new Error("not supported yet");
@@ -329,13 +329,13 @@ export const createWalletTerminator: StateCreator<
         publicKeyForTxn,
         params.receiverId,
         params.senderId,
-        params.action,
+        params.action!,
         params.actions,
       );
 
       const source = get().sources[publicKeyForTxn];
       if (source.type === "ledger") {
-        const signedTx = await get().signWithLedger(tx, source.derivationPath);
+        const signedTx = await get().signWithLedger(tx, source.derivationPath!);
         const provider = new JsonRpcProvider({ url: get().getRpcUrl() });
         get().goToWaitForTransaction();
         const txn = await provider.sendTransaction(signedTx);
@@ -350,7 +350,7 @@ export const createWalletTerminator: StateCreator<
 
         const network = config.networkId;
         const keyStore = new keyStores.InMemoryKeyStore();
-        const keyPair = KeyPair.fromString(source.privateKey);
+        const keyPair = KeyPair.fromString(source.privateKey!);
         await keyStore.setKey(network, params.senderId, keyPair);
 
         const nearconfig = {

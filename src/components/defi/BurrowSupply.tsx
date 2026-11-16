@@ -43,7 +43,9 @@ const BurrowSupply = () => {
   const depositMutation = useSupplyToBurrow();
 
   // Helper to get display symbol for tokens in Burrow context
-  const getTokenDisplaySymbol = (token: NonNullable<typeof tokensQuery.data>[0]) => {
+  const getTokenDisplaySymbol = (
+    token: NonNullable<typeof tokensQuery.data>[0],
+  ) => {
     if (token.account_id === "near") {
       return "NEAR (native)";
     }
@@ -61,7 +63,7 @@ const BurrowSupply = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="funding"
           control={form.control}
@@ -91,16 +93,18 @@ const BurrowSupply = () => {
                             "w-[160px] justify-between rounded-r-none border-r-0",
                             !field.value && "text-muted-foreground",
                           )}
-                          disabled={tokensQuery.isLoading}
+                          disabled={tokensQuery.isPending}
                         >
-                          {tokensQuery.isLoading && "Loading..."}
-                          {!tokensQuery.isLoading &&
+                          {tokensQuery.isPending && "Loading..."}
+                          {!tokensQuery.isPending &&
                             (field.value
                               ? (() => {
                                   const token = tokensQuery.data?.find(
                                     (t) => t.account_id === field.value,
                                   );
-                                  return token ? getTokenDisplaySymbol(token) : "Select token";
+                                  return token
+                                    ? getTokenDisplaySymbol(token)
+                                    : "Select token";
                                 })()
                               : "Select token")}
                           <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -112,8 +116,8 @@ const BurrowSupply = () => {
                         <CommandInput placeholder="Search token..." />
                         <CommandEmpty>No token found.</CommandEmpty>
                         <CommandGroup>
-                          {tokensQuery.isLoading && "Loading..."}
-                          {!tokensQuery.isLoading &&
+                          {tokensQuery.isPending && "Loading..."}
+                          {!tokensQuery.isPending &&
                             tokensQuery.data?.map((token) => (
                               <CommandItem
                                 value={token.account_id}
@@ -130,7 +134,9 @@ const BurrowSupply = () => {
                                       : "opacity-0",
                                   )}
                                 />
-                                {`${getTokenDisplaySymbol(token)} (${getFormattedAmount(token)})`}
+                                {`${getTokenDisplaySymbol(
+                                  token,
+                                )} (${getFormattedAmount(token)})`}
                               </CommandItem>
                             ))}
                         </CommandGroup>
@@ -171,7 +177,8 @@ const BurrowSupply = () => {
           <p className="text-sm text-muted-foreground">
             {form.watch("token") === "near" ? (
               <span className="text-amber-600 dark:text-amber-400">
-                Native NEAR will be automatically wrapped to wNEAR, then supplied to Burrow.
+                Native NEAR will be automatically wrapped to wNEAR, then
+                supplied to Burrow.
               </span>
             ) : form.watch("token") === "wrap.near" ? (
               <span className="text-green-600 dark:text-green-400">

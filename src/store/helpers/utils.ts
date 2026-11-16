@@ -103,5 +103,5 @@ export const filterMultisig = async (accountIds: string[], rpcUrl: string) => {
       .filter(Boolean),
   );
 
-  return validAccIds;
+  return validAccIds as string[];
 };

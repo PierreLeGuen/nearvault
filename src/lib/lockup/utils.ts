@@ -41,8 +41,8 @@ export const formatVestingInfo = (
 ): string | null => {
   if (!info?.start) return null; // TODO
   const start = new Date(info.start.divn(1000000).toNumber());
-  const cliff = new Date(info.cliff.divn(1000000).toNumber());
-  const end = new Date(info.end.divn(1000000).toNumber());
+  const cliff = new Date(info.cliff!.divn(1000000).toNumber());
+  const end = new Date(info.end!.divn(1000000).toNumber());
   return `from ${start} until ${end} with cliff at ${cliff}`;
 };
 

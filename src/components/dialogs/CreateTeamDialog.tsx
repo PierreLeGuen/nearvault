@@ -61,7 +61,7 @@ export function CreateTeamDialog({
               rules={{ required: true }}
               disabled={false}
             />
-            <Button type="submit" disabled={mutation.isLoading}>
+            <Button type="submit" disabled={mutation.isPending}>
               <div className="inline-flex items-center">
                 <WalletIcon className="mr-2 w-5" />
                 Create team

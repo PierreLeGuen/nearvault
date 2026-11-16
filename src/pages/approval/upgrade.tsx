@@ -27,7 +27,7 @@ const Upgrade: NextPageWithLayout = () => {
   const walletsQuery = useWalletsUpgradeStatus();
   const upgradeMutation = useUpgradeContract();
 
-  if (walletsQuery.isLoading) {
+  if (walletsQuery.isPending) {
     return (
       <ContentCentered>
         <HeaderTitle level="h1" text="Upgrade contract" />
@@ -95,7 +95,7 @@ function WalletUpgradeCard({
     info;
 
   const isSubmitting =
-    upgradeMutation.isLoading &&
+    upgradeMutation.isPending &&
     upgradeMutation.variables?.walletAddress === wallet.walletAddress;
   const mutationSucceeded =
     upgradeMutation.isSuccess &&
@@ -103,8 +103,7 @@ function WalletUpgradeCard({
   const mutationErrorMsg =
     upgradeMutation.isError &&
     upgradeMutation.variables?.walletAddress === wallet.walletAddress
-      ? (upgradeMutation.error as Error)?.message ||
-        "Failed to submit the proposal"
+      ? upgradeMutation.error?.message || "Failed to submit the proposal"
       : null;
 
   const verifiedProposals = existingProposals.filter(
@@ -126,7 +125,7 @@ function WalletUpgradeCard({
             <CardTitle className="break-all font-mono text-sm">
               {wallet.walletAddress}
             </CardTitle>
-            <Badge className="bg-red-500/15 text-red-700 border-red-500/20 whitespace-nowrap">
+            <Badge className="bg-red-500/15 whitespace-nowrap border-red-500/20 text-red-700">
               Error
             </Badge>
           </div>
@@ -149,7 +148,7 @@ function WalletUpgradeCard({
             <CardTitle className="break-all font-mono text-sm">
               {wallet.walletAddress}
             </CardTitle>
-            <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/20 whitespace-nowrap">
+            <Badge className="bg-emerald-500/15 whitespace-nowrap border-emerald-500/20 text-emerald-700">
               Upgraded
             </Badge>
           </div>
@@ -171,7 +170,7 @@ function WalletUpgradeCard({
             <CardTitle className="break-all font-mono text-sm">
               {wallet.walletAddress}
             </CardTitle>
-            <Badge className="bg-slate-500/15 text-slate-600 border-slate-500/20 whitespace-nowrap">
+            <Badge className="bg-slate-500/15 whitespace-nowrap border-slate-500/20 text-slate-600">
               Not eligible
             </Badge>
           </div>
@@ -182,8 +181,7 @@ function WalletUpgradeCard({
             {codeHash && (
               <>
                 {" "}
-                Current hash:{" "}
-                <code className="text-xs">{codeHash}</code>
+                Current hash: <code className="text-xs">{codeHash}</code>
               </>
             )}
           </p>
@@ -201,15 +199,15 @@ function WalletUpgradeCard({
             {wallet.walletAddress}
           </CardTitle>
           {unverifiedProposals.length > 0 ? (
-            <Badge className="bg-orange-500/15 text-orange-700 border-orange-500/20 whitespace-nowrap">
+            <Badge className="bg-orange-500/15 whitespace-nowrap border-orange-500/20 text-orange-700">
               Deploy pending
             </Badge>
           ) : verifiedProposals.length > 0 ? (
-            <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/20 whitespace-nowrap">
+            <Badge className="bg-blue-500/15 whitespace-nowrap border-blue-500/20 text-blue-700">
               Proposal pending
             </Badge>
           ) : (
-            <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/20 whitespace-nowrap">
+            <Badge className="bg-amber-500/15 whitespace-nowrap border-amber-500/20 text-amber-700">
               Needs upgrade
             </Badge>
           )}
@@ -242,8 +240,7 @@ function WalletUpgradeCard({
           <Alert>
             <AlertDescription>
               A verified upgrade proposal already exists (request id:{" "}
-              {verifiedProposals.map((p) => p.id).join(", ")}). Approve it
-              via{" "}
+              {verifiedProposals.map((p) => p.id).join(", ")}). Approve it via{" "}
               <Link href="/approval/pending" className="underline">
                 Pending Requests
               </Link>
@@ -258,11 +255,10 @@ function WalletUpgradeCard({
               <AlertDescription>
                 <strong>Using a Ledger?</strong> After you approve the
                 transaction header, the device may appear frozen for up to ~10
-                minutes. This is expected — the transaction carries the full
-                new WASM (~346 KB) which the device has to hash. Raise the
-                auto-lock timeout in the Ledger&apos;s on-device settings to
-                more than 10 minutes, or periodically press any button to keep
-                it awake.
+                minutes. This is expected — the transaction carries the full new
+                WASM (~346 KB) which the device has to hash. Raise the auto-lock
+                timeout in the Ledger&apos;s on-device settings to more than 10
+                minutes, or periodically press any button to keep it awake.
               </AlertDescription>
             </Alert>
 
@@ -282,8 +278,8 @@ function WalletUpgradeCard({
                 {isSubmitting
                   ? "Submitting..."
                   : mutationSucceeded
-                    ? "Proposal submitted"
-                    : "Create upgrade proposal"}
+                  ? "Proposal submitted"
+                  : "Create upgrade proposal"}
               </Button>
             ) : (
               <Button className="w-full" disabled>

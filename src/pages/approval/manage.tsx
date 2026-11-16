@@ -8,7 +8,7 @@ import { type NextPageWithLayout } from "../_app";
 const Manage: NextPageWithLayout = () => {
   const query = useListWallets();
 
-  if (query.isLoading)
+  if (query.isPending)
     return (
       <ContentCentered>
         <HeaderTitle level="h1" text="Manage wallets" />
@@ -16,7 +16,7 @@ const Manage: NextPageWithLayout = () => {
       </ContentCentered>
     );
 
-  if (query.data.length === 0) {
+  if (query.data!.length === 0) {
     return (
       <ContentCentered>
         <HeaderTitle level="h1" text="Manage wallets" />
@@ -25,7 +25,7 @@ const Manage: NextPageWithLayout = () => {
     );
   }
 
-  return <ManageMultisigAccounts multisigWallets={query.data} />;
+  return <ManageMultisigAccounts multisigWallets={query.data!} />;
 };
 
 Manage.getLayout = getSidebarLayout;

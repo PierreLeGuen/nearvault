@@ -25,7 +25,7 @@ export interface WalletPretty {
 const Unstake: NextPageWithLayout = () => {
   const getStakingDetailsForWallets = useGetStakingDetailsForTeamsWallets();
 
-  if (getStakingDetailsForWallets.isLoading) {
+  if (getStakingDetailsForWallets.isPending) {
     return (
       <ContentCentered>
         <HeaderTitle level="h1" text="Unstake" />

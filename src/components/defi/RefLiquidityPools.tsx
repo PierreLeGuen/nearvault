@@ -178,7 +178,7 @@ const RefLiquidityPools = ({ poolKinds }: RefLiquidityPoolsProps) => {
       shouldValidate: false,
       shouldDirty: true,
     });
-  }, [stableLike, lastUpdatedIndex, watchedAmounts[lastUpdatedIndex]]); // Only depend on the changed value
+  }, [stableLike, lastUpdatedIndex, watchedAmounts[lastUpdatedIndex!]]); // Only depend on the changed value
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!selectedPool) {
@@ -232,7 +232,7 @@ const RefLiquidityPools = ({ poolKinds }: RefLiquidityPoolsProps) => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="funding"
           control={form.control}
@@ -245,7 +245,7 @@ const RefLiquidityPools = ({ poolKinds }: RefLiquidityPoolsProps) => {
         />
 
         <DropdownFormField
-          isLoading={liquidityPoolsQuery.isLoading}
+          isLoading={liquidityPoolsQuery.isPending}
           items={liquidityPoolsQuery.data?.map((pool) => ({
             id: pool.id,
             name: getFormattedPoolBalance(pool),

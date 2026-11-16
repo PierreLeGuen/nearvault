@@ -83,7 +83,7 @@ export function CreateTeamCard(params: Params) {
               rules={{ required: true }}
               disabled={false}
             />
-            <Button type="submit" disabled={query.isLoading}>
+            <Button type="submit" disabled={query.isPending}>
               Create
             </Button>
             {query.isError && (

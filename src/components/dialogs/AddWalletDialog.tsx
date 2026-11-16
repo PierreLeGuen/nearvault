@@ -18,7 +18,7 @@ const walletIdSchema = z.string(); // Adjust this regex based on the actual form
 const formSchema = z.object({
   ids: z.string().transform((value) => {
     const wallets = value.split(/[\n,]+/).map((id) => id.trim());
-    const errors = [];
+    const errors: string[] = [];
     for (const walletId of wallets) {
       try {
         walletIdSchema.parse(walletId);
@@ -41,11 +41,11 @@ export function AddWalletDialog() {
   const listWallets = useListWallets();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!currentTeamQuery.data.id) return;
+    if (!currentTeamQuery.data!.id) return;
 
     try {
       await addWalletMut.mutateAsync({
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
         walletAddresses: values.ids,
       });
       await listWallets.refetch();
@@ -77,7 +77,7 @@ export function AddWalletDialog() {
               rules={{ required: true }}
               disabled={false}
             />
-            <Button type="submit" disabled={addWalletMut.isLoading}>
+            <Button type="submit" disabled={addWalletMut.isPending}>
               <div className="inline-flex items-center">
                 <WalletIcon className="mr-2 w-5" />
                 Add Wallet(s)

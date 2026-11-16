@@ -67,7 +67,7 @@ export function useAssertRpcUrl() {
   const currentTeamQuery = useGetCurrentTeam();
   const rpcUrlQuery = api.teams.getRpcUrl.useQuery(
     {
-      teamId: currentTeamQuery.data?.id,
+      teamId: currentTeamQuery.data?.id as string,
     },
     {
       enabled: !!currentTeamQuery.data,
@@ -89,7 +89,7 @@ export function useAssertRpcUrl() {
   }, [rpcUrlQuery.data, setRpcUrl, currentRpcUrl]);
 
   return {
-    isLoading: rpcUrlQuery.isLoading,
+    isLoading: rpcUrlQuery.isPending,
     error: rpcUrlQuery.error,
     rpcUrl: rpcUrlQuery.data?.rpcUrl || config.urls.rpc,
   };
@@ -102,7 +102,7 @@ export function useAssertNearBlocksApiKey() {
   const currentTeamQuery = useGetCurrentTeam();
   const apiKeyQuery = api.teams.getNearBlocksApiKey.useQuery(
     {
-      teamId: currentTeamQuery.data?.id,
+      teamId: currentTeamQuery.data?.id as string,
     },
     {
       enabled: !!currentTeamQuery.data,
@@ -124,7 +124,7 @@ export function useAssertNearBlocksApiKey() {
   }, [apiKeyQuery.data, setNearBlocksApiKey, currentApiKey]);
 
   return {
-    isLoading: apiKeyQuery.isLoading,
+    isLoading: apiKeyQuery.isPending,
     error: apiKeyQuery.error,
     apiKey: apiKeyQuery.data?.nearBlocksApiKey || null,
   };
@@ -134,14 +134,14 @@ export function useListWallets() {
   const currentTeamQuery = useGetCurrentTeam();
 
   const query = api.teams.getWalletsForTeam.useQuery({
-    teamId: currentTeamQuery.data?.id,
+    teamId: currentTeamQuery.data?.id as string,
   });
 
   return useQuery({
     queryKey: ["walletsSorted", currentTeamQuery.data?.id],
     enabled: !!currentTeamQuery.data && !!query.data,
     queryFn: () => {
-      return query.data.toSorted((a, b) => {
+      return query.data!.toSorted((a, b) => {
         return a.walletAddress.localeCompare(b.walletAddress);
       });
     },
@@ -170,7 +170,7 @@ export function useListAddressBook() {
 
   return api.teams.getBeneficiariesForTeam.useQuery(
     {
-      teamId: currentTeamQuery.data?.id,
+      teamId: currentTeamQuery.data?.id as string,
     },
     {
       enabled: !!currentTeamQuery.data,
@@ -183,7 +183,7 @@ export function useGetInvitationsForTeam() {
 
   return api.teams.getInvitationsForTeam.useQuery(
     {
-      teamId: currentTeamQuery.data?.id,
+      teamId: currentTeamQuery.data?.id as string,
     },
     {
       enabled: !!currentTeamQuery.data,
@@ -346,7 +346,7 @@ export function useCreateTeamAndInviteUsers() {
 
       await Promise.all(
         data.members
-          .filter((member) => member !== session.data.user.email)
+          .filter((member) => member !== session.data!.user.email)
           .map((member) =>
             addMember.mutateAsync({
               teamId: team.id,
@@ -402,7 +402,7 @@ export function useGetTeamsTransactionsHistory() {
   const query = useGetCurrentTeam();
   return api.teams.getTeamTransactionsHistory.useQuery(
     {
-      teamId: query.data?.id,
+      teamId: query.data?.id as string,
     },
     {
       enabled: !!query.data,
@@ -418,7 +418,7 @@ export function useGetTeamMembers() {
   const currentTeamQuery = useGetCurrentTeam();
   return api.teams.getMembersForTeam.useQuery(
     {
-      teamId: currentTeamQuery.data?.id,
+      teamId: currentTeamQuery.data?.id as string,
     },
     {
       enabled: !!currentTeamQuery.data,
