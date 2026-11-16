@@ -123,6 +123,7 @@
   "allowScripts": {
     "@prisma/client": true,
     "@prisma/engines": true,
-    "prisma": true
+    "prisma": true,
+    "secp256k1": false
   }
 }
