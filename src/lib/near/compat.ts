@@ -45,6 +45,21 @@ export function toBigInt(value: BNLike): bigint {
   return BigInt(value.toString());
 }
 
+const U64_LIMIT = BigInt(2) ** BigInt(64);
+const U128_LIMIT = BigInt(2) ** BigInt(128);
+
+/**
+ * near-api-js 2.x refused amounts that did not fit the field; near-api-js 7
+ * wraps them silently (a negative deposit becomes a huge one). Keep refusing.
+ */
+function toUnsigned(value: BNLike, limit: bigint, field: string): bigint {
+  const amount = toBigInt(value);
+  if (amount < BigInt(0) || amount >= limit) {
+    throw new RangeError(`${field} is out of range: ${amount.toString()}`);
+  }
+  return amount;
+}
+
 /** Same check as near-api-js 2.x: a Uint8Array or Buffer is sent as raw bytes. */
 function isBytes(args: object): args is Uint8Array {
   const maybeBytes = args as Uint8Array;
@@ -65,14 +80,14 @@ export function functionCall(
   return actions.functionCall(
     methodName,
     argBytes,
-    toBigInt(gas),
-    toBigInt(deposit),
+    toUnsigned(gas, U64_LIMIT, "gas"),
+    toUnsigned(deposit, U128_LIMIT, "deposit"),
   );
 }
 
 /** near-api-js 2.x `transactions.transfer`. */
 export function transfer(deposit: BNLike = 0): Action {
-  return actions.transfer(toBigInt(deposit));
+  return actions.transfer(toUnsigned(deposit, U128_LIMIT, "deposit"));
 }
 
 /** Drop-in for `import { transactions } from "near-api-js"` (2.x). */
@@ -209,16 +224,18 @@ export type QueryParams = { request_type: string; [key: string]: unknown };
 const RETRY = { attempts: 10, firstWaitMs: 1000, multiplier: 1.5 };
 
 function isRetryableLike2x(error: unknown): boolean {
-  const { cause, name } = (error ?? {}) as { cause?: unknown; name?: string };
+  const { cause } = (error ?? {}) as { cause?: unknown };
+  // near-api-js 7 reports HTTP failures with the status as `cause`. 2.x only
+  // retried 503; a 408 (node timeout) or 429 was thrown at once.
+  if (typeof cause === "number") return cause === 503;
   const text = String(error);
   return (
-    cause === 503 ||
+    // network failures
     text.includes("FetchError") ||
     text.includes("Failed to fetch") ||
+    // timeouts reported in the JSON-RPC response body
     text.includes("Timeout error") ||
-    text.includes("query has timed out") ||
-    name === "TimeoutError" ||
-    name === "TransactionTimeoutError"
+    text.includes("query has timed out")
   );
 }
 

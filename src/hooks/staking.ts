@@ -345,6 +345,7 @@ export function useGetStakingDetailsForWallets() {
               "Rate limit exceeded or network error. Please try again later";
           } else if (
             e?.status === 429 ||
+            e?.cause === 429 ||
             e?.response?.status === 429 ||
             e?.message?.includes("429") ||
             e?.message?.includes("rate limit")
