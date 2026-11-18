@@ -51,6 +51,11 @@ interface WalletSelectorContextValue {
 const WalletSelectorContext =
   React.createContext<WalletSelectorContextValue | null>(null);
 
+// A sign-in restored without an account id cannot sign; treat it as signed
+// out rather than showing an empty funding account.
+const usableAccounts = (accounts: AccountState[]) =>
+  accounts.filter((account) => !!account.accountId);
+
 export const WalletSelectorContextProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
@@ -82,7 +87,7 @@ export const WalletSelectorContextProvider: React.FC<{
     });
     const state = _selector.store.getState();
 
-    setAccounts(state.accounts);
+    setAccounts(usableAccounts(state.accounts));
     setSelector(_selector);
     setModal(_modal);
     setLoading(false);
@@ -90,7 +95,7 @@ export const WalletSelectorContextProvider: React.FC<{
 
   useEffect(() => {
     init().catch((err) => {
-      console.error(err);
+      console.error("wallet selector setup failed", (err as Error)?.name);
       alert("Failed to initialise wallet selector");
     });
   }, [init]);
@@ -106,9 +111,10 @@ export const WalletSelectorContextProvider: React.FC<{
         distinctUntilChanged(),
       )
       .subscribe((nextAccounts) => {
-        console.log("Accounts Update", nextAccounts);
+        const usable = usableAccounts(nextAccounts);
+        console.log("Accounts Update", { count: usable.length });
 
-        setAccounts(nextAccounts);
+        setAccounts(usable);
       });
 
     const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {
