@@ -29,6 +29,7 @@ import {
   baseDecode,
   baseEncode,
 } from "near-api-js";
+import { TransactionTimeoutError } from "near-api-js/rpc-errors";
 
 // ---------------------------------------------------------------------------
 // Amounts and actions
@@ -224,6 +225,10 @@ export type QueryParams = { request_type: string; [key: string]: unknown };
 const RETRY = { attempts: 10, firstWaitMs: 1000, multiplier: 1.5 };
 
 function isRetryableLike2x(error: unknown): boolean {
+  // The node answered with a JSON-RPC timeout (for example
+  // `broadcast_tx_commit` still waiting for the outcome). 2.x resent the
+  // request; resending the same signed transaction is safe.
+  if (error instanceof TransactionTimeoutError) return true;
   const { cause } = (error ?? {}) as { cause?: unknown };
   // near-api-js 7 reports HTTP failures with the status as `cause`. 2.x only
   // retried 503; a 408 (node timeout) or 429 was thrown at once.
@@ -233,7 +238,8 @@ function isRetryableLike2x(error: unknown): boolean {
     // network failures
     text.includes("FetchError") ||
     text.includes("Failed to fetch") ||
-    // timeouts reported in the JSON-RPC response body
+    // JSON-RPC timeouts, as near-api-js 7 and older nodes word them
+    text.includes("Transaction timed out") ||
     text.includes("Timeout error") ||
     text.includes("query has timed out")
   );
