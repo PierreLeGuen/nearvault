@@ -74,10 +74,12 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@next/env": "^16.4.6",
     "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/typography": "^0.5.20",
     "@types/bn.js": "^5.2.0",
     "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
