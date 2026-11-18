@@ -27,8 +27,12 @@ import type { PoolConfig } from "pg";
  * - Prisma 6's `sslcert` (the server certificate), `sslidentity` and
  *   `sslpassword` are refused rather than silently changing meaning:
  *   node-postgres reads `sslcert` as a client certificate (with `sslkey`) and
- *   has no PKCS#12 identity. node-postgres's own `sslrootcert`, and `sslcert`
- *   with `sslkey`, are passed through.
+ *   has no PKCS#12 identity.
+ * - A URL that uses node-postgres's own certificate options (`sslrootcert`,
+ *   or `sslcert` with `sslkey`) is left to node-postgres, `sslmode` included.
+ *   Note that the Prisma CLI (migrations) still reads DATABASE_URL in
+ *   Prisma's own format.
+ * - Numeric options must be whole numbers, as Prisma 6 required.
  */
 export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   poolConfig: PoolConfig;
@@ -49,6 +53,20 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   const connectTimeout = take("connect_timeout");
   const poolTimeout = take("pool_timeout");
   const socketTimeout = take("socket_timeout");
+  const numbers = {
+    connection_limit: connectionLimit,
+    connect_timeout: connectTimeout,
+    pool_timeout: poolTimeout,
+    socket_timeout: socketTimeout,
+  };
+  for (const [name, value] of Object.entries(numbers)) {
+    if (value !== undefined && !/^\d+$/.test(value)) {
+      throw new Error(`DATABASE_URL: ${name} must be a whole number.`);
+    }
+  }
+  const pgTls =
+    params.has("sslrootcert") ||
+    (params.has("sslcert") && params.has("sslkey"));
   const prismaTlsParams = ["sslidentity", "sslpassword"];
   if (params.has("sslcert") && !params.has("sslkey")) {
     prismaTlsParams.push("sslcert");
@@ -70,7 +88,10 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   const verified = sslaccept === "strict";
 
   let ssl: PoolConfig["ssl"];
-  if (sslmode === "disable") {
+  if (pgTls) {
+    // node-postgres applies its certificate options from the URL itself.
+    if (sslmode !== undefined) params.set("sslmode", sslmode);
+  } else if (sslmode === "disable") {
     ssl = false;
   } else if (sslmode === "require" || sslmode === "prefer") {
     ssl = { rejectUnauthorized: verified };
