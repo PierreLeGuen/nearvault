@@ -55,7 +55,9 @@ const U128_LIMIT = BigInt(2) ** BigInt(128);
  */
 function toUnsigned(value: BNLike, limit: bigint, field: string): bigint {
   const amount = toBigInt(value);
-  if (amount < BigInt(0) || amount >= limit) {
+  // bn.js truncates numbers, so -0.5 would otherwise pass as 0.
+  const negativeNumber = typeof value === "number" && value < 0;
+  if (negativeNumber || amount < BigInt(0) || amount >= limit) {
     throw new RangeError(`${field} is out of range: ${amount.toString()}`);
   }
   return amount;
@@ -235,9 +237,10 @@ function isRetryableLike2x(error: unknown): boolean {
   if (typeof cause === "number") return cause === 503;
   const text = String(error);
   return (
-    // network failures
+    // network failures (node-fetch, browsers, Node's built-in fetch)
     text.includes("FetchError") ||
     text.includes("Failed to fetch") ||
+    text.includes("fetch failed") ||
     // JSON-RPC timeouts, as near-api-js 7 and older nodes word them
     text.includes("Transaction timed out") ||
     text.includes("Timeout error") ||
