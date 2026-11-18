@@ -23,7 +23,6 @@ import {
   type CodeResult,
   type FinalExecutionOutcome,
   PublicKey,
-  SignedTransaction,
   createTransaction,
 } from "near-api-js";
 import Head from "next/head";
@@ -47,6 +46,7 @@ import {
   functionCall,
   parseNearAmount,
 } from "~/lib/near/compat";
+import { decodeRequestedSignedTransaction } from "~/lib/near/signed-transaction";
 import { env } from "~/env.mjs";
 import { type NextPageWithLayout } from "../_app";
 
@@ -615,6 +615,7 @@ const FireblocksLockup: NextPageWithLayout = () => {
         [functionCall(action, args, new BN(ACTIONS[action].gas), new BN(0))],
         base_decode(block.header.hash),
       );
+      const unsignedBytes = Buffer.from(tx.encode());
 
       setBusy("Waiting for approval in Fireblocks…");
       pushLog(`Sent ${action} on ${lockupId} to Fireblocks for signing.`);
@@ -625,18 +626,14 @@ const FireblocksLockup: NextPageWithLayout = () => {
           method: "near_signTransaction",
           // A Buffer, not a Uint8Array, so it JSON-encodes as
           // { type: "Buffer", data: [...] }.
-          params: { transaction: Buffer.from(tx.encode()) },
+          params: { transaction: unsignedBytes },
         },
       });
-      const signedBytes = Buffer.from(toBytes(result));
-      const signed = SignedTransaction.decode(signedBytes);
-      // near-api-js 7 decodes a valid prefix and ignores trailing bytes;
-      // only broadcast a response that is exactly one signed transaction.
-      if (!Buffer.from(signed.encode()).equals(signedBytes)) {
-        throw new Error(
-          "Fireblocks returned an unexpected signed transaction; nothing was broadcast.",
-        );
-      }
+      // Only broadcast the transaction that was sent for signing.
+      const signed = decodeRequestedSignedTransaction(
+        toBytes(result),
+        unsignedBytes,
+      );
 
       setBusy("Broadcasting to NEAR…");
       pushLog("Signature received, broadcasting.");
