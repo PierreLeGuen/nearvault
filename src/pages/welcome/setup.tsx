@@ -13,8 +13,10 @@ import { cn } from "~/lib/utils";
 import { type NextPageWithLayout } from "../_app";
 
 export const SetupMultisigWallet: NextPageWithLayout = () => {
-  const [multisigWalletCreated, setMultisigWalletCreated] = useState(undefined);
-  const [teamCreated, setTeamCreated] = useState(undefined);
+  const [multisigWalletCreated, setMultisigWalletCreated] = useState<
+    string | undefined
+  >(undefined);
+  const [teamCreated, setTeamCreated] = useState<unknown>(undefined);
   const [step, setStep] = useState(0);
   const { data, status } = useSession();
   const loading = status === "loading";
@@ -70,7 +72,7 @@ export const SetupMultisigWallet: NextPageWithLayout = () => {
             onTeamCreated={setTeamCreated}
             defaultValues={{
               name: `My Awesome Team`,
-              members: [email],
+              members: [email!],
               wallets: [(multisigWalletCreated as string) || ""],
             }}
           />

@@ -74,7 +74,7 @@ const StartPage: NextPageWithLayout = ({
                 </Button>
               </div>
             ) : (
-              <SignInButtons providers={providers} />
+              <SignInButtons providers={providers!} />
             )}
           </CardContent>
         </Card>

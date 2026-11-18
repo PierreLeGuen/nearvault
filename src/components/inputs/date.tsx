@@ -38,7 +38,7 @@ export function DateField<
     <FormField
       {...props}
       render={({ field }) => (
-        <FormItem className="flex flex-grow flex-col">
+        <FormItem className="flex grow flex-col">
           <FormLabel>{props.label}</FormLabel>
           <Popover>
             <PopoverTrigger asChild>
@@ -64,7 +64,7 @@ export function DateField<
                 mode="single"
                 selected={field.value}
                 onSelect={field.onChange}
-                initialFocus
+                autoFocus
               />
             </PopoverContent>
           </Popover>

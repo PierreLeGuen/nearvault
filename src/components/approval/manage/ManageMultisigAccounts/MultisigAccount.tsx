@@ -14,7 +14,7 @@ import { SetNumberConfirmations } from "./SetNumberConfirmations";
 export const MultisigAccount = ({ accountId }: { accountId: string }) => {
   const query = useGetAccountKeys(accountId);
 
-  if (query.isLoading) {
+  if (query.isPending) {
     return (
       <div>
         <HeaderTitle level="h3" text={accountId} />
@@ -31,7 +31,7 @@ export const MultisigAccount = ({ accountId }: { accountId: string }) => {
           <AddKey accountId={accountId} />
           <SetNumberConfirmations
             accountId={accountId}
-            maxThreshold={query.data.keys.length}
+            maxThreshold={query.data!.keys.length}
           />
         </span>
       </div>
@@ -44,7 +44,7 @@ export const MultisigAccount = ({ accountId }: { accountId: string }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {query.data.keys.map((key) => (
+            {query.data!.keys.map((key) => (
               <Key
                 key={key.public_key}
                 publicKey={key.public_key}

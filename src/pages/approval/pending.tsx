@@ -47,7 +47,7 @@ const Pending: NextPageWithLayout = () => {
     }
   };
 
-  if (query.isLoading) {
+  if (query.isPending) {
     return (
       <ContentCentered className="px-12 py-10 lg:px-12">
         <HeaderTitle level="h1" text="Pending requests" />

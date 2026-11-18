@@ -12,6 +12,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   FormControl,
@@ -75,7 +76,7 @@ export function ReceiverFormField<
                   {isLoading && "Loading..."}
                   {!isLoading &&
                     (field.value
-                      ? currentReceiverFmt(receivers, field.value)
+                      ? currentReceiverFmt(receivers!, field.value)
                       : `${props.placeholder}`)}
                   <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -85,34 +86,36 @@ export function ReceiverFormField<
               <ScrollArea className="h-[550px]">
                 <Command>
                   <CommandInput placeholder="Search wallet..." />
-                  <CommandEmpty>No wallet found.</CommandEmpty>
-                  <CommandGroup>
-                    {receivers?.map((beneficiary) => (
-                      <CommandItem
-                        value={beneficiary.walletAddress}
-                        key={beneficiary.walletAddress}
-                        onSelect={() => {
-                          field.onChange({
-                            target: {
-                              value: beneficiary.walletAddress,
-                            },
-                          });
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            beneficiary.walletAddress === field.value
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                        <span className="truncate">
-                          {`${beneficiary.firstName} (${beneficiary.walletAddress})`}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandEmpty>No wallet found.</CommandEmpty>
+                    <CommandGroup>
+                      {receivers?.map((beneficiary) => (
+                        <CommandItem
+                          value={beneficiary.walletAddress}
+                          key={beneficiary.walletAddress}
+                          onSelect={() => {
+                            field.onChange({
+                              target: {
+                                value: beneficiary.walletAddress,
+                              },
+                            });
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              beneficiary.walletAddress === field.value
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">
+                            {`${beneficiary.firstName} (${beneficiary.walletAddress})`}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </ScrollArea>
             </PopoverContent>

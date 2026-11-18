@@ -48,7 +48,7 @@ export function TeamsDropdownMenu() {
     toast.success(`Team ${userTeamRel.team.name} left!`);
   };
 
-  if (teamsQuery.isLoading) return <Skeleton className="h-8 rounded-none" />;
+  if (teamsQuery.isPending) return <Skeleton className="h-8 rounded-none" />;
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: "/auth/signin" });
@@ -65,9 +65,9 @@ export function TeamsDropdownMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="justify-between rounded-none px-7">
-            {currentTeamQuery.isLoading
+            {currentTeamQuery.isPending
               ? "Loading..."
-              : currentTeamQuery.data.name}
+              : currentTeamQuery.data!.name}
             <ChevronDownIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

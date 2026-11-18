@@ -55,7 +55,7 @@ export const AddBeneficiaryDialog = () => {
         firstName: values.identifier.trim(),
         lastName: "",
         walletAddress: values.accountId.trim(),
-        teamId: currentTeamQuery.data.id,
+        teamId: currentTeamQuery.data!.id,
       });
       setSubmitMessage("Beneficiary created successfully!");
     } catch (error) {
@@ -120,7 +120,7 @@ export const AddBeneficiaryDialog = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={addBenefMut.isLoading}>
+            <Button type="submit" disabled={addBenefMut.isPending}>
               Create Beneficiary
             </Button>
             {submitMessage && <FormMessage>{submitMessage}</FormMessage>}

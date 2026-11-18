@@ -1,5 +1,5 @@
 import { Signer } from "near-api-js";
-import { type Signature, PublicKey } from "@near-js/crypto";
+import { type Signature, PublicKey } from "near-api-js/lib/utils/key_pair";
 import { LedgerClient } from "./LedgerClient";
 
 const randomPublicKey = "ed25519:EU3JT4N2ahWEzVPfcjEutG89ZDfX1vcqeYz9N1DDest6";

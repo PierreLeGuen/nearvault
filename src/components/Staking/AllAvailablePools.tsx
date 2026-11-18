@@ -39,7 +39,7 @@ const AllAvailablePools = ({
           placeholder="Search pools"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          className="rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
         />
       </div>
       <div className="mb-4 text-sm">
@@ -56,7 +56,7 @@ const AllAvailablePools = ({
         {filteredPools.map((pool) => (
           <div
             key={pool.id}
-            className="m-2 flex items-center justify-between rounded-md border bg-white p-4 shadow"
+            className="m-2 flex items-center justify-between rounded-md border bg-white p-4 shadow-sm"
           >
             <div>
               <a

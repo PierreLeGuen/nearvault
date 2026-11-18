@@ -261,7 +261,7 @@ const ManageLockup: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex flex-grow flex-col items-center gap-10 py-10">
+    <div className="flex grow flex-col items-center gap-10 py-10">
       <Card>
         <CardHeader>
           <CardTitle>Manage lockup</CardTitle>
@@ -294,7 +294,7 @@ const ManageLockup: NextPageWithLayout = () => {
               </form>
             </Form>
           </div>
-          <div className="prose pl-4 pt-4">
+          <div className="prose pt-4 pl-4">
             {accountError && <p className="text-red-500">{accountError}</p>}
             {lockupInformation && (
               <>
@@ -347,7 +347,7 @@ const ManageLockup: NextPageWithLayout = () => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/25" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -369,7 +369,7 @@ const ManageLockup: NextPageWithLayout = () => {
                 >
                   <Dialog.Title
                     as="h3"
-                    className="mb-3 text-lg font-medium leading-6 text-gray-900"
+                    className="mb-3 text-lg leading-6 font-medium text-gray-900"
                   >
                     Are you sure?
                   </Dialog.Title>
@@ -448,11 +448,11 @@ const ManageLockup: NextPageWithLayout = () => {
                     <input
                       type="submit"
                       value="Create termination request"
-                      className="inline-flex cursor-pointer justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                      className="inline-flex cursor-pointer justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                     />
                     <button
                       type="button"
-                      className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                       onClick={() => cancelSetIsOpen(false)}
                     >
                       Abort

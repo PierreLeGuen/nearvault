@@ -66,7 +66,7 @@ export function AddMemberDialog() {
               defaultValue=""
               disabled={false}
             />
-            <Button type="submit" disabled={addMemberMut.isLoading}>
+            <Button type="submit" disabled={addMemberMut.isPending}>
               <div className="inline-flex items-center">
                 <PaperPlaneIcon className="mr-2" />
                 Invite member

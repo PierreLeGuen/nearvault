@@ -3,7 +3,10 @@ import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
 import { toast } from "react-toastify";
-import { type WalletData } from "~/components/Staking/AllStaked";
+import {
+  type StakedPool,
+  type WalletData,
+} from "~/components/Staking/AllStaked";
 import { getSelectedPool } from "~/lib/client";
 import { initStakingContract } from "~/lib/staking/contract";
 import { type WalletPretty } from "~/pages/staking/stake";
@@ -26,25 +29,33 @@ export type Pool = {
 export function useIsPoolSelected(selectedWallet: WalletPretty | undefined) {
   const { newNearConnection } = usePersistingStore();
 
-  return useQuery(["isPoolSelected", selectedWallet], async () => {
-    if (!selectedWallet || !selectedWallet.isLockup) {
-      return "";
-    }
-    return await getSelectedPool(
-      "",
-      selectedWallet.walletDetails.walletAddress,
-      await newNearConnection(),
-    );
+  return useQuery({
+    queryKey: ["isPoolSelected", selectedWallet],
+
+    queryFn: async () => {
+      if (!selectedWallet || !selectedWallet.isLockup) {
+        return "";
+      }
+      return await getSelectedPool(
+        "",
+        selectedWallet.walletDetails.walletAddress,
+        await newNearConnection(),
+      );
+    },
   });
 }
 
 export function useListAllStakingPools() {
   const { getNearBlocksApi } = usePersistingStore();
 
-  return useQuery(["allAvailablePools"], async () => {
-    const res = await getNearBlocksApi().getStakingPools();
+  return useQuery({
+    queryKey: ["allAvailablePools"],
 
-    return res;
+    queryFn: async () => {
+      const res = await getNearBlocksApi().getStakingPools();
+
+      return res;
+    },
   });
 }
 
@@ -70,7 +81,7 @@ export function useListAllStakingPoolsWithDetails() {
       );
 
       // Parallelize calls to get_reward_fee_fraction
-      const poolPromises = data.map(async (pool) => {
+      const poolPromises = data!.map(async (pool) => {
         const contract = initStakingContract(await n.account(""), pool);
         const fees = await contract.get_reward_fee_fraction();
 
@@ -237,22 +248,17 @@ export function useGetStakingDetailsForWallets() {
   const { newNearConnection, getNearBlocksApi } = usePersistingStore();
   const listWallets = useTeamsWalletsWithLockups();
 
-  return useQuery<
-    {
-      walletData: WalletData[];
-      errors: { wallet: string; error: string; walletAddress: string }[];
-    },
-    Error
-  >(
-    ["allStakedPools", listWallets.data],
-    async (): Promise<{
+  return useQuery({
+    queryKey: ["allStakedPools", listWallets.data],
+
+    queryFn: async (): Promise<{
       walletData: WalletData[];
       errors: { wallet: string; error: string; walletAddress: string }[];
     }> => {
       const errors: { wallet: string; error: string; walletAddress: string }[] =
         [];
 
-      const promises = listWallets.data.map(async (wallet, index) => {
+      const promises = listWallets.data!.map(async (wallet, index) => {
         try {
           const data = await getNearBlocksApi().getStakingDeposits(
             wallet.walletDetails.walletAddress,
@@ -273,7 +279,7 @@ export function useGetStakingDetailsForWallets() {
           }
 
           const n = await newNearConnection();
-          const stakedPools = [];
+          const stakedPools: StakedPool[] = [];
 
           for (const pool of data) {
             try {
@@ -364,12 +370,12 @@ export function useGetStakingDetailsForWallets() {
 
       return { walletData, errors };
     },
-    {
-      enabled: !!listWallets.data,
-      // Don't retry on initial load to avoid rate limit cascades
-      retry: false,
-    },
-  );
+
+    enabled: !!listWallets.data,
+
+    // Don't retry on initial load to avoid rate limit cascades
+    retry: false,
+  });
 }
 
 export function useUnstakeTransaction() {

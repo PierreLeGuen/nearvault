@@ -91,17 +91,13 @@ export function UnstakeDialog(props: {
               </Button>
             </span>
             {unstakeTxn.isError && (
-              <div className="text-red-500">
-                {(unstakeTxn.error as Error).message}
-              </div>
+              <div className="text-red-500">{unstakeTxn.error.message}</div>
             )}
             {unstakeTxn.isSuccess && (
               <div className="text-green-500">Successfully sent request!</div>
             )}
             {unstakeAllTxn.isError && (
-              <div className="text-red-500">
-                {(unstakeAllTxn.error as Error).message}
-              </div>
+              <div className="text-red-500">{unstakeAllTxn.error.message}</div>
             )}
             {unstakeAllTxn.isSuccess && (
               <div className="text-green-500">Successfully sent request!</div>

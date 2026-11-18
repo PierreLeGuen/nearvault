@@ -78,7 +78,16 @@ const FormItem = React.forwardRef<
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+      <div
+        ref={ref}
+        className={cn(
+          // Same spacing as Tailwind v3 space-y-2 (margin-top on later siblings);
+          // v4 space-y puts margin-bottom on the label, which is inline.
+          "[&>:not([hidden])~:not([hidden])]:mt-2",
+          className,
+        )}
+        {...props}
+      />
     </FormItemContext.Provider>
   );
 });

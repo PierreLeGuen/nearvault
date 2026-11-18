@@ -159,7 +159,7 @@ export function useUpgradeContract() {
       );
       if (existingProposals.length > 0) {
         throw new Error(
-          `A deploy-contract proposal already exists on ${walletAddress} (request id: ${existingProposals[0]!.id}). Approve or delete it before creating a new one.`,
+          `A deploy-contract proposal already exists on ${walletAddress} (request id: ${existingProposals[0].id}). Approve or delete it before creating a new one.`,
         );
       }
 

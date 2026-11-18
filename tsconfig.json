@@ -12,22 +12,24 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
-    "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
+    "noUncheckedIndexedAccess": false,
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "src/*": [
+        "./src/*"
       ]
     },
-    "strict": false
+    "strict": false,
+    "strictNullChecks": true
   },
   "include": [
-    ".eslintrc.cjs",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",

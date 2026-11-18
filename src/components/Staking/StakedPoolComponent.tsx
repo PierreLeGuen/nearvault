@@ -30,7 +30,7 @@ const StakedPoolComponent = ({
     parseFloat(amountToUnstake) > parseFloat(maxAmount);
 
   const inputDivClasses =
-    "flex flex-row items-stretch overflow-hidden rounded-md shadow " +
+    "flex flex-row items-stretch overflow-hidden rounded-md shadow-sm " +
     (isAmountTooHigh ? "bg-red-200" : "bg-gray-200");
 
   const buttonClasses =
@@ -57,7 +57,7 @@ const StakedPoolComponent = ({
         </div>
         <div className={inputDivClasses}>
           <input
-            className="flex-grow rounded-l-md px-2 py-2 focus:outline-none"
+            className="grow rounded-l-md px-2 py-2 focus:outline-hidden"
             type="text"
             placeholder="Enter amount..."
             value={
@@ -72,9 +72,9 @@ const StakedPoolComponent = ({
             disabled={isAmountTooHigh}
             onClick={() => {
               void unstakeFn(
-                wallet.wallet.isLockup
+                (wallet.wallet.isLockup
                   ? wallet.wallet.ownerAccountId
-                  : wallet.wallet.walletDetails.walletAddress,
+                  : wallet.wallet.walletDetails.walletAddress)!,
                 isLockup,
                 pool.validator_id,
                 amountToUnstake,

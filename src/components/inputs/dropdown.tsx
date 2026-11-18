@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   FormControl,
@@ -74,7 +75,7 @@ export function DropdownFormField<
                   {isLoading && "Loading..."}
                   {!isLoading &&
                     (field.value
-                      ? getCurrentItem(field.value, items).name
+                      ? getCurrentItem(field.value, items!)!.name
                       : `${props.placeholder}`)}
                   <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -84,32 +85,34 @@ export function DropdownFormField<
               <ScrollArea className="h-[550px]">
                 <Command>
                   <CommandInput placeholder="Search..." />
-                  <CommandEmpty>No wallet found.</CommandEmpty>
-                  <CommandGroup>
-                    {items?.map((item) => (
-                      <CommandItem
-                        value={item.name}
-                        key={item.id}
-                        onSelect={() => {
-                          field.onChange({
-                            target: {
-                              value: item.id,
-                            },
-                          });
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            item.id === field.value
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                        <span className="truncate">{item.name}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandEmpty>No wallet found.</CommandEmpty>
+                    <CommandGroup>
+                      {items?.map((item) => (
+                        <CommandItem
+                          value={item.name}
+                          key={item.id}
+                          onSelect={() => {
+                            field.onChange({
+                              target: {
+                                value: item.id,
+                              },
+                            });
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              item.id === field.value
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">{item.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </ScrollArea>
             </PopoverContent>

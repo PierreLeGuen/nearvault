@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -76,7 +76,7 @@ export const RefYourDeposits = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="funding"
           control={form.control}
@@ -89,7 +89,7 @@ export const RefYourDeposits = () => {
         />
 
         <DropdownFormField
-          isLoading={poolsQuery.isLoading}
+          isLoading={poolsQuery.isPending}
           items={poolsQuery.data?.map((pool) => ({
             id: pool.id,
             name: getFormattedPoolBalance(pool),
@@ -114,7 +114,7 @@ export const RefYourDeposits = () => {
           name="sharesToWithdraw"
           control={form.control}
           label="Amount of shares to withdraw"
-          maxIndivisible={BigNumber(mySharesQuery.data).toFixed(0)}
+          maxIndivisible={BigNumber(mySharesQuery.data!).toFixed(0)}
           description="Enter the amount of shares you want to withdraw."
           defaultValue="0"
         />

@@ -54,10 +54,14 @@ export interface CreateLockupProps {
 
 const createLockupForm = z.object({
   fromWallet: z.string({
-    required_error: "Please select a wallet.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a wallet." : undefined,
   }),
   toWallet: z.string({
-    required_error: "Please select a wallet.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a wallet." : undefined,
   }),
   amount: z.number().gt(0),
   startDate: z.date(),
@@ -94,7 +98,7 @@ const CreateLockup: NextPageWithLayout = () => {
   const listAddressBookQuery = useListAddressBook();
 
   function onSubmitGetLockup(values: z.infer<typeof createLockupForm>) {
-    const fromWallet = walletsWithLockupQuery.data.find(
+    const fromWallet = walletsWithLockupQuery.data!.find(
       (w) => w.walletDetails.walletAddress == values.fromWallet,
     );
     if (!fromWallet) {
@@ -104,7 +108,7 @@ const CreateLockup: NextPageWithLayout = () => {
     createLockup.mutate({
       fundingAccountId: values.fromWallet,
       ownerId: values.toWallet,
-      yoctoDeposit: parseNearAmount(values.amount.toString()),
+      yoctoDeposit: parseNearAmount(values.amount.toString())!,
       start: values.startDate,
       end: values.endDate,
       cliff: values.cliffDate,
@@ -156,7 +160,7 @@ const CreateLockup: NextPageWithLayout = () => {
   ]);
 
   return (
-    <div className="flex flex-grow flex-col p-12">
+    <div className="flex grow flex-col p-12">
       <Card>
         <CardHeader>
           <CardTitle>Create Lockup</CardTitle>
@@ -170,7 +174,7 @@ const CreateLockup: NextPageWithLayout = () => {
                 className="space-y-8"
               >
                 <SenderFormField
-                  isLoading={walletsWithLockupQuery.isLoading}
+                  isLoading={walletsWithLockupQuery.isPending}
                   wallets={walletsWithLockupQuery.data}
                   name="fromWallet"
                   control={form.control}
@@ -182,7 +186,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   label="Sender Wallet"
                 />
                 <ReceiverFormField
-                  isLoading={listAddressBookQuery.isLoading}
+                  isLoading={listAddressBookQuery.isPending}
                   receivers={listAddressBookQuery.data}
                   name="toWallet"
                   control={form.control}
@@ -193,7 +197,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   placeholder="Select a wallet"
                   label="Receiver Account"
                 />
-                <div className="flex flex-grow flex-row">
+                <div className="flex grow flex-row">
                   <FormItem className="flex flex-col">
                     <FormLabel>Token</FormLabel>
                     <Button
@@ -213,7 +217,7 @@ const CreateLockup: NextPageWithLayout = () => {
                     control={form.control}
                     name="amount"
                     render={({ field }) => (
-                      <FormItem className="flex flex-grow flex-col">
+                      <FormItem className="flex grow flex-col">
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
                           <Input
@@ -233,7 +237,7 @@ const CreateLockup: NextPageWithLayout = () => {
                         </FormControl>
                         <FormDescription>
                           Balance:{" "}
-                          {nearBalanceQuery.isLoading
+                          {nearBalanceQuery.isPending
                             ? "Loading..."
                             : nearBalanceQuery.data}
                         </FormDescription>
@@ -246,7 +250,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   control={form.control}
                   name="cancelable"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
                       <div className="space-y-0.5">
                         <FormLabel>Allow Cancellation</FormLabel>
                         <FormDescription>
@@ -297,7 +301,7 @@ const CreateLockup: NextPageWithLayout = () => {
                   control={form.control}
                   name="allowStaking"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
                       <div className="space-y-0.5">
                         <FormLabel>Allow Staking</FormLabel>
                         <FormDescription>

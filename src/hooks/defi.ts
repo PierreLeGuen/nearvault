@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import BN from "bn.js";
 import { transactions } from "near-api-js";
 import { parseNearAmount } from "near-api-js/lib/utils/format";
@@ -38,16 +38,24 @@ import { useStorageDeposit } from "./transfers";
 export const EXCHANGES = ["REF"] as const;
 
 export const useSupportedExchange = () => {
-  return useQuery(["supportedExchange"], () => {
-    return [EXCHANGES[0]];
+  return useQuery({
+    queryKey: ["supportedExchange"],
+
+    queryFn: () => {
+      return [EXCHANGES[0]];
+    },
   });
 };
 
 export const useGetSwapOpportunities = (token: Token, exchange: string) => {
-  return useQuery(["swapIn", token, exchange], () => {
-    if (exchange !== "REF") {
-      throw new Error("Exchange not supported");
-    }
+  return useQuery({
+    queryKey: ["swapIn", token, exchange],
+
+    queryFn: () => {
+      if (exchange !== "REF") {
+        throw new Error("Exchange not supported");
+      }
+    },
   });
 };
 
@@ -70,9 +78,10 @@ export const useGetRefLiquidityPools = (
   poolKinds?: readonly RefPoolKind[],
 ) => {
   const { getProvider } = usePersistingStore();
-  return useQuery(
-    ["liquidityPools", includeEmptyPools, poolKinds ?? "all"],
-    async () => {
+  return useQuery({
+    queryKey: ["liquidityPools", includeEmptyPools, poolKinds ?? "all"],
+
+    queryFn: async () => {
       const pools = await fetchJson<LiquidityPool[]>(
         "https://api.ref.finance/list-pools",
       );
@@ -103,7 +112,9 @@ export const useGetRefLiquidityPools = (
         .map((pool) => {
           const amounts = pool.amounts.map((amount, i) => {
             const accId = pool.token_account_ids[i];
-            const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+            const ftMetadata = ftMetadatas.find(
+              (ft) => ft!.accountId === accId,
+            );
             if (!ftMetadata) {
               return "0";
             }
@@ -117,76 +128,84 @@ export const useGetRefLiquidityPools = (
           return Number(a.id) - Number(b.id);
         });
     },
-  );
+  });
 };
 export const useGetPoolsForToken = (tokenId: string) => {
   const { getProvider } = usePersistingStore();
-  return useQuery(["poolsForToken", tokenId], async () => {
-    const pools = await fetchJson<LiquidityPool[]>(
-      "https://api.ref.finance/list-pools",
-    );
-    const tokenAccountIds = [
-      ...new Set(
-        pools.flatMap((pool) => {
-          return pool.token_account_ids;
-        }),
-      ),
-    ];
-    const ftMetadatas = await getFtMetadataForAccounts(
-      tokenAccountIds,
-      getProvider(),
-    );
+  return useQuery({
+    queryKey: ["poolsForToken", tokenId],
 
-    const accountIdToSymbol: Record<string, string> = {};
-    ftMetadatas.forEach((ftMetadata) => {
-      accountIdToSymbol[ftMetadata.accountId] = ftMetadata.symbol;
-    });
+    queryFn: async () => {
+      const pools = await fetchJson<LiquidityPool[]>(
+        "https://api.ref.finance/list-pools",
+      );
+      const tokenAccountIds = [
+        ...new Set(
+          pools.flatMap((pool) => {
+            return pool.token_account_ids;
+          }),
+        ),
+      ];
+      const ftMetadatas = await getFtMetadataForAccounts(
+        tokenAccountIds,
+        getProvider(),
+      );
 
-    const filteredPools = pools
-      .filter((pool) => {
-        return pool.token_account_ids.includes(tokenId);
-      })
-      .map((pool) => {
-        const amounts = pool.amounts.map((amount, i) => {
-          const accId = pool.token_account_ids[i];
-          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
-          if (!ftMetadata) {
-            return "0";
-          }
-          const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
-          return formattedAmount.toString();
-        });
-        pool.amounts = amounts;
-        pool.token_account_ids = pool.token_account_ids.filter(
-          (id) => id !== tokenId,
-        );
-        pool.token_symbols = pool.token_symbols.filter(
-          (symbol) => symbol !== tokenId,
-        );
-        return pool;
-      })
-      .sort((a, b) => {
-        return Number(a.id) - Number(b.id);
+      const accountIdToSymbol: Record<string, string> = {};
+      ftMetadatas.forEach((ftMetadata) => {
+        accountIdToSymbol[ftMetadata!.accountId] = ftMetadata!.symbol;
       });
 
-    return {
-      pools: filteredPools,
-      accountIdToSymbol,
-    };
+      const filteredPools = pools
+        .filter((pool) => {
+          return pool.token_account_ids.includes(tokenId);
+        })
+        .map((pool) => {
+          const amounts = pool.amounts.map((amount, i) => {
+            const accId = pool.token_account_ids[i];
+            const ftMetadata = ftMetadatas.find(
+              (ft) => ft!.accountId === accId,
+            );
+            if (!ftMetadata) {
+              return "0";
+            }
+            const formattedAmount = Number(amount) / 10 ** ftMetadata.decimals;
+            return formattedAmount.toString();
+          });
+          pool.amounts = amounts;
+          pool.token_account_ids = pool.token_account_ids.filter(
+            (id) => id !== tokenId,
+          );
+          pool.token_symbols = pool.token_symbols.filter(
+            (symbol) => symbol !== tokenId,
+          );
+          return pool;
+        })
+        .sort((a, b) => {
+          return Number(a.id) - Number(b.id);
+        });
+
+      return {
+        pools: filteredPools,
+        accountIdToSymbol,
+      };
+    },
   });
 };
 
 export const useGetLiquidityPoolById = (poolId?: string) => {
-  return useQuery(
-    ["liquidityPool", poolId],
-    async () => {
+  return useQuery({
+    queryKey: ["liquidityPool", poolId],
+
+    queryFn: async () => {
       const poolDetails = await fetchJson<LiquidityPool[]>(
         "https://api.ref.finance/list-pools-by-ids?ids=" + poolId,
       );
       return poolDetails[0];
     },
-    { enabled: !!poolId },
-  );
+
+    enabled: !!poolId,
+  });
 };
 
 type TokenInfo = {
@@ -198,11 +217,15 @@ type TokenInfo = {
 type Tokens = Record<string, TokenInfo>;
 
 export const useGetTokenPrices = () => {
-  return useQuery(["tokenPrices"], async () => {
-    const res = await fetchJson<Tokens>(
-      "https://api.ref.finance/list-token-price",
-    );
-    return res;
+  return useQuery({
+    queryKey: ["tokenPrices"],
+
+    queryFn: async () => {
+      const res = await fetchJson<Tokens>(
+        "https://api.ref.finance/list-token-price",
+      );
+      return res;
+    },
   });
 };
 
@@ -306,7 +329,7 @@ export const useDepositToRefLiquidityPool = () => {
         "get_deposits",
         { account_id: params.fundingAccId },
         provider,
-      ).catch(() => ({}) as Record<string, string>);
+      ).catch(() => ({}));
 
       const transfers = params.tokens.map((token, i) => {
         const wanted = BigInt(amounts[i]);
@@ -327,7 +350,7 @@ export const useDepositToRefLiquidityPool = () => {
               account_id: params.fundingAccId,
               registration_only: false,
             },
-            parseNearAmount("0.125"),
+            parseNearAmount("0.125")!,
             (50 * TGas).toString(),
           ),
         ]),
@@ -399,7 +422,11 @@ export const useDepositToRefLiquidityPool = () => {
       const addLiquidityRequest = transactions.functionCall(
         "add_request",
         stableLike
-          ? buildRefAddStableLiquidityRequest({ poolId, amounts, minShares })
+          ? buildRefAddStableLiquidityRequest({
+              poolId,
+              amounts,
+              minShares: minShares!,
+            })
           : buildRefAddLiquidityRequest({ poolId, amounts }),
         new BN(200 * TGas),
         new BN("0"),
@@ -439,9 +466,10 @@ export interface LiquidityPoolRef {
 
 export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
   const { getProvider } = usePersistingStore();
-  return useQuery(
-    ["liquidityPoolsForAccount", accountId],
-    async () => {
+  return useQuery({
+    queryKey: ["liquidityPoolsForAccount", accountId],
+
+    queryFn: async () => {
       const endpoint = "https://api.ref.finance/liquidity-pools/" + accountId;
       const pools = await fetchJson<LiquidityPoolRef[]>(endpoint);
       const ftMetadatas = await getFtMetadataForAccounts(
@@ -451,7 +479,7 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
       return pools.map((pool) => {
         const amounts = pool.amounts.map((amount, i) => {
           const accId = pool.token_account_ids[i];
-          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          const ftMetadata = ftMetadatas.find((ft) => ft!.accountId === accId);
           if (!ftMetadata) {
             return "0";
           }
@@ -459,14 +487,14 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
           return formattedAmount.toString();
         });
         const decimals = pool.token_account_ids.map((accId) => {
-          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          const ftMetadata = ftMetadatas.find((ft) => ft!.accountId === accId);
           if (!ftMetadata) {
             return 0;
           }
           return ftMetadata.decimals;
         });
         const symbols = pool.token_account_ids.map((accId) => {
-          const ftMetadata = ftMetadatas.find((ft) => ft.accountId === accId);
+          const ftMetadata = ftMetadatas.find((ft) => ft!.accountId === accId);
           if (!ftMetadata) {
             return "";
           }
@@ -479,27 +507,30 @@ export const useGetRefLiquidityPoolsForAccount = (accountId?: string) => {
         return pool;
       });
     },
-    { enabled: !!accountId },
-  );
+
+    enabled: !!accountId,
+  });
 };
 
 export const useGetRefPoolShares = (poolId?: string, accountId?: string) => {
   const { getProvider } = usePersistingStore();
-  return useQuery(
-    ["poolShares", poolId, accountId],
-    async () => {
+  return useQuery({
+    queryKey: ["poolShares", poolId, accountId],
+
+    queryFn: async () => {
       return viewCall<string>(
         "v2.ref-finance.near",
         "get_pool_shares",
         {
-          pool_id: parseInt(poolId),
+          pool_id: parseInt(poolId!),
           account_id: accountId,
         },
         getProvider(),
       );
     },
-    { enabled: !!poolId && !!accountId },
-  );
+
+    enabled: !!poolId && !!accountId,
+  });
 };
 
 export const useGetRefSharesForAmount = (
@@ -510,9 +541,10 @@ export const useGetRefSharesForAmount = (
   const shares = useGetRefPoolShares(poolId, fundingAccId);
   const poolsQuery = useGetRefLiquidityPoolsForAccount(fundingAccId);
 
-  return useQuery(
-    ["sharesForAmount", amounts, poolId, fundingAccId],
-    () => {
+  return useQuery({
+    queryKey: ["sharesForAmount", amounts, poolId, fundingAccId],
+
+    queryFn: () => {
       const shares: string[] = [];
       const pool = poolsQuery.data?.find((p) => p.id === poolId);
       if (!pool) {
@@ -539,8 +571,9 @@ export const useGetRefSharesForAmount = (
 
       return shares;
     },
-    { enabled: !!shares.data },
-  );
+
+    enabled: !!shares.data,
+  });
 };
 
 export const withdrawRef = z.object({
@@ -734,7 +767,7 @@ export const useSupplyToBurrow = () => {
               account_id: params.funding,
               registration_only: false,
             },
-            parseNearAmount("0.25"),
+            parseNearAmount("0.25")!,
             (50 * TGas).toString(),
           ),
         ]),
@@ -938,9 +971,10 @@ type BurrowAccountInfo = {
 export const useGetBurrowSuppliedTokens = (accountId?: string) => {
   const { getProvider } = usePersistingStore();
 
-  return useQuery(
-    ["burrowHoldings", accountId],
-    async () => {
+  return useQuery({
+    queryKey: ["burrowHoldings", accountId],
+
+    queryFn: async () => {
       if (!accountId) {
         throw new Error("Account ID is required");
       }
@@ -983,9 +1017,9 @@ export const useGetBurrowSuppliedTokens = (accountId?: string) => {
         // const c = b.multipliedBy(0.999);
         token.balance = b.toFixed();
         const ftMetadata = ftMetadatas.find(
-          (ft) => ft.accountId === token.token_id,
+          (ft) => ft!.accountId === token.token_id,
         );
-        const config = configs.find((c) => c.token_id === token.token_id);
+        const config = configs.find((c) => c!.token_id === token.token_id);
         console.log(token, ftMetadata, config);
 
         const r = {
@@ -1003,8 +1037,9 @@ export const useGetBurrowSuppliedTokens = (accountId?: string) => {
         ftMetadatas: ftMetadatas,
       };
     },
-    { enabled: !!accountId },
-  );
+
+    enabled: !!accountId,
+  });
 };
 
 export const burrowClaimRewardsSchema = z.object({
@@ -1114,26 +1149,27 @@ export const useGetTokenStorageBalance = (
 ) => {
   const { getProvider } = usePersistingStore();
 
-  return useQuery(
-    ["tokenStorageBalance", tokenId, accountId],
-    async () => {
+  return useQuery({
+    queryKey: ["tokenStorageBalance", tokenId, accountId],
+
+    queryFn: async () => {
       if (!tokenId || !accountId) return null;
 
       return getStorageBalance(tokenId, accountId, getProvider());
     },
-    {
-      enabled: !!tokenId && !!accountId,
-      staleTime: 30 * 1000,
-    },
-  );
+
+    enabled: !!tokenId && !!accountId,
+    staleTime: 30 * 1000,
+  });
 };
 
 export const useGetRefDeposits = (accountId?: string) => {
   const { getProvider } = usePersistingStore();
 
-  return useQuery<Record<string, RefDeposit> | null>(
-    ["refDeposits", accountId],
-    async () => {
+  return useQuery<Record<string, RefDeposit> | null>({
+    queryKey: ["refDeposits", accountId],
+
+    queryFn: async () => {
       if (!accountId) return null;
 
       const deposits = await viewCall<Deposits>(
@@ -1157,7 +1193,7 @@ export const useGetRefDeposits = (accountId?: string) => {
 
       return Object.fromEntries(
         nonZeroDeposits.map(([tokenId, amount]) => {
-          const metadata = ftMetadatas.find((ft) => ft.accountId === tokenId);
+          const metadata = ftMetadatas.find((ft) => ft!.accountId === tokenId);
           const formattedAmount = metadata
             ? new BigNumber(amount)
                 .div(new BigNumber(10).pow(metadata.decimals))
@@ -1168,11 +1204,10 @@ export const useGetRefDeposits = (accountId?: string) => {
         }),
       );
     },
-    {
-      enabled: !!accountId,
-      staleTime: 30 * 1000,
-    },
-  );
+
+    enabled: !!accountId,
+    staleTime: 30 * 1000,
+  });
 };
 
 export const useRefWithdraw = () => {

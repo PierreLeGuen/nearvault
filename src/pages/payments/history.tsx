@@ -15,7 +15,8 @@ import { useGetTeamsTransactionsHistory } from "~/hooks/teams";
 import { type NextPageWithLayout } from "../_app";
 
 const History: NextPageWithLayout = () => {
-  const { data: transactions, isLoading } = useGetTeamsTransactionsHistory();
+  const { data: transactions, isPending: isLoading } =
+    useGetTeamsTransactionsHistory();
 
   if (isLoading) {
     return (

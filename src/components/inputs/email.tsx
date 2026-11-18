@@ -22,7 +22,7 @@ export function EmailInput<
     <FormField
       {...props}
       render={({ field }) => (
-        <FormItem className="space-y-2">
+        <FormItem>
           <FormLabel className="capitalize">
             {props.label ?? field.name}
             {props.rules?.required && " *"}

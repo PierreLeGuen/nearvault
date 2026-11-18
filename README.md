@@ -39,7 +39,7 @@ nearvault is an open-source treasury app for teams and companies operating on [N
 
 ## Getting started
 
-Prerequisites: Node.js 22+, npm, and a running PostgreSQL instance.
+Prerequisites: Node.js 26 (LTS), npm 11+, and a running PostgreSQL instance.
 
 ```bash
 git clone https://github.com/PierreLeGuen/nearvault.git
@@ -59,6 +59,8 @@ The app runs at http://localhost:3000. Required environment variables (see `.env
 - `NEXT_PUBLIC_NETWORK_ID`: `mainnet` or `testnet`.
 
 To build without a fully populated environment, set `SKIP_ENV_VALIDATION=1`.
+
+Checks: `npm run lint` (ESLint), `npm run typecheck` (TypeScript) and `npm run build`.
 
 Built with the [T3 stack](https://create.t3.gg/): Next.js, tRPC, Prisma, NextAuth, and Tailwind CSS.
 

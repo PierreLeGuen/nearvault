@@ -20,7 +20,7 @@ const Home: NextPageWithLayout = () => {
   }
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-12 w-full border-b border-border/40 bg-foreground/95 px-4 pl-5 backdrop-blur supports-[backdrop-filter]:bg-foreground">
+      <header className="sticky top-0 z-50 flex h-12 w-full border-b border-border/40 bg-foreground/95 px-4 pl-5 backdrop-blur-sm supports-backdrop-filter:bg-foreground">
         <div className="mr-4 flex">
           <Link
             className="mr-6 hidden items-center space-x-2 text-background md:flex "
@@ -57,7 +57,7 @@ const Home: NextPageWithLayout = () => {
               rel="noreferrer"
               href="https://github.com/PierreLeGuen/near-finance"
             >
-              <div className="inline-flex h-9 w-9 items-center justify-center whitespace-nowrap rounded-md px-0 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+              <div className="inline-flex h-9 w-9 items-center justify-center whitespace-nowrap rounded-md px-0 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
                 <svg viewBox="0 0 438.549 438.549" className="h-4 w-4">
                   <path
                     fill="currentColor"
@@ -72,7 +72,7 @@ const Home: NextPageWithLayout = () => {
               rel="noreferrer"
               href="https://twitter.com/shadcn"
             >
-              <div className="inline-flex h-9 w-9 items-center justify-center whitespace-nowrap rounded-md px-0 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+              <div className="inline-flex h-9 w-9 items-center justify-center whitespace-nowrap rounded-md px-0 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
                 <svg
                   className="h-3 w-3 fill-current"
                   height="23"
@@ -103,13 +103,13 @@ const Home: NextPageWithLayout = () => {
 
             <div className="flex w-full items-center justify-center space-x-4 py-4 md:pb-10">
               <Link
-                className="text-background-foreground inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[6px] bg-background px-4 py-2 text-sm font-medium shadow transition-colors hover:bg-background/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                className="text-background-foreground inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[6px] bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-background/90 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 href={"/lockup/manage"}
               >
                 Get Started
               </Link>
               <a
-                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[6px] border border-input bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition-colors hover:bg-accent-foreground hover:text-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[6px] border border-input bg-foreground px-4 py-2 text-sm font-medium text-background shadow-xs transition-colors hover:bg-accent-foreground hover:text-background focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 href="https://docs.nearvault.org/"
               >
                 Docs

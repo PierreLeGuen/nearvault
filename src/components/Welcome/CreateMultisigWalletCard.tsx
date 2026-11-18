@@ -123,7 +123,7 @@ export function CreateMultisigWalletCard(params: Params) {
               </div>
             ) : (
               <SenderFormField
-                isLoading={multisigWalletsQuery.isLoading}
+                isLoading={multisigWalletsQuery.isPending}
                 wallets={multisigWalletsQuery.data?.filter((w) => !w.isLockup)}
                 name="fundingAccountId"
                 control={form.control}

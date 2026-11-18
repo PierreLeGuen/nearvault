@@ -9,6 +9,7 @@ import { createTRPCNext } from "@trpc/next";
 import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
 
+import { queryClient } from "~/lib/query-client";
 import { type AppRouter } from "~/server/api/root";
 
 const getBaseUrl = () => {
@@ -21,13 +22,8 @@ const getBaseUrl = () => {
 export const api = createTRPCNext<AppRouter>({
   config() {
     return {
-      /**
-       * Transformer used for data de-serialization from the server.
-       *
-       * @see https://trpc.io/docs/data-transformers
-       */
-      transformer: superjson,
-
+      // Share the app's QueryClient (and its defaults) with tRPC hooks.
+      queryClient,
       /**
        * Links used to determine request flow from client to server.
        *
@@ -41,6 +37,12 @@ export const api = createTRPCNext<AppRouter>({
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          /**
+           * Transformer used for data de-serialization from the server.
+           *
+           * @see https://trpc.io/docs/data-transformers
+           */
+          transformer: superjson,
         }),
       ],
     };
@@ -51,6 +53,7 @@ export const api = createTRPCNext<AppRouter>({
    * @see https://trpc.io/docs/nextjs#ssr-boolean-default-false
    */
   ssr: false,
+  transformer: superjson,
 });
 
 /**

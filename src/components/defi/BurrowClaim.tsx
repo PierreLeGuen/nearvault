@@ -20,7 +20,7 @@ const BurrowClaim = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="accountId"
           control={form.control}

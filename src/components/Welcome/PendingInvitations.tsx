@@ -29,10 +29,10 @@ export const PendingInvitations = ({
       status: status,
     });
 
-    callback(invitation, status);
+    callback!(invitation, status);
   };
 
-  if (invitationsQuery.isLoading) {
+  if (invitationsQuery.isPending) {
     return <div>Loading...</div>;
   }
 

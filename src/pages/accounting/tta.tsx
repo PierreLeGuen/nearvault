@@ -25,7 +25,7 @@ const formSchema = z.object({
       .split(/[\n,]+/)
       .map((id) => id.trim())
       .filter(Boolean);
-    const errors = [];
+    const errors: string[] = [];
     for (const walletId of wallets) {
       try {
         z.string().parse(walletId);
@@ -62,7 +62,7 @@ const Tta: NextPageWithLayout = () => {
   };
 
   return (
-    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+    <div className="flex grow flex-col items-center gap-10 py-10 ">
       <Card className="max-w-[600px]">
         <CardHeader>
           <CardTitle>Reporting</CardTitle>
@@ -108,13 +108,11 @@ const Tta: NextPageWithLayout = () => {
                 description="Note: Reports with balances may take significantly longer to generate."
                 rules={{ required: false }}
               />
-              <Button type="submit" disabled={mutation.isLoading}>
+              <Button type="submit" disabled={mutation.isPending}>
                 Submit
               </Button>
               {mutation.error && (
-                <div className="text-red-500">
-                  {(mutation.error as Error).message}
-                </div>
+                <div className="text-red-500">{mutation.error.message}</div>
               )}
               {mutation.isSuccess && (
                 <div className="text-green-500">

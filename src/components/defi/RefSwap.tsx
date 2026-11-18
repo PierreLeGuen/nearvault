@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
-import BigNumber from "bignumber.js";
+import BigNumber from "~/lib/bignumber";
 import { useEffect } from "react";
 import { z } from "zod";
 import { SenderFormField } from "~/components/inputs/sender";
@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   Form,
@@ -77,7 +78,7 @@ export const getUserBalanceForPool = (
       if (token) {
         tokens.push(token);
       } else {
-        tokens.push(undefined);
+        tokens.push(undefined as unknown as Token);
       }
     }
   }
@@ -189,7 +190,7 @@ const RefSwap = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <SenderFormField
-          isLoading={walletsQuery.isLoading}
+          isLoading={walletsQuery.isPending}
           wallets={walletsQuery.data?.filter((w) => !w.isLockup)}
           name="funding"
           control={form.control}
@@ -201,7 +202,7 @@ const RefSwap = () => {
           label="Sender"
         />
 
-        <div className="flex flex-grow flex-row">
+        <div className="flex grow flex-row">
           <FormField
             control={form.control}
             name="tokenOutId"
@@ -218,14 +219,14 @@ const RefSwap = () => {
                           "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
                           !field.value && "text-muted-foreground",
                         )}
-                        disabled={tokensQuery.isLoading}
+                        disabled={tokensQuery.isPending}
                       >
-                        {tokensQuery.isLoading && "Loading..."}
-                        {!tokensQuery.isLoading &&
+                        {tokensQuery.isPending && "Loading..."}
+                        {!tokensQuery.isPending &&
                           (field.value
                             ? tokensQuery.data?.find(
-                              (token) => token.account_id === field.value,
-                            )?.symbol
+                                (token) => token.account_id === field.value,
+                              )?.symbol
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -234,30 +235,32 @@ const RefSwap = () => {
                   <PopoverContent className="w-[350px] p-0">
                     <Command>
                       <CommandInput placeholder="Search token..." />
-                      <CommandEmpty>No token found.</CommandEmpty>
-                      <CommandGroup>
-                        {tokensQuery.isLoading && "Loading..."}
-                        {!tokensQuery.isLoading &&
-                          tokensQuery.data?.map((token) => (
-                            <CommandItem
-                              value={token.account_id}
-                              key={token.account_id}
-                              onSelect={() => {
-                                form.setValue("tokenOutId", token.account_id);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  token.account_id === field.value
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                              {`${token.symbol} (${getFormattedAmount(token)})`}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
+                      <CommandList>
+                        <CommandEmpty>No token found.</CommandEmpty>
+                        <CommandGroup>
+                          {tokensQuery.isPending && "Loading..."}
+                          {!tokensQuery.isPending &&
+                            tokensQuery.data?.map((token) => (
+                              <CommandItem
+                                value={token.account_id}
+                                key={token.account_id}
+                                onSelect={() => {
+                                  form.setValue("tokenOutId", token.account_id);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    token.account_id === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                                {`${token.symbol} (${getFormattedAmount(token)})`}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>
@@ -269,13 +272,13 @@ const RefSwap = () => {
             control={form.control}
             name="userAmountOut"
             render={({ field }) => (
-              <FormItem className="flex flex-grow flex-col">
+              <FormItem className="flex grow flex-col">
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="0"
                     type="number"
-                    className="flex rounded-l-none border "
+                    className="flex rounded-l-none border"
                     value={field.value}
                     onChange={(e) => {
                       try {
@@ -293,7 +296,7 @@ const RefSwap = () => {
         </div>
 
         {/* In amount */}
-        <div className="flex flex-grow flex-row">
+        <div className="flex grow flex-row">
           <FormField
             control={form.control}
             name="tokenInId"
@@ -310,14 +313,14 @@ const RefSwap = () => {
                           "br w-[100px] max-w-[100px] justify-between rounded-r-none border-r-0",
                           !field.value && "text-muted-foreground",
                         )}
-                        disabled={poolsForTokenQuery.isLoading}
+                        disabled={poolsForTokenQuery.isPending}
                       >
-                        {poolsForTokenQuery.isLoading && "Loading..."}
-                        {!poolsForTokenQuery.isLoading &&
+                        {poolsForTokenQuery.isPending && "Loading..."}
+                        {!poolsForTokenQuery.isPending &&
                           (field.value
                             ? poolsForTokenQuery.data?.accountIdToSymbol[
-                            field.value
-                            ]
+                                field.value
+                              ]
                             : "Select token")}
                         <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -326,40 +329,43 @@ const RefSwap = () => {
                   <PopoverContent className="w-[350px] p-0">
                     <Command>
                       <CommandInput placeholder="Search token..." />
-                      <ScrollArea className="h-[300px]">
-                        <CommandEmpty>No token found.</CommandEmpty>
-                        <CommandGroup>
-                          {poolsForTokenQuery.isLoading && "Loading..."}
-                          {!poolsForTokenQuery.isLoading &&
-                            poolsForTokenQuery.data?.pools.map((pool) => {
-                              const tokenAccIds = pool.token_account_ids.filter(
-                                (tokenId) =>
-                                  tokenId !== form.watch("tokenOutId"),
-                              );
-                              return tokenAccIds.map((tokenAccInId) => (
-                                <CommandItem
-                                  value={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
-                                  key={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
-                                  onSelect={() => {
-                                    form.setValue("tokenInId", tokenAccInId);
-                                    form.setValue("poolId", pool.id);
-                                  }}
-                                >
-                                  <CheckIcon
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      tokenAccInId === field.value &&
-                                        pool.id === form.watch("poolId")
-                                        ? "opacity-100"
-                                        : "opacity-0",
-                                    )}
-                                  />
-                                  {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]} (Pool: ${pool.id})`}
-                                </CommandItem>
-                              ));
-                            })}
-                        </CommandGroup>
-                      </ScrollArea>
+                      <CommandList>
+                        <ScrollArea className="h-[300px]">
+                          <CommandEmpty>No token found.</CommandEmpty>
+                          <CommandGroup>
+                            {poolsForTokenQuery.isPending && "Loading..."}
+                            {!poolsForTokenQuery.isPending &&
+                              poolsForTokenQuery.data?.pools.map((pool) => {
+                                const tokenAccIds =
+                                  pool.token_account_ids.filter(
+                                    (tokenId) =>
+                                      tokenId !== form.watch("tokenOutId"),
+                                  );
+                                return tokenAccIds.map((tokenAccInId) => (
+                                  <CommandItem
+                                    value={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
+                                    key={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
+                                    onSelect={() => {
+                                      form.setValue("tokenInId", tokenAccInId);
+                                      form.setValue("poolId", pool.id);
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        tokenAccInId === field.value &&
+                                          pool.id === form.watch("poolId")
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]} (Pool: ${pool.id})`}
+                                  </CommandItem>
+                                ));
+                              })}
+                          </CommandGroup>
+                        </ScrollArea>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>
@@ -371,7 +377,7 @@ const RefSwap = () => {
             control={form.control}
             name="userMinAmountIn"
             render={({ field }) => (
-              <FormItem className="flex flex-grow flex-col">
+              <FormItem className="flex grow flex-col">
                 <FormLabel>Amount in</FormLabel>
                 <FormControl>
                   <Input

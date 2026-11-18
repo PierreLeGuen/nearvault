@@ -205,8 +205,9 @@ export const teamsRouter = createTRPCRouter({
         });
       }
 
-      const newWallets = [];
-      const errors = [];
+      const newWallets: Awaited<ReturnType<typeof ctx.prisma.wallet.create>>[] =
+        [];
+      const errors: string[] = [];
 
       for (const walletAddress of walletAddresses) {
         try {
@@ -453,7 +454,7 @@ export const teamsRouter = createTRPCRouter({
     // Fetch all team invitations for the logged-in user
     return ctx.prisma.teamInvitation.findMany({
       where: {
-        invitedEmail: ctx.session.user.email,
+        invitedEmail: ctx.session.user.email!,
         status: "PENDING",
       },
       include: {
@@ -607,7 +608,6 @@ export const teamsRouter = createTRPCRouter({
           message: "Invitation not found.",
         });
       }
-      console.log(invitation);
 
       // Check if the logged-in user is the invited user
       if (invitation.invitedEmail !== ctx.session.user.email) {
@@ -911,7 +911,7 @@ export const teamsRouter = createTRPCRouter({
           },
           creator: {
             connect: {
-              email: creatorEmail,
+              email: creatorEmail!,
             },
           },
           wallet: {

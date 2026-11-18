@@ -22,6 +22,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   Form,
@@ -58,11 +59,15 @@ import { type NextPageWithLayout } from "../_app";
 
 const formSchema = z.object({
   fromWallet: z.string({
-    required_error: "Please select a wallet.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a wallet." : undefined,
   }),
   toWallet: z.string().min(2),
   token: z.string({
-    required_error: "Please select a token.",
+    // Only for a missing value, like zod 3's required_error.
+    error: (issue) =>
+      issue.input === undefined ? "Please select a token." : undefined,
   }),
   amount: z.number().gt(0),
   memo: z.string(),
@@ -91,12 +96,13 @@ const TransfersPage: NextPageWithLayout = () => {
   const lockupTransferMut = useLockupTransfer();
   const nearTransferMut = useNearTransfer();
 
-  const { data: senderWallets, isLoading } = useTeamsWalletsWithLockups();
+  const { data: senderWallets, isPending: isLoading } =
+    useTeamsWalletsWithLockups();
 
-  const { data: addressBook, isLoading: addrBookLoading } =
+  const { data: addressBook, isPending: addrBookLoading } =
     useListAddressBook();
 
-  const { data: tokens, isLoading: tokensIsLoading } =
+  const { data: tokens, isPending: tokensIsLoading } =
     useGetAllTokensWithBalanceForWallet(watchedSender);
 
   // Updates the formatted balance when the token or the wallet changes
@@ -174,14 +180,14 @@ const TransfersPage: NextPageWithLayout = () => {
             fundingAccId: senderAddress,
             lockupAddress: lockupAddress,
             receiverAddress: receiver.walletAddress,
-            indivAmount: yoctoAmount,
+            indivAmount: yoctoAmount!,
           });
         } else {
           // from multisig wallet
           await nearTransferMut.mutateAsync({
             fundingAccId: senderAddress,
             receiverAddress: receiver.walletAddress,
-            indivAmount: yoctoAmount,
+            indivAmount: yoctoAmount!,
           });
         }
       } else {
@@ -203,7 +209,7 @@ const TransfersPage: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex flex-grow flex-col items-center gap-10 py-10 ">
+    <div className="flex grow flex-col items-center gap-10 py-10">
       <Card className="w-[600px]">
         <CardHeader>
           <CardTitle>Transfer tokens</CardTitle>
@@ -238,7 +244,7 @@ const TransfersPage: NextPageWithLayout = () => {
                 placeholder="Select a wallet"
                 label="Receiver"
               />
-              <div className="flex flex-grow flex-row">
+              <div className="flex grow flex-row">
                 <FormField
                   control={form.control}
                   name="token"
@@ -272,32 +278,37 @@ const TransfersPage: NextPageWithLayout = () => {
                         <PopoverContent className="w-[350px] p-0">
                           <Command>
                             <CommandInput placeholder="Search token..." />
-                            <CommandEmpty>No token found.</CommandEmpty>
-                            <CommandGroup>
-                              {tokensIsLoading && "Loading..."}
-                              {!tokensIsLoading &&
-                                tokens?.map((token) => (
-                                  <CommandItem
-                                    value={token.account_id}
-                                    key={token.account_id}
-                                    onSelect={() => {
-                                      form.setValue("token", token.account_id);
-                                    }}
-                                  >
-                                    <CheckIcon
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        token.account_id === field.value
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                    />
-                                    {`${token.symbol} (${getFormattedAmount(
-                                      token,
-                                    )})`}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
+                            <CommandList>
+                              <CommandEmpty>No token found.</CommandEmpty>
+                              <CommandGroup>
+                                {tokensIsLoading && "Loading..."}
+                                {!tokensIsLoading &&
+                                  tokens?.map((token) => (
+                                    <CommandItem
+                                      value={token.account_id}
+                                      key={token.account_id}
+                                      onSelect={() => {
+                                        form.setValue(
+                                          "token",
+                                          token.account_id,
+                                        );
+                                      }}
+                                    >
+                                      <CheckIcon
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          token.account_id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      {`${token.symbol} (${getFormattedAmount(
+                                        token,
+                                      )})`}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
                           </Command>
                         </PopoverContent>
                       </Popover>
@@ -309,13 +320,13 @@ const TransfersPage: NextPageWithLayout = () => {
                   control={form.control}
                   name="amount"
                   render={({ field }) => (
-                    <FormItem className="flex flex-grow flex-col">
+                    <FormItem className="flex grow flex-col">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="0"
                           type="number"
-                          className="flex rounded-l-none border "
+                          className="flex rounded-l-none border"
                           value={field.value}
                           onChange={(e) => {
                             try {

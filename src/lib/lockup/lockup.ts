@@ -203,7 +203,7 @@ export const viewLockupAccount = async (
       const { releaseDuration, vestingInformation } = lockupState;
       const lockupReleaseStartTimestamp = getStartLockupTimestamp(
         lockupState.lockupDuration,
-        lockupState.lockupTimestamp,
+        lockupState.lockupTimestamp!,
         lockupState.hasBrokenTimestamp,
       );
       const lockedAmount = getLockedTokenAmount(lockupState);
@@ -228,8 +228,8 @@ export const viewLockupAccount = async (
         lockupState: {
           //   ...restLockupState,
           ...lockupState,
-          releaseDuration: formatReleaseDuration(releaseDuration),
-          vestedInfo: formatVestingInfo(vestingInformation)!,
+          releaseDuration: formatReleaseDuration(releaseDuration!),
+          vestedInfo: formatVestingInfo(vestingInformation!)!,
         },
       };
     }
