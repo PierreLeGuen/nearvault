@@ -227,28 +227,23 @@ export type QueryParams = { request_type: string; [key: string]: unknown };
 const RETRY = { attempts: 10, firstWaitMs: 1000, multiplier: 1.5 };
 
 function isRetryableLike2x(error: unknown): boolean {
-  // Node's built-in fetch reports network failures this way.
-  if (error instanceof TypeError && error.message === "fetch failed") {
+  // Network failures: fetch rejects with a TypeError ("fetch failed" in
+  // Node, "Failed to fetch" in Chromium). Match the error itself, not text,
+  // so a contract error quoting these words is not retried.
+  if (
+    error instanceof TypeError &&
+    (error.message === "fetch failed" || error.message === "Failed to fetch")
+  ) {
     return true;
   }
   // The node answered with a JSON-RPC timeout (for example
   // `broadcast_tx_commit` still waiting for the outcome). 2.x resent the
   // request; resending the same signed transaction is safe.
   if (error instanceof TransactionTimeoutError) return true;
-  const { cause } = (error ?? {}) as { cause?: unknown };
   // near-api-js 7 reports HTTP failures with the status as `cause`. 2.x only
   // retried 503; a 408 (node timeout) or 429 was thrown at once.
-  if (typeof cause === "number") return cause === 503;
-  const text = String(error);
-  return (
-    // network failures (node-fetch, browsers)
-    text.includes("FetchError") ||
-    text.includes("Failed to fetch") ||
-    // JSON-RPC timeouts, as near-api-js 7 and older nodes word them
-    text.includes("Transaction timed out") ||
-    text.includes("Timeout error") ||
-    text.includes("query has timed out")
-  );
+  const { cause } = (error ?? {}) as { cause?: unknown };
+  return cause === 503;
 }
 
 type SendJsonRpc = (method: string, params: unknown) => Promise<unknown>;
