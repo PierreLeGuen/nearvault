@@ -15,15 +15,20 @@ import type { PoolConfig } from "pg";
  *   `require`; local hosts connect without TLS.
  * - `schema`: passed to the adapter (defaults to `public`).
  * - `connection_limit`: pool size. Without it, Prisma 6 opened up to twice
- *   the CPU count plus one connections; node-postgres would open 10.
+ *   the physical core count plus one connections; node-postgres would open
+ *   10. Node only reports logical CPUs, so count two per core, which never
+ *   exceeds Prisma 6's default.
  * - `connect_timeout` (Prisma default 5s) and `pool_timeout` (default 10s):
  *   node-postgres has a single timeout for opening a connection and for
  *   waiting for a free one in the pool, so use the longer of the two. With
  *   both set to 0 (no limit), there is no timeout.
  * - `socket_timeout`: seconds a query may take.
- * - `sslcert`, `sslidentity`, `sslpassword`: node-postgres reads `sslcert` as
- *   a client certificate and has no PKCS#12 identity, so these are refused
- *   rather than silently changing meaning.
+ * - Timeouts too large for a Node timer mean no timeout.
+ * - Prisma 6's `sslcert` (the server certificate), `sslidentity` and
+ *   `sslpassword` are refused rather than silently changing meaning:
+ *   node-postgres reads `sslcert` as a client certificate (with `sslkey`) and
+ *   has no PKCS#12 identity. node-postgres's own `sslrootcert`, and `sslcert`
+ *   with `sslkey`, are passed through.
  */
 export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   poolConfig: PoolConfig;
@@ -44,10 +49,14 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   const connectTimeout = take("connect_timeout");
   const poolTimeout = take("pool_timeout");
   const socketTimeout = take("socket_timeout");
-  for (const key of ["sslcert", "sslidentity", "sslpassword"]) {
+  const prismaTlsParams = ["sslidentity", "sslpassword"];
+  if (params.has("sslcert") && !params.has("sslkey")) {
+    prismaTlsParams.push("sslcert");
+  }
+  for (const key of prismaTlsParams) {
     if (params.has(key)) {
       throw new Error(
-        `DATABASE_URL: "${key}" is not supported with the pg adapter; use sslrootcert, sslcert and sslkey with their node-postgres meaning instead.`,
+        `DATABASE_URL: Prisma's "${key}" is not supported with the pg adapter; use sslrootcert for the server certificate, or sslcert with sslkey for a client certificate.`,
       );
     }
   }
@@ -72,22 +81,24 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
     params.set("sslmode", sslmode);
   }
 
-  const timeoutSeconds = Math.max(
-    Number(connectTimeout ?? 5),
-    Number(poolTimeout ?? 10),
-  );
+  // Node timers cap at 2^31 - 1 ms; node-postgres treats 0 as no timeout.
+  const millis = (seconds: number) => {
+    const ms = seconds * 1000;
+    return ms > 0 && ms <= 2 ** 31 - 1 ? ms : 0;
+  };
   const poolConfig: PoolConfig = {
     connectionString: url.toString(),
-    // 0 means no timeout for node-postgres too.
-    connectionTimeoutMillis: timeoutSeconds * 1000,
+    connectionTimeoutMillis: millis(
+      Math.max(Number(connectTimeout ?? 5), Number(poolTimeout ?? 10)),
+    ),
   };
   if (ssl !== undefined) poolConfig.ssl = ssl;
   poolConfig.max =
     connectionLimit === undefined
-      ? availableParallelism() * 2 + 1
+      ? Math.max(1, Math.floor(availableParallelism() / 2)) * 2 + 1
       : Number(connectionLimit);
-  if (socketTimeout !== undefined) {
-    poolConfig.query_timeout = Number(socketTimeout) * 1000;
+  if (socketTimeout !== undefined && millis(Number(socketTimeout)) > 0) {
+    poolConfig.query_timeout = millis(Number(socketTimeout));
   }
 
   return { poolConfig, schema };
