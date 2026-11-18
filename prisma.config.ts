@@ -1,12 +1,16 @@
+import { existsSync, readFileSync } from "node:fs";
 import nextEnv from "@next/env";
 import { defineConfig } from "prisma/config";
 
-// Prisma 7 no longer reads .env itself. Load env files the way Next.js does
-// (including ${VAR} expansion), so the CLI sees the same DATABASE_URL as the
-// app: the development files locally, as `next dev` does, and the production
-// files when NODE_ENV is "production". Variables already set in the
-// environment take precedence.
-nextEnv.loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
+// Prisma 7 no longer reads .env itself. Read it as the Prisma 6 CLI did: only
+// .env, with ${VAR} expansion. Variables already set in the environment take
+// precedence.
+if (existsSync(".env")) {
+  nextEnv.processEnv(
+    [{ path: ".env", contents: readFileSync(".env", "utf8"), env: {} }],
+    process.cwd(),
+  );
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
