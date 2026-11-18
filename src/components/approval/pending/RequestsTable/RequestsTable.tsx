@@ -36,6 +36,9 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
     // Every request row can open its details; v9 ignores toggleExpanded on
     // rows without sub-rows unless this says otherwise.
     getRowCanExpand: () => true,
+    // v9 collapses expanded rows whenever data changes (for example the
+    // refetch after an approval); v8 kept them open.
+    autoResetExpanded: false,
   });
 
   return (
