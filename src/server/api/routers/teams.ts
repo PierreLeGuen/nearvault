@@ -452,9 +452,14 @@ export const teamsRouter = createTRPCRouter({
 
   getPendingInvitationsForUser: protectedProcedure.query(async ({ ctx }) => {
     // Fetch all team invitations for the logged-in user
+    const email = ctx.session.user.email;
+    if (!email) {
+      return [];
+    }
+
     return ctx.prisma.teamInvitation.findMany({
       where: {
-        invitedEmail: ctx.session.user.email!,
+        invitedEmail: email,
         status: "PENDING",
       },
       include: {
