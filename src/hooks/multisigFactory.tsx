@@ -41,7 +41,7 @@ export function useCreateMultisigWithFactory() {
       const wallet = await selector.wallet();
       const threshold = new Number(data.threshold);
 
-      await wallet.signAndSendTransaction({
+      const outcome = await wallet.signAndSendTransaction({
         receiverId: factory,
         actions: [
           actionCreators.functionCall(
@@ -56,7 +56,12 @@ export function useCreateMultisigWithFactory() {
           ),
         ],
       });
-      return data.accountId + "." + config.accounts.multisigFactory;
+      return {
+        accountId: data.accountId + "." + config.accounts.multisigFactory,
+        // wallet-selector 10 returns the outcome (MyNearWallet opens a popup
+        // instead of redirecting back with ?transactionHashes=).
+        transactionHash: outcome?.transaction_outcome?.id,
+      };
     },
   });
 }
