@@ -20,7 +20,8 @@ const config = {
     defaultLocale: "en",
   },
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com" }],
+    // No protocol, so http and https both match, as `images.domains` did.
+    remotePatterns: [{ hostname: "lh3.googleusercontent.com" }],
   },
 };
 export default config;
