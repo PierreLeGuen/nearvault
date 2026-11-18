@@ -39,6 +39,9 @@ export const RequestsTable = ({ data, wallet, approveRejectFn }: Props) => {
     // v9 collapses expanded rows whenever data changes (for example the
     // refetch after an approval); v8 kept them open.
     autoResetExpanded: false,
+    // Key rows by request id, so open details stay on the same request when
+    // the refetch drops another one.
+    getRowId: (row) => String(row.request.request_id),
   });
 
   return (
