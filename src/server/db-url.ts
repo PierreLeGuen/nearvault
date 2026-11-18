@@ -14,7 +14,10 @@ import type { PoolConfig } from "pg";
  *   `require`; local hosts connect without TLS.
  * - `schema`: passed to the adapter (defaults to `public`).
  * - `connection_limit`: pool size.
- * - `connect_timeout`: seconds to wait for a connection (Prisma default 5).
+ * - `connect_timeout` (Prisma default 5s) and `pool_timeout` (default 10s):
+ *   node-postgres has a single timeout for opening a connection and for
+ *   waiting for a free one in the pool, so use the longer of the two. With
+ *   both set to 0 (no limit), there is no timeout.
  */
 export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   poolConfig: PoolConfig;
@@ -33,13 +36,9 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   const schema = take("schema");
   const connectionLimit = take("connection_limit");
   const connectTimeout = take("connect_timeout");
+  const poolTimeout = take("pool_timeout");
   // Prisma-only settings with no node-postgres equivalent.
-  for (const key of [
-    "pool_timeout",
-    "pgbouncer",
-    "socket_timeout",
-    "statement_cache_size",
-  ]) {
+  for (const key of ["pgbouncer", "socket_timeout", "statement_cache_size"]) {
     take(key);
   }
 
@@ -59,10 +58,14 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
     params.set("sslmode", sslmode);
   }
 
+  const timeoutSeconds = Math.max(
+    Number(connectTimeout ?? 5),
+    Number(poolTimeout ?? 10),
+  );
   const poolConfig: PoolConfig = {
     connectionString: url.toString(),
-    connectionTimeoutMillis:
-      connectTimeout === undefined ? 5000 : Number(connectTimeout) * 1000,
+    // 0 means no timeout for node-postgres too.
+    connectionTimeoutMillis: timeoutSeconds * 1000,
   };
   if (ssl !== undefined) poolConfig.ssl = ssl;
   if (connectionLimit !== undefined) poolConfig.max = Number(connectionLimit);
