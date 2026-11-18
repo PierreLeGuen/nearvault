@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import type { PoolConfig } from "pg";
 
 /**
@@ -13,11 +14,16 @@ import type { PoolConfig } from "pg";
  * - no `sslmode`: Prisma 6 tried TLS first. Remote hosts get TLS as with
  *   `require`; local hosts connect without TLS.
  * - `schema`: passed to the adapter (defaults to `public`).
- * - `connection_limit`: pool size.
+ * - `connection_limit`: pool size. Without it, Prisma 6 opened up to twice
+ *   the CPU count plus one connections; node-postgres would open 10.
  * - `connect_timeout` (Prisma default 5s) and `pool_timeout` (default 10s):
  *   node-postgres has a single timeout for opening a connection and for
  *   waiting for a free one in the pool, so use the longer of the two. With
  *   both set to 0 (no limit), there is no timeout.
+ * - `socket_timeout`: seconds a query may take.
+ * - `sslcert`, `sslidentity`, `sslpassword`: node-postgres reads `sslcert` as
+ *   a client certificate and has no PKCS#12 identity, so these are refused
+ *   rather than silently changing meaning.
  */
 export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   poolConfig: PoolConfig;
@@ -37,8 +43,16 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
   const connectionLimit = take("connection_limit");
   const connectTimeout = take("connect_timeout");
   const poolTimeout = take("pool_timeout");
+  const socketTimeout = take("socket_timeout");
+  for (const key of ["sslcert", "sslidentity", "sslpassword"]) {
+    if (params.has(key)) {
+      throw new Error(
+        `DATABASE_URL: "${key}" is not supported with the pg adapter; use sslrootcert, sslcert and sslkey with their node-postgres meaning instead.`,
+      );
+    }
+  }
   // Prisma-only settings with no node-postgres equivalent.
-  for (const key of ["pgbouncer", "socket_timeout", "statement_cache_size"]) {
+  for (const key of ["pgbouncer", "statement_cache_size"]) {
     take(key);
   }
 
@@ -68,7 +82,13 @@ export function pgOptionsFromDatabaseUrl(databaseUrl: string): {
     connectionTimeoutMillis: timeoutSeconds * 1000,
   };
   if (ssl !== undefined) poolConfig.ssl = ssl;
-  if (connectionLimit !== undefined) poolConfig.max = Number(connectionLimit);
+  poolConfig.max =
+    connectionLimit === undefined
+      ? availableParallelism() * 2 + 1
+      : Number(connectionLimit);
+  if (socketTimeout !== undefined) {
+    poolConfig.query_timeout = Number(socketTimeout) * 1000;
+  }
 
   return { poolConfig, schema };
 }

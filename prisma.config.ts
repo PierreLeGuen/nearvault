@@ -3,8 +3,10 @@ import { defineConfig } from "prisma/config";
 
 // Prisma 7 no longer reads .env itself. Load env files the way Next.js does
 // (including ${VAR} expansion), so the CLI sees the same DATABASE_URL as the
-// app. Variables already set in the environment take precedence.
-nextEnv.loadEnvConfig(process.cwd());
+// app: the development files locally, as `next dev` does, and the production
+// files when NODE_ENV is "production". Variables already set in the
+// environment take precedence.
+nextEnv.loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
