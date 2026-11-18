@@ -73,27 +73,29 @@ export const getAccountsForPublicKey = async (
   return [...uniqueAccounts];
 };
 
-export const filterMultisig = async (accountIds: string[], rpcUrl: string) => {
+export const filterMultisig = async (
+  accountIds: string[],
+  rpcUrl: string,
+): Promise<string[]> => {
   const provider = new NearRpcProvider({ url: rpcUrl });
 
-  const validAccIds = await Promise.all(
-    accountIds
-      .map(async (accountId) => {
-        try {
-          await provider.query({
-            request_type: "call_function",
-            finality: "final",
-            account_id: accountId,
-            method_name: "list_request_ids",
-            args_base64: "e30=",
-          });
-          return accountId;
-        } catch (e) {
-          console.log("not multisig", (e as Error)?.name);
-        }
-      })
-      .filter(Boolean),
+  const results = await Promise.all(
+    accountIds.map(async (accountId) => {
+      try {
+        await provider.query({
+          request_type: "call_function",
+          finality: "final",
+          account_id: accountId,
+          method_name: "list_request_ids",
+          args_base64: "e30=",
+        });
+        return accountId;
+      } catch {
+        // not a multisig account
+        return null;
+      }
+    }),
   );
 
-  return validAccIds as string[];
+  return results.filter((accountId): accountId is string => accountId !== null);
 };
