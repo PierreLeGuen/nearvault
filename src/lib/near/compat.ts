@@ -227,6 +227,10 @@ export type QueryParams = { request_type: string; [key: string]: unknown };
 const RETRY = { attempts: 10, firstWaitMs: 1000, multiplier: 1.5 };
 
 function isRetryableLike2x(error: unknown): boolean {
+  // Node's built-in fetch reports network failures this way.
+  if (error instanceof TypeError && error.message === "fetch failed") {
+    return true;
+  }
   // The node answered with a JSON-RPC timeout (for example
   // `broadcast_tx_commit` still waiting for the outcome). 2.x resent the
   // request; resending the same signed transaction is safe.
@@ -237,10 +241,9 @@ function isRetryableLike2x(error: unknown): boolean {
   if (typeof cause === "number") return cause === 503;
   const text = String(error);
   return (
-    // network failures (node-fetch, browsers, Node's built-in fetch)
+    // network failures (node-fetch, browsers)
     text.includes("FetchError") ||
     text.includes("Failed to fetch") ||
-    text.includes("fetch failed") ||
     // JSON-RPC timeouts, as near-api-js 7 and older nodes word them
     text.includes("Transaction timed out") ||
     text.includes("Timeout error") ||
