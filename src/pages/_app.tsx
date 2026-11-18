@@ -1,7 +1,8 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { api } from "~/lib/api";
+import { queryClient } from "~/lib/query-client";
 
 import { Analytics } from "@vercel/analytics/react";
 import { type NextPage } from "next";
@@ -28,16 +29,6 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
   session: Session;
 };
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      gcTime: 1 * 60,
-      staleTime: 2 * 60,
-    },
-  },
-});
 
 function MyApp({ Component, pageProps, session }: AppPropsWithLayout) {
   useNewVersionCheck();

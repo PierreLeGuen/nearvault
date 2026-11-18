@@ -294,7 +294,7 @@ const ManageLockup: NextPageWithLayout = () => {
               </form>
             </Form>
           </div>
-          <div className="prose pl-4 pt-4">
+          <div className="prose pt-4 pl-4">
             {accountError && <p className="text-red-500">{accountError}</p>}
             {lockupInformation && (
               <>
@@ -347,7 +347,7 @@ const ManageLockup: NextPageWithLayout = () => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/25" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -369,7 +369,7 @@ const ManageLockup: NextPageWithLayout = () => {
                 >
                   <Dialog.Title
                     as="h3"
-                    className="mb-3 text-lg font-medium leading-6 text-gray-900"
+                    className="mb-3 text-lg leading-6 font-medium text-gray-900"
                   >
                     Are you sure?
                   </Dialog.Title>

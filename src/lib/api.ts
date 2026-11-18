@@ -9,6 +9,7 @@ import { createTRPCNext } from "@trpc/next";
 import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
 
+import { queryClient } from "~/lib/query-client";
 import { type AppRouter } from "~/server/api/root";
 
 const getBaseUrl = () => {
@@ -21,6 +22,8 @@ const getBaseUrl = () => {
 export const api = createTRPCNext<AppRouter>({
   config() {
     return {
+      // Share the app's QueryClient (and its defaults) with tRPC hooks.
+      queryClient,
       /**
        * Links used to determine request flow from client to server.
        *
