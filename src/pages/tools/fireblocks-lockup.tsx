@@ -628,7 +628,15 @@ const FireblocksLockup: NextPageWithLayout = () => {
           params: { transaction: Buffer.from(tx.encode()) },
         },
       });
-      const signed = SignedTransaction.decode(Buffer.from(toBytes(result)));
+      const signedBytes = Buffer.from(toBytes(result));
+      const signed = SignedTransaction.decode(signedBytes);
+      // near-api-js 7 decodes a valid prefix and ignores trailing bytes;
+      // only broadcast a response that is exactly one signed transaction.
+      if (!Buffer.from(signed.encode()).equals(signedBytes)) {
+        throw new Error(
+          "Fireblocks returned an unexpected signed transaction; nothing was broadcast.",
+        );
+      }
 
       setBusy("Broadcasting to NEAR…");
       pushLog("Signature received, broadcasting.");
