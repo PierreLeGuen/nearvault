@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   FormControl,
@@ -78,32 +79,34 @@ export function SenderFormField<
               <ScrollArea className="h-[550px]">
                 <Command>
                   <CommandInput placeholder="Search wallet..." />
-                  <CommandEmpty>No wallet found.</CommandEmpty>
-                  <CommandGroup>
-                    {wallets?.map((wallet) => (
-                      <CommandItem
-                        value={wallet.prettyName}
-                        key={wallet.walletDetails.id}
-                        onSelect={() => {
-                          field.onChange({
-                            target: {
-                              value: wallet.walletDetails.walletAddress,
-                            },
-                          });
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            wallet.walletDetails.walletAddress === field.value
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                        {wallet.prettyName}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandEmpty>No wallet found.</CommandEmpty>
+                    <CommandGroup>
+                      {wallets?.map((wallet) => (
+                        <CommandItem
+                          value={wallet.prettyName}
+                          key={wallet.walletDetails.id}
+                          onSelect={() => {
+                            field.onChange({
+                              target: {
+                                value: wallet.walletDetails.walletAddress,
+                              },
+                            });
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              wallet.walletDetails.walletAddress === field.value
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          {wallet.prettyName}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </ScrollArea>
             </PopoverContent>

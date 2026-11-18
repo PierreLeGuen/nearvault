@@ -23,6 +23,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "../ui/command";
 import {
   Form,
@@ -134,105 +135,111 @@ const BurrowWithdraw = () => {
                   <PopoverContent className="w-[350px] p-0">
                     <Command>
                       <CommandInput placeholder="Search token..." />
-                      <CommandEmpty>No tokens found.</CommandEmpty>
-                      {!burrowCollateralsQuery.isPending && (
-                        <>
-                          <CommandGroup heading="Collateral">
-                            {burrowCollateralsQuery.data?.holdings.collateral.map(
-                              (holding) => {
-                                const token = getTokenDetails(holding.token_id);
-                                if (!token) return null;
+                      <CommandList>
+                        <CommandEmpty>No tokens found.</CommandEmpty>
+                        {!burrowCollateralsQuery.isPending && (
+                          <>
+                            <CommandGroup heading="Collateral">
+                              {burrowCollateralsQuery.data?.holdings.collateral.map(
+                                (holding) => {
+                                  const token = getTokenDetails(
+                                    holding.token_id,
+                                  );
+                                  if (!token) return null;
 
-                                return (
-                                  <CommandItem
-                                    value={`collateral-${
-                                      token.ftMetadata!.accountId
-                                    }`}
-                                    key={`collateral-${
-                                      token.ftMetadata!.accountId
-                                    }`}
-                                    onSelect={() => {
-                                      form.setValue(
-                                        "token",
-                                        token.ftMetadata!.accountId,
-                                      );
-                                      setSelectedTokenType("collateral");
-                                    }}
-                                  >
-                                    <CheckIcon
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        token.ftMetadata!.accountId ===
-                                          field.value &&
-                                          selectedTokenType === "collateral"
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                    />
-                                    {`${
-                                      token.ftMetadata!.symbol
-                                    } (Collateral: ${getFormattedAmount({
-                                      balance: holding.balance,
-                                      decimals:
-                                        token.ftMetadata!.decimals +
-                                        token.config!.config.extra_decimals,
-                                      symbol: token.ftMetadata!.symbol,
-                                    })})`}
-                                  </CommandItem>
-                                );
-                              },
-                            )}
-                          </CommandGroup>
+                                  return (
+                                    <CommandItem
+                                      value={`collateral-${
+                                        token.ftMetadata!.accountId
+                                      }`}
+                                      key={`collateral-${
+                                        token.ftMetadata!.accountId
+                                      }`}
+                                      onSelect={() => {
+                                        form.setValue(
+                                          "token",
+                                          token.ftMetadata!.accountId,
+                                        );
+                                        setSelectedTokenType("collateral");
+                                      }}
+                                    >
+                                      <CheckIcon
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          token.ftMetadata!.accountId ===
+                                            field.value &&
+                                            selectedTokenType === "collateral"
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      {`${
+                                        token.ftMetadata!.symbol
+                                      } (Collateral: ${getFormattedAmount({
+                                        balance: holding.balance,
+                                        decimals:
+                                          token.ftMetadata!.decimals +
+                                          token.config!.config.extra_decimals,
+                                        symbol: token.ftMetadata!.symbol,
+                                      })})`}
+                                    </CommandItem>
+                                  );
+                                },
+                              )}
+                            </CommandGroup>
 
-                          <CommandGroup heading="Supplied">
-                            {burrowCollateralsQuery.data?.holdings.supplied.map(
-                              (holding) => {
-                                const token = getTokenDetails(holding.token_id);
-                                if (!token) return null;
+                            <CommandGroup heading="Supplied">
+                              {burrowCollateralsQuery.data?.holdings.supplied.map(
+                                (holding) => {
+                                  const token = getTokenDetails(
+                                    holding.token_id,
+                                  );
+                                  if (!token) return null;
 
-                                return (
-                                  <CommandItem
-                                    value={`supplied-${
-                                      token.ftMetadata!.accountId
-                                    }`}
-                                    key={`supplied-${
-                                      token.ftMetadata!.accountId
-                                    }`}
-                                    onSelect={() => {
-                                      form.setValue(
-                                        "token",
-                                        token.ftMetadata!.accountId,
-                                      );
-                                      setSelectedTokenType("supplied");
-                                    }}
-                                  >
-                                    <CheckIcon
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        token.ftMetadata!.accountId ===
-                                          field.value &&
-                                          selectedTokenType === "supplied"
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                    />
-                                    {`${
-                                      token.ftMetadata!.symbol
-                                    } (Supplied: ${getFormattedAmount({
-                                      balance: holding.balance,
-                                      decimals:
-                                        token.ftMetadata!.decimals +
-                                        token.config!.config.extra_decimals,
-                                      symbol: token.ftMetadata!.symbol,
-                                    })})`}
-                                  </CommandItem>
-                                );
-                              },
-                            )}
-                          </CommandGroup>
-                        </>
-                      )}
-                      {burrowCollateralsQuery.isPending && "Loading..."}
+                                  return (
+                                    <CommandItem
+                                      value={`supplied-${
+                                        token.ftMetadata!.accountId
+                                      }`}
+                                      key={`supplied-${
+                                        token.ftMetadata!.accountId
+                                      }`}
+                                      onSelect={() => {
+                                        form.setValue(
+                                          "token",
+                                          token.ftMetadata!.accountId,
+                                        );
+                                        setSelectedTokenType("supplied");
+                                      }}
+                                    >
+                                      <CheckIcon
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          token.ftMetadata!.accountId ===
+                                            field.value &&
+                                            selectedTokenType === "supplied"
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      {`${
+                                        token.ftMetadata!.symbol
+                                      } (Supplied: ${getFormattedAmount({
+                                        balance: holding.balance,
+                                        decimals:
+                                          token.ftMetadata!.decimals +
+                                          token.config!.config.extra_decimals,
+                                        symbol: token.ftMetadata!.symbol,
+                                      })})`}
+                                    </CommandItem>
+                                  );
+                                },
+                              )}
+                            </CommandGroup>
+                          </>
+                        )}
+                        {burrowCollateralsQuery.isPending && "Loading..."}
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>
@@ -266,8 +273,8 @@ const BurrowWithdraw = () => {
                 {storageBalanceQuery.isPending
                   ? "Checking token storage..."
                   : needsStorageRegistration
-                  ? `Register wallet to receive ${selectedSymbol}`
-                  : `Create Burrow ${selectedTokenType} withdraw request`}
+                    ? `Register wallet to receive ${selectedSymbol}`
+                    : `Create Burrow ${selectedTokenType} withdraw request`}
               </div>
               {!storageBalanceQuery.isPending && (
                 <div className="mt-2 text-xs text-muted-foreground">
@@ -287,8 +294,8 @@ const BurrowWithdraw = () => {
             {withdrawMutation.isPending
               ? "Creating request..."
               : needsStorageRegistration
-              ? "Create storage registration request"
-              : "Create withdraw request"}
+                ? "Create storage registration request"
+                : "Create withdraw request"}
           </Button>
         </form>
       </Form>

@@ -25,6 +25,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "../ui/command";
 import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -114,32 +115,34 @@ const BurrowSupply = () => {
                     <PopoverContent className="w-[350px] p-0">
                       <Command>
                         <CommandInput placeholder="Search token..." />
-                        <CommandEmpty>No token found.</CommandEmpty>
-                        <CommandGroup>
-                          {tokensQuery.isPending && "Loading..."}
-                          {!tokensQuery.isPending &&
-                            tokensQuery.data?.map((token) => (
-                              <CommandItem
-                                value={token.account_id}
-                                key={token.account_id}
-                                onSelect={() => {
-                                  form.setValue("token", token.account_id);
-                                }}
-                              >
-                                <CheckIcon
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    token.account_id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                                {`${getTokenDisplaySymbol(
-                                  token,
-                                )} (${getFormattedAmount(token)})`}
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
+                        <CommandList>
+                          <CommandEmpty>No token found.</CommandEmpty>
+                          <CommandGroup>
+                            {tokensQuery.isPending && "Loading..."}
+                            {!tokensQuery.isPending &&
+                              tokensQuery.data?.map((token) => (
+                                <CommandItem
+                                  value={token.account_id}
+                                  key={token.account_id}
+                                  onSelect={() => {
+                                    form.setValue("token", token.account_id);
+                                  }}
+                                >
+                                  <CheckIcon
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      token.account_id === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                  />
+                                  {`${getTokenDisplaySymbol(
+                                    token,
+                                  )} (${getFormattedAmount(token)})`}
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>

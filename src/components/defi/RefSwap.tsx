@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   Form,
@@ -234,30 +235,32 @@ const RefSwap = () => {
                   <PopoverContent className="w-[350px] p-0">
                     <Command>
                       <CommandInput placeholder="Search token..." />
-                      <CommandEmpty>No token found.</CommandEmpty>
-                      <CommandGroup>
-                        {tokensQuery.isPending && "Loading..."}
-                        {!tokensQuery.isPending &&
-                          tokensQuery.data?.map((token) => (
-                            <CommandItem
-                              value={token.account_id}
-                              key={token.account_id}
-                              onSelect={() => {
-                                form.setValue("tokenOutId", token.account_id);
-                              }}
-                            >
-                              <CheckIcon
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  token.account_id === field.value
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                              {`${token.symbol} (${getFormattedAmount(token)})`}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
+                      <CommandList>
+                        <CommandEmpty>No token found.</CommandEmpty>
+                        <CommandGroup>
+                          {tokensQuery.isPending && "Loading..."}
+                          {!tokensQuery.isPending &&
+                            tokensQuery.data?.map((token) => (
+                              <CommandItem
+                                value={token.account_id}
+                                key={token.account_id}
+                                onSelect={() => {
+                                  form.setValue("tokenOutId", token.account_id);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    token.account_id === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                                {`${token.symbol} (${getFormattedAmount(token)})`}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>
@@ -275,7 +278,7 @@ const RefSwap = () => {
                   <Input
                     placeholder="0"
                     type="number"
-                    className="flex rounded-l-none border "
+                    className="flex rounded-l-none border"
                     value={field.value}
                     onChange={(e) => {
                       try {
@@ -326,40 +329,43 @@ const RefSwap = () => {
                   <PopoverContent className="w-[350px] p-0">
                     <Command>
                       <CommandInput placeholder="Search token..." />
-                      <ScrollArea className="h-[300px]">
-                        <CommandEmpty>No token found.</CommandEmpty>
-                        <CommandGroup>
-                          {poolsForTokenQuery.isPending && "Loading..."}
-                          {!poolsForTokenQuery.isPending &&
-                            poolsForTokenQuery.data?.pools.map((pool) => {
-                              const tokenAccIds = pool.token_account_ids.filter(
-                                (tokenId) =>
-                                  tokenId !== form.watch("tokenOutId"),
-                              );
-                              return tokenAccIds.map((tokenAccInId) => (
-                                <CommandItem
-                                  value={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
-                                  key={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
-                                  onSelect={() => {
-                                    form.setValue("tokenInId", tokenAccInId);
-                                    form.setValue("poolId", pool.id);
-                                  }}
-                                >
-                                  <CheckIcon
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      tokenAccInId === field.value &&
-                                        pool.id === form.watch("poolId")
-                                        ? "opacity-100"
-                                        : "opacity-0",
-                                    )}
-                                  />
-                                  {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]} (Pool: ${pool.id})`}
-                                </CommandItem>
-                              ));
-                            })}
-                        </CommandGroup>
-                      </ScrollArea>
+                      <CommandList>
+                        <ScrollArea className="h-[300px]">
+                          <CommandEmpty>No token found.</CommandEmpty>
+                          <CommandGroup>
+                            {poolsForTokenQuery.isPending && "Loading..."}
+                            {!poolsForTokenQuery.isPending &&
+                              poolsForTokenQuery.data?.pools.map((pool) => {
+                                const tokenAccIds =
+                                  pool.token_account_ids.filter(
+                                    (tokenId) =>
+                                      tokenId !== form.watch("tokenOutId"),
+                                  );
+                                return tokenAccIds.map((tokenAccInId) => (
+                                  <CommandItem
+                                    value={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
+                                    key={`${pool.id}-${tokenAccInId}-${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]}`}
+                                    onSelect={() => {
+                                      form.setValue("tokenInId", tokenAccInId);
+                                      form.setValue("poolId", pool.id);
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        tokenAccInId === field.value &&
+                                          pool.id === form.watch("poolId")
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    {`${poolsForTokenQuery.data?.accountIdToSymbol[tokenAccInId]} (Pool: ${pool.id})`}
+                                  </CommandItem>
+                                ));
+                              })}
+                          </CommandGroup>
+                        </ScrollArea>
+                      </CommandList>
                     </Command>
                   </PopoverContent>
                 </Popover>

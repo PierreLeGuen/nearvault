@@ -17,7 +17,12 @@ import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
 
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { Command, CommandGroup, CommandItem } from "~/components/ui/command";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -62,28 +67,30 @@ export function ThresholdInput<
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
                 <Command>
-                  <CommandGroup>
-                    {thresholds.map((threshold) => (
-                      <CommandItem
-                        key={threshold}
-                        value={threshold.toString()}
-                        onSelect={(currentValue) => {
-                          field.onChange(currentValue);
-                          setOpen(false);
-                        }}
-                      >
-                        {threshold}
-                        <CheckIcon
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            threshold === field.value
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandGroup>
+                      {thresholds.map((threshold) => (
+                        <CommandItem
+                          key={threshold}
+                          value={threshold.toString()}
+                          onSelect={(currentValue) => {
+                            field.onChange(currentValue);
+                            setOpen(false);
+                          }}
+                        >
+                          {threshold}
+                          <CheckIcon
+                            className={cn(
+                              "ml-auto h-4 w-4",
+                              threshold === field.value
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </PopoverContent>
             </Popover>

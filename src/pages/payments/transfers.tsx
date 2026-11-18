@@ -22,6 +22,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import {
   Form,
@@ -208,7 +209,7 @@ const TransfersPage: NextPageWithLayout = () => {
   }
 
   return (
-    <div className="flex grow flex-col items-center gap-10 py-10 ">
+    <div className="flex grow flex-col items-center gap-10 py-10">
       <Card className="w-[600px]">
         <CardHeader>
           <CardTitle>Transfer tokens</CardTitle>
@@ -277,32 +278,37 @@ const TransfersPage: NextPageWithLayout = () => {
                         <PopoverContent className="w-[350px] p-0">
                           <Command>
                             <CommandInput placeholder="Search token..." />
-                            <CommandEmpty>No token found.</CommandEmpty>
-                            <CommandGroup>
-                              {tokensIsLoading && "Loading..."}
-                              {!tokensIsLoading &&
-                                tokens?.map((token) => (
-                                  <CommandItem
-                                    value={token.account_id}
-                                    key={token.account_id}
-                                    onSelect={() => {
-                                      form.setValue("token", token.account_id);
-                                    }}
-                                  >
-                                    <CheckIcon
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        token.account_id === field.value
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                    />
-                                    {`${token.symbol} (${getFormattedAmount(
-                                      token,
-                                    )})`}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
+                            <CommandList>
+                              <CommandEmpty>No token found.</CommandEmpty>
+                              <CommandGroup>
+                                {tokensIsLoading && "Loading..."}
+                                {!tokensIsLoading &&
+                                  tokens?.map((token) => (
+                                    <CommandItem
+                                      value={token.account_id}
+                                      key={token.account_id}
+                                      onSelect={() => {
+                                        form.setValue(
+                                          "token",
+                                          token.account_id,
+                                        );
+                                      }}
+                                    >
+                                      <CheckIcon
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          token.account_id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      {`${token.symbol} (${getFormattedAmount(
+                                        token,
+                                      )})`}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
                           </Command>
                         </PopoverContent>
                       </Popover>
@@ -320,7 +326,7 @@ const TransfersPage: NextPageWithLayout = () => {
                         <Input
                           placeholder="0"
                           type="number"
-                          className="flex rounded-l-none border "
+                          className="flex rounded-l-none border"
                           value={field.value}
                           onChange={(e) => {
                             try {
