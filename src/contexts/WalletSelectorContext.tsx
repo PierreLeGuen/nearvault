@@ -19,6 +19,21 @@ import { config } from "~/config/config";
 const CONTRACT_ID = config.accounts.multisigFactory;
 const NETWORK_ID = config.networkId;
 
+// wallet-selector's own presets for each network (its modal looks Ledger
+// accounts up on the indexer); the app keeps its own RPC endpoint.
+const SELECTOR_NETWORK_URLS = {
+  mainnet: {
+    helperUrl: "https://helper.mainnet.near.org",
+    explorerUrl: "https://nearblocks.io",
+    indexerUrl: "https://api.fastnear.com/v0",
+  },
+  testnet: {
+    helperUrl: "https://helper.testnet.near.org",
+    explorerUrl: "https://testnet.nearblocks.io",
+    indexerUrl: "https://test.api.fastnear.com/v0",
+  },
+} as const;
+
 declare global {
   interface Window {
     selector: WalletSelector;
@@ -51,9 +66,7 @@ export const WalletSelectorContextProvider: React.FC<{
       network: {
         networkId: NETWORK_ID,
         nodeUrl: config.urls.rpc,
-        helperUrl: "https://helper.testnet.near.org",
-        explorerUrl: "https://testnet.nearblocks.io",
-        indexerUrl: "https://testnet-api.kitwallet.app",
+        ...SELECTOR_NETWORK_URLS[NETWORK_ID],
       },
       debug: true,
       modules: [
