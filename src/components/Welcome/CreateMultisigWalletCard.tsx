@@ -81,7 +81,9 @@ export function CreateMultisigWalletCard(params: Params) {
     if (params.viaMultisig) {
       await createMultisigWithFactoryViaMultisig.mutateAsync(values);
     } else {
-      await createMultisigWithFactory.mutateAsync(values);
+      const { transactionHash } =
+        await createMultisigWithFactory.mutateAsync(values);
+      if (transactionHash) setTransactionHashes([transactionHash]);
     }
   };
 

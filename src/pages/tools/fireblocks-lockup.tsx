@@ -17,12 +17,14 @@
 import type SignClient from "@walletconnect/sign-client";
 import type { SessionTypes } from "@walletconnect/types";
 import BN from "bn.js";
-import * as nearAPI from "near-api-js";
 import {
   type AccessKeyList,
-  type AccessKeyView,
+  type AccessKeyViewRaw,
   type CodeResult,
-} from "near-api-js/lib/providers/provider";
+  type FinalExecutionOutcome,
+  PublicKey,
+  createTransaction,
+} from "near-api-js";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
@@ -37,6 +39,14 @@ import {
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { config } from "~/config/config";
+import {
+  NearRpcProvider,
+  base_decode,
+  formatNearAmount,
+  functionCall,
+  parseNearAmount,
+} from "~/lib/near/compat";
+import { decodeRequestedSignedTransaction } from "~/lib/near/signed-transaction";
 import { env } from "~/env.mjs";
 import { type NextPageWithLayout } from "../_app";
 
@@ -107,7 +117,7 @@ interface WcAccount {
   publicKey: string;
 }
 
-const provider = new nearAPI.providers.JsonRpcProvider({
+const provider = new NearRpcProvider({
   url: config.urls.rpc,
 });
 const wcChainId = `near:${config.networkId}`;
@@ -186,9 +196,7 @@ function isValidAccountId(id: string): boolean {
 }
 
 /** Returns a description of the first failed status in a final outcome, or null. */
-function findFailure(
-  outcome: nearAPI.providers.FinalExecutionOutcome,
-): string | null {
+function findFailure(outcome: FinalExecutionOutcome): string | null {
   const statuses: unknown[] = [
     outcome.status,
     ...outcome.receipts_outcome.map((r) => r.outcome.status),
@@ -222,7 +230,7 @@ function toBytes(result: unknown): Uint8Array {
 }
 
 function formatNear(yocto: string, digits = 4) {
-  return nearAPI.utils.format.formatNearAmount(yocto, digits);
+  return formatNearAmount(yocto, digits);
 }
 
 function firstString(v: string | string[] | undefined): string {
@@ -318,7 +326,7 @@ const FireblocksLockup: NextPageWithLayout = () => {
   const yoctoAmount = useMemo(() => {
     if (action !== "transfer") return null;
     try {
-      return nearAPI.utils.format.parseNearAmount(amount || "0");
+      return parseNearAmount(amount || "0");
     } catch {
       return null;
     }
@@ -592,29 +600,22 @@ const FireblocksLockup: NextPageWithLayout = () => {
       setBusy("Building transaction…");
       const [block, accessKey] = await Promise.all([
         provider.block({ finality: "final" }),
-        provider.query<AccessKeyView>({
+        provider.query<AccessKeyViewRaw>({
           request_type: "view_access_key",
           finality: "final",
           account_id: account.accountId,
           public_key: account.publicKey,
         }),
       ]);
-      const tx = nearAPI.transactions.createTransaction(
+      const tx = createTransaction(
         account.accountId,
-        nearAPI.utils.PublicKey.from(account.publicKey),
+        PublicKey.from(account.publicKey),
         lockupId,
-        // The RPC returns a plain number even though the type says BN.
-        new BN(String(accessKey.nonce)).addn(1),
-        [
-          nearAPI.transactions.functionCall(
-            action,
-            args,
-            new BN(ACTIONS[action].gas),
-            new BN(0),
-          ),
-        ],
-        nearAPI.utils.serialize.base_decode(block.header.hash),
+        BigInt(new BN(String(accessKey.nonce)).addn(1).toString()),
+        [functionCall(action, args, new BN(ACTIONS[action].gas), new BN(0))],
+        base_decode(block.header.hash),
       );
+      const unsignedBytes = Buffer.from(tx.encode());
 
       setBusy("Waiting for approval in Fireblocks…");
       pushLog(`Sent ${action} on ${lockupId} to Fireblocks for signing.`);
@@ -623,12 +624,16 @@ const FireblocksLockup: NextPageWithLayout = () => {
         chainId: wcChainId,
         request: {
           method: "near_signTransaction",
-          params: { transaction: tx.encode() },
+          // A Buffer, not a Uint8Array, so it JSON-encodes as
+          // { type: "Buffer", data: [...] }.
+          params: { transaction: unsignedBytes },
         },
       });
-      const signed = nearAPI.transactions.SignedTransaction.decode(
-        Buffer.from(toBytes(result)),
-      ) as nearAPI.transactions.SignedTransaction;
+      // Only broadcast the transaction that was sent for signing.
+      const signed = decodeRequestedSignedTransaction(
+        toBytes(result),
+        unsignedBytes,
+      );
 
       setBusy("Broadcasting to NEAR…");
       pushLog("Signature received, broadcasting.");

@@ -2,8 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type BN from "bn.js";
 import bs58 from "bs58";
-import { JsonRpcProvider } from "near-api-js/lib/providers";
-import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { NearRpcProvider, formatNearAmount } from "~/lib/near/compat";
 import { Fragment, useEffect, useState } from "react";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -143,7 +142,7 @@ const ManageLockup: NextPageWithLayout = () => {
     console.log("getLockupInformation", account);
 
     try {
-      const provider = new JsonRpcProvider({ url: config.urls.rpc });
+      const provider = new NearRpcProvider({ url: config.urls.rpc });
       const l = calculateLockup(
         prepareAccountId(account),
         config.accounts.lockupFactory,

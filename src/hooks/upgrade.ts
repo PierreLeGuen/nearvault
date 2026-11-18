@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { BN } from "bn.js";
-import { transactions } from "near-api-js";
+import { transactions } from "~/lib/near/compat";
 import {
   classifyWalletHash,
   checkExistingUpgradeProposals,

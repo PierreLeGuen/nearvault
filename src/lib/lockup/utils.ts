@@ -1,13 +1,9 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import BN from "bn.js";
-import {
-  serialize,
-  type BinaryReader,
-  type Schema,
-} from "near-api-js/lib/utils/serialize";
+import { BinaryWriter, serialize, type BinaryReader, type Schema } from "borsh";
 import { sha256 } from "js-sha256";
-import * as nearAPI from "near-api-js";
+import { base_encode } from "~/lib/near/compat";
 
 import {
   type StakingInformation,
@@ -193,7 +189,7 @@ function computeVestingSchedule(
     "hex",
   );
 
-  const writer = new nearAPI.utils.serialize.BinaryWriter();
+  const writer = new BinaryWriter();
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore:next-line
   writer.writeU64(vestingSchedule.start_timestamp);
@@ -253,9 +249,7 @@ export function findProperVestingSchedule({
     !lockupOwnerAccountId.includes(".")
   ) {
     lockupOwnerInputs.push(
-      nearAPI.utils.serialize.base_encode(
-        Buffer.from(lockupOwnerAccountId, "hex"),
-      ),
+      base_encode(Buffer.from(lockupOwnerAccountId, "hex")),
     );
   }
 

@@ -1,9 +1,7 @@
 import BN from "bn.js";
-import {
-  type Provider,
-  type CodeResult,
-} from "near-api-js/lib/providers/provider";
-import { BinaryReader } from "near-api-js/lib/utils/serialize";
+import { BinaryReader } from "borsh";
+import { type CodeResult } from "near-api-js";
+import { type NearRpcProvider } from "~/lib/near/compat";
 
 import {
   type AccountLockup,
@@ -37,7 +35,7 @@ import { createHash } from "crypto";
  */
 export const viewLockupState = async (
   contractId: string,
-  provider: Provider,
+  provider: NearRpcProvider,
   blockReference: BlockReference = { finality: "final" },
 ): Promise<LockupState> => {
   const accountCalculationInfo = await viewAccountBalance(
@@ -47,14 +45,12 @@ export const viewLockupState = async (
   );
   const lockupAccountCodeHash = accountCalculationInfo.codeHash;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const result = await provider.query<ViewStateResult>({
     request_type: "view_state",
     ...blockReference,
     account_id: contractId,
     prefix_base64: Buffer.from("STATE", "utf-8").toString("base64"),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any);
+  });
 
   const blockTimestamp = (
     await provider.block({
@@ -107,20 +103,18 @@ export const viewLockupState = async (
  */
 export const getLockupAccountBalance = async (
   contractId: string,
-  provider: Provider,
+  provider: NearRpcProvider,
   blockReference: BlockReference = { finality: "final" },
 ): Promise<BN> => {
   //   const near = await connect(nearConfig);
   const delegatedStakingPoolAccountIdResponse =
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await provider.query<CodeResult>({
       request_type: "call_function",
       account_id: contractId,
       method_name: "get_staking_pool_account_id",
       args_base64: Buffer.from(JSON.stringify({})).toString("base64"),
       ...blockReference,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const delegatedStakingPoolAccountId = JSON.parse(
     Buffer.from(delegatedStakingPoolAccountIdResponse.result).toString(),
@@ -132,18 +126,15 @@ export const getLockupAccountBalance = async (
   );
   if (delegatedStakingPoolAccountId) {
     const delegatedStakingBalanceResponse =
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await provider.query<CodeResult>({
         request_type: "call_function",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         account_id: delegatedStakingPoolAccountId,
         method_name: "get_account_total_balance",
         args_base64: Buffer.from(
           JSON.stringify({ account_id: contractId }),
         ).toString("base64"),
         ...blockReference,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      });
     return new BN(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       JSON.parse(
@@ -163,16 +154,14 @@ export const getLockupAccountBalance = async (
  */
 export const viewAccountBalance = async (
   accountId: string,
-  provider: Provider,
+  provider: NearRpcProvider,
   blockReference: BlockReference = { finality: "final" },
 ): Promise<ViewAccount> => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const viewAccount = await provider.query<ViewAccountQuery>({
     request_type: "view_account",
     ...blockReference,
     account_id: accountId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any);
+  });
   return {
     amount: new BN(viewAccount.amount),
     codeHash: viewAccount.code_hash,
@@ -189,7 +178,7 @@ export const viewAccountBalance = async (
  */
 export const viewLockupAccount = async (
   lockupAccountId: string,
-  provider: Provider,
+  provider: NearRpcProvider,
   blockReference?: BlockReference,
 ): Promise<AccountLockup | null> => {
   try {
@@ -197,8 +186,6 @@ export const viewLockupAccount = async (
       getLockupAccountBalance(lockupAccountId, provider, blockReference),
       viewLockupState(lockupAccountId, provider, blockReference),
     ]);
-    console.log(lockupState);
-
     if (lockupState) {
       const { releaseDuration, vestingInformation } = lockupState;
       const lockupReleaseStartTimestamp = getStartLockupTimestamp(

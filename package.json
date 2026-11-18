@@ -18,10 +18,11 @@
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^7.0.6",
     "@ledgerhq/hw-transport-webhid": "6.27.19",
-    "@near-wallet-selector/core": "8.9.1",
-    "@near-wallet-selector/ledger": "8.9.1",
-    "@near-wallet-selector/modal-ui": "8.9.1",
-    "@near-wallet-selector/my-near-wallet": "8.9.1",
+    "@near-js/transactions": "^2.5.1",
+    "@near-wallet-selector/core": "10.1.4",
+    "@near-wallet-selector/ledger": "10.1.4",
+    "@near-wallet-selector/modal-ui": "10.1.4",
+    "@near-wallet-selector/my-near-wallet": "10.1.4",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
@@ -48,6 +49,7 @@
     "@walletconnect/types": "2.19.2",
     "bignumber.js": "^11.1.5",
     "bn.js": "^5.2.5",
+    "borsh": "0.7.0",
     "bottleneck": "^2.19.5",
     "bs58": "^6.0.0",
     "class-variance-authority": "^0.7.1",
@@ -55,7 +57,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "js-sha256": "^1.0.0",
-    "near-api-js": "2.1.4",
+    "near-api-js": "7.5.3",
     "next": "^16.4.6",
     "next-auth": "^4.24.15",
     "nodemailer": "^10.6.0",
@@ -122,6 +124,7 @@
   "allowScripts": {
     "@prisma/client": true,
     "@prisma/engines": true,
-    "prisma": true
+    "prisma": true,
+    "secp256k1": false
   }
 }

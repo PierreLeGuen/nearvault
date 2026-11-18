@@ -1,20 +1,23 @@
-import { connect, keyStores, transactions, utils } from "near-api-js";
-import {
-  type FinalExecutionStatus,
-  JsonRpcProvider,
-} from "near-api-js/lib/providers";
 import {
   type Action,
+  type FinalExecutionStatus,
   type SignedTransaction,
   type Transaction,
+  Account,
+  KeyPairSigner,
+  PublicKey,
   createTransaction,
-} from "near-api-js/lib/transaction";
-import { KeyPair, PublicKey } from "near-api-js/lib/utils";
+} from "near-api-js";
 import { type NextRouter } from "next/router";
 import { toast } from "react-toastify";
 import { type StateCreator, create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { config } from "~/config/config";
+import {
+  NearRpcProvider,
+  base_decode,
+  keyPairFromString,
+} from "~/lib/near/compat";
 import { LedgerClient } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerClient";
 import { LedgerSigner } from "~/store-easy-peasy/slices/wallets/slices/ledger/helpers/LedgerSigner";
 import { getActions } from "~/store-easy-peasy/slices/wallets/thunks/signAndSendTransaction/getActions";
@@ -116,25 +119,17 @@ export const createWalletTerminator: StateCreator<
   addAccounts: (newAccounts: PkAndAccounts, newSources: PkAndSources) => {
     const accounts = get().keysToAccounts;
     console.log("addAccounts", {
-      currentAccounts: accounts,
-      newAccounts,
+      newKeys: Object.keys(newAccounts).length,
     });
 
     Object.keys(newAccounts).forEach((key) => {
       accounts[key] = accounts[key] || [];
-      console.log("addAccounts", {
-        key,
-        currentAccounts: accounts[key],
-        newAccounts: newAccounts[key],
-      });
 
       //filter out null and  remove duplicate
       accounts[key] = Array.from(
         new Set([...accounts[key], ...newAccounts[key]]),
       ).filter((a) => Boolean(a));
     });
-
-    console.log(accounts);
 
     const sources = get().sources;
 
@@ -148,8 +143,7 @@ export const createWalletTerminator: StateCreator<
     set({ keysToAccounts: accounts, sources });
 
     console.log("addAccounts", {
-      accounts: get().keysToAccounts,
-      sources: get().sources,
+      keys: Object.keys(get().keysToAccounts).length,
     });
   },
   refreshAccounts: async () => {
@@ -186,7 +180,7 @@ export const createWalletTerminator: StateCreator<
 
       pkStr = publicKey.toString();
     } catch (e) {
-      console.error(e);
+      console.error("connectWithLedger failed", (e as Error)?.name);
       get().goToLedgerDerivationPath((e as Error).message);
     } finally {
       if (ledger.isConnected()) {
@@ -194,15 +188,15 @@ export const createWalletTerminator: StateCreator<
       }
     }
 
-    console.log("connectWithLedger", { pkStr });
-
     const accounts = await getAccountsForPublicKey(pkStr);
 
-    console.log("connectWithLedger", { accounts });
+    console.log("connectWithLedger", { accounts: accounts.length });
 
     const filteredAccounts = await filterMultisig(accounts, get().getRpcUrl());
 
-    console.log("connectWithLedger", { filteredAccounts });
+    console.log("connectWithLedger", {
+      filteredAccounts: filteredAccounts.length,
+    });
 
     // Using plain objects instead of Map
     const newAccounts = { [pkStr]: filteredAccounts };
@@ -219,8 +213,7 @@ export const createWalletTerminator: StateCreator<
     return pkStr;
   },
   connectWithPrivateKey: async (privateKey: string) => {
-    const kp = KeyPair.fromString(privateKey);
-    console.log("connectWithPrivateKey", { kp });
+    const kp = keyPairFromString(privateKey);
     const pubK = kp.getPublicKey().toString();
     const accounts = await getAccountsForPublicKey(pubK);
     const filteredAccounts = (
@@ -279,8 +272,7 @@ export const createWalletTerminator: StateCreator<
       get().setSelectedPublicKey(publicKey);
 
       console.log("handleMnwRedirect", {
-        accounts: get().keysToAccounts,
-        sources: get().sources,
+        keys: Object.keys(get().keysToAccounts).length,
       });
 
       await router.replace(returnTo!);
@@ -309,7 +301,7 @@ export const createWalletTerminator: StateCreator<
       recvId,
       nonce,
       getActions(action, actions),
-      utils.serialize.base_decode(block.header.hash),
+      base_decode(block.header.hash),
     );
     return tx;
   },
@@ -336,7 +328,7 @@ export const createWalletTerminator: StateCreator<
       const source = get().sources[publicKeyForTxn];
       if (source.type === "ledger") {
         const signedTx = await get().signWithLedger(tx, source.derivationPath!);
-        const provider = new JsonRpcProvider({ url: get().getRpcUrl() });
+        const provider = new NearRpcProvider({ url: get().getRpcUrl() });
         get().goToWaitForTransaction();
         const txn = await provider.sendTransaction(signedTx);
         if ((txn.status as FinalExecutionStatus).Failure) {
@@ -348,21 +340,20 @@ export const createWalletTerminator: StateCreator<
       } else if (source.type === "privatekey") {
         get().goToWaitForTransaction();
 
-        const network = config.networkId;
-        const keyStore = new keyStores.InMemoryKeyStore();
-        const keyPair = KeyPair.fromString(source.privateKey!);
-        await keyStore.setKey(network, params.senderId, keyPair);
+        const keyPair = keyPairFromString(source.privateKey!);
+        const provider = new NearRpcProvider({ url: get().getRpcUrl() });
+        const account = new Account(
+          params.senderId,
+          provider.rpc,
+          new KeyPairSigner(keyPair),
+        );
 
-        const nearconfig = {
-          networkId: network,
-          keyStore,
-          nodeUrl: get().getRpcUrl(),
-        };
-
-        const near = await connect(nearconfig);
-        const account = await near.account(params.senderId);
-
-        const res = await account.signAndSendTransaction(tx);
+        // The account fetches its own nonce and block hash; only the
+        // receiver and actions of the transaction built above are used.
+        const res = await account.signAndSendTransaction({
+          receiverId: tx.receiverId,
+          actions: tx.actions,
+        });
         get().goToWaitForTransaction(res.transaction_outcome.id);
       } else {
         throw new Error("Unknown source type");
@@ -375,10 +366,9 @@ export const createWalletTerminator: StateCreator<
   signWithLedger: async (tx: Transaction, derivationPath: string) => {
     try {
       get().goToLedgerSignTransaction();
-      const [, signedTransaction] = await transactions.signTransaction(
-        tx,
-        new LedgerSigner(derivationPath),
-      );
+      const { signedTransaction } = await new LedgerSigner(
+        derivationPath,
+      ).signTransaction(tx);
       return signedTransaction;
     } catch (e) {
       get().goToLedgerSignTransaction((e as Error).message);

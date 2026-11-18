@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import BN from "bn.js";
-import { transactions } from "near-api-js";
+import { transactions } from "~/lib/near/compat";
 import { toast } from "react-toastify";
 import { getStorageBalance } from "~/lib/client";
 import { buildFtStorageDepositRequest } from "~/lib/defi/requests";

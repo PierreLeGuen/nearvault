@@ -1,4 +1,4 @@
-import * as nearAPI from "near-api-js";
+import { Contract, type ReadOnlyAccount } from "~/lib/near/compat";
 
 export type U128 = string; // Assuming it is a string representation of a 128-bit unsigned integer
 export type U64 = string; // Assuming it is a string representation of a 64-bit unsigned integer
@@ -126,7 +126,7 @@ export interface MultisigRequest {
   actions: MultiSigAction[];
 }
 
-export interface MultiSigContract extends nearAPI.Contract {
+export interface MultiSigContract extends Contract {
   add_request(params: { request: MultisigRequest }): Promise<RequestId>;
   add_request_and_confirm(params: {
     request: MultisigRequest;
@@ -146,9 +146,9 @@ export interface MultiSigContract extends nearAPI.Contract {
 }
 
 export function initMultiSigContract(
-  account: nearAPI.Account,
+  account: ReadOnlyAccount,
 ): MultiSigContract {
-  return new nearAPI.Contract(account, account.accountId, {
+  return new Contract(account, account.accountId, {
     viewMethods: [
       "get_request",
       "get_num_requests_per_member",

@@ -1,4 +1,4 @@
-import * as nearAPI from "near-api-js";
+import { Contract, type ReadOnlyAccount } from "~/lib/near/compat";
 
 export type FungibleTokenMetadata = {
   spec: string;
@@ -10,7 +10,7 @@ export type FungibleTokenMetadata = {
   decimals: number;
 };
 
-export interface FungibleTokenContract extends nearAPI.Contract {
+export interface FungibleTokenContract extends Contract {
   ft_transfer(params: {
     receiver_id: string;
     amount: string;
@@ -30,10 +30,10 @@ export interface FungibleTokenContract extends nearAPI.Contract {
 }
 
 export function initFungibleTokenContract(
-  account: nearAPI.Account,
+  account: ReadOnlyAccount,
   contractName: string
 ): FungibleTokenContract {
-  return new nearAPI.Contract(account, contractName, {
+  return new Contract(account, contractName, {
     changeMethods: ["ft_transfer", "ft_transfer_call"],
     viewMethods: ["ft_total_supply", "ft_balance_of", "ft_metadata"],
   }) as FungibleTokenContract;

@@ -1,7 +1,7 @@
+import { actionCreators } from "@near-js/transactions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import BN from "bn.js";
-import { transactions } from "near-api-js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount, transactions } from "~/lib/near/compat";
 import { useState } from "react";
 import { z } from "zod";
 import { config } from "~/config/config";
@@ -40,25 +40,27 @@ export function useCreateMultisigWithFactory() {
       const wallet = await selector.wallet();
       const threshold = new Number(data.threshold);
 
-      await wallet.signAndSendTransaction({
+      const outcome = await wallet.signAndSendTransaction({
         receiverId: factory,
         actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              methodName: "create",
-              args: {
-                name: data.accountId,
-                members: data.owners,
-                num_confirmations: threshold,
-              },
-              gas: "300000000000000",
-              deposit: parseNearAmount("5")!,
+          actionCreators.functionCall(
+            "create",
+            {
+              name: data.accountId,
+              members: data.owners,
+              num_confirmations: threshold,
             },
-          },
+            BigInt("300000000000000"),
+            BigInt(parseNearAmount("5")!),
+          ),
         ],
       });
-      return data.accountId + "." + config.accounts.multisigFactory;
+      return {
+        accountId: data.accountId + "." + config.accounts.multisigFactory,
+        // wallet-selector 10 returns the outcome (MyNearWallet opens a popup
+        // instead of redirecting back with ?transactionHashes=).
+        transactionHash: outcome?.transaction_outcome?.id,
+      };
     },
   });
 }

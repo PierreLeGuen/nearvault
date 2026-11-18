@@ -1,4 +1,4 @@
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount } from "~/lib/near/compat";
 import { type FungibleTokenMetadata } from "~/lib/ft/contract";
 
 export const BURROW_CONTRACT_ID = "contract.main.burrow.near";

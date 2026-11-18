@@ -1,4 +1,4 @@
-import { transactions } from "near-api-js";
+import { transactions } from "~/lib/near/compat";
 import { TGas } from "./staking";
 import BN from "bn.js";
 import { useMutation } from "@tanstack/react-query";

@@ -1,8 +1,6 @@
 import type BN from "bn.js";
-import { type ConnectConfig } from "near-api-js/lib/connect";
-import { type KeyStore } from "near-api-js/lib/key_stores/keystore";
-import { type QueryResponseKind } from "near-api-js/lib/providers/provider";
-import * as nearAPI from "near-api-js";
+import { type QueryResponseKind } from "near-api-js";
+import { Contract, type ReadOnlyAccount } from "~/lib/near/compat";
 
 export type LockupState = {
   readonly owner: string;
@@ -89,19 +87,8 @@ export type ViewAccount = {
   readonly blockHeight: number;
 };
 
-export type ConnectOptions = Omit<
-  ConnectConfig,
-  "networkId" | "keyStore" | "headers"
-> & {
-  readonly networkId?: string;
-  readonly keyStore?: KeyStore;
-  readonly headers?: {
-    readonly [key: string]: string | number;
-  };
-};
-
 // Code herE: https://github.com/near/core-contracts/blob/215d4ed2edb563c47edd961555106b74275c4274/lockup/src/getters.rs#L7
-export interface LockupContract extends nearAPI.Contract {
+export interface LockupContract extends Contract {
   get_owner_account_id(): Promise<string>;
   get_staking_pool_account_id(): Promise<string>;
   get_vesting_information(): Promise<FromStateVestingInformation | "None">;
@@ -109,10 +96,10 @@ export interface LockupContract extends nearAPI.Contract {
 }
 
 export function init(
-  account: nearAPI.Account,
+  account: ReadOnlyAccount,
   contractName: string
 ): LockupContract {
-  return new nearAPI.Contract(account, contractName, {
+  return new Contract(account, contractName, {
     changeMethods: [],
     viewMethods: ["get_vesting_information", "get_termination_status"],
   }) as LockupContract;

@@ -19,6 +19,21 @@ import { config } from "~/config/config";
 const CONTRACT_ID = config.accounts.multisigFactory;
 const NETWORK_ID = config.networkId;
 
+// wallet-selector's own presets for each network (its modal looks Ledger
+// accounts up on the indexer); the app keeps its own RPC endpoint.
+const SELECTOR_NETWORK_URLS = {
+  mainnet: {
+    helperUrl: "https://helper.mainnet.near.org",
+    explorerUrl: "https://nearblocks.io",
+    indexerUrl: "https://api.fastnear.com/v0",
+  },
+  testnet: {
+    helperUrl: "https://helper.testnet.near.org",
+    explorerUrl: "https://testnet.nearblocks.io",
+    indexerUrl: "https://test.api.fastnear.com/v0",
+  },
+} as const;
+
 declare global {
   interface Window {
     selector: WalletSelector;
@@ -36,6 +51,11 @@ interface WalletSelectorContextValue {
 const WalletSelectorContext =
   React.createContext<WalletSelectorContextValue | null>(null);
 
+// A sign-in restored without an account id cannot sign; treat it as signed
+// out rather than showing an empty funding account.
+const usableAccounts = (accounts: AccountState[]) =>
+  accounts.filter((account) => !!account.accountId);
+
 export const WalletSelectorContextProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
@@ -51,9 +71,7 @@ export const WalletSelectorContextProvider: React.FC<{
       network: {
         networkId: NETWORK_ID,
         nodeUrl: config.urls.rpc,
-        helperUrl: "https://helper.testnet.near.org",
-        explorerUrl: "https://testnet.nearblocks.io",
-        indexerUrl: "https://testnet-api.kitwallet.app",
+        ...SELECTOR_NETWORK_URLS[NETWORK_ID],
       },
       debug: true,
       modules: [
@@ -69,7 +87,7 @@ export const WalletSelectorContextProvider: React.FC<{
     });
     const state = _selector.store.getState();
 
-    setAccounts(state.accounts);
+    setAccounts(usableAccounts(state.accounts));
     setSelector(_selector);
     setModal(_modal);
     setLoading(false);
@@ -77,7 +95,7 @@ export const WalletSelectorContextProvider: React.FC<{
 
   useEffect(() => {
     init().catch((err) => {
-      console.error(err);
+      console.error("wallet selector setup failed", (err as Error)?.name);
       alert("Failed to initialise wallet selector");
     });
   }, [init]);
@@ -93,9 +111,10 @@ export const WalletSelectorContextProvider: React.FC<{
         distinctUntilChanged(),
       )
       .subscribe((nextAccounts) => {
-        console.log("Accounts Update", nextAccounts);
+        const usable = usableAccounts(nextAccounts);
+        console.log("Accounts Update", { count: usable.length });
 
-        setAccounts(nextAccounts);
+        setAccounts(usable);
       });
 
     const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {

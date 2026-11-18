@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import BN from "bn.js";
-import { transactions } from "near-api-js";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount, transactions } from "~/lib/near/compat";
 import { toast } from "react-toastify";
 import {
   type StakedPool,
@@ -346,6 +345,7 @@ export function useGetStakingDetailsForWallets() {
               "Rate limit exceeded or network error. Please try again later";
           } else if (
             e?.status === 429 ||
+            e?.cause === 429 ||
             e?.response?.status === 429 ||
             e?.message?.includes("429") ||
             e?.message?.includes("rate limit")

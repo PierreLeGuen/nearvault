@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { parseNearAmount } from "near-api-js/lib/utils/format";
+import { parseNearAmount } from "~/lib/near/compat";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";

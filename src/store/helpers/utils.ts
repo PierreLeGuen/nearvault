@@ -1,7 +1,7 @@
-import { JsonRpcProvider } from "near-api-js/lib/providers";
-import { type PublicKey } from "near-api-js/lib/utils";
+import { type PublicKey } from "near-api-js";
 import { config } from "~/config/config";
 import { NearBlocksApi } from "~/config/nearBlocksApiNew";
+import { NearRpcProvider } from "~/lib/near/compat";
 
 type Key = {
   public_key: string;
@@ -36,10 +36,7 @@ export const getAccessKey = async ({
   senderId: string;
   signerPublicKey: PublicKey;
 }) => {
-  console.log("getAccessKey", { rpcUrl, senderId, publicKey: signerPublicKey });
-
-  const provider = new JsonRpcProvider({ url: rpcUrl });
-  console.log(signerPublicKey.toString());
+  const provider = new NearRpcProvider({ url: rpcUrl });
 
   const args = {
     request_type: "view_access_key",
@@ -47,18 +44,13 @@ export const getAccessKey = async ({
     account_id: senderId,
     public_key: signerPublicKey.toString(),
   };
-  console.log("args", args);
-
   const ak: AccesKeyResponse = await provider.query(args);
-  console.log(ak);
 
   return ak;
 };
 
 export const getLatestBlockHash = async (rpcUrl: string) => {
-  console.log("getAccessKey", { rpcUrl });
-
-  const provider = new JsonRpcProvider({ url: rpcUrl });
+  const provider = new NearRpcProvider({ url: rpcUrl });
 
   const b = await provider.block({ finality: "final" });
 
@@ -82,7 +74,7 @@ export const getAccountsForPublicKey = async (
 };
 
 export const filterMultisig = async (accountIds: string[], rpcUrl: string) => {
-  const provider = new JsonRpcProvider({ url: rpcUrl });
+  const provider = new NearRpcProvider({ url: rpcUrl });
 
   const validAccIds = await Promise.all(
     accountIds
@@ -97,7 +89,7 @@ export const filterMultisig = async (accountIds: string[], rpcUrl: string) => {
           });
           return accountId;
         } catch (e) {
-          console.log("not multisig", e);
+          console.log("not multisig", (e as Error)?.name);
         }
       })
       .filter(Boolean),

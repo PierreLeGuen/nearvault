@@ -1,7 +1,7 @@
-import { transactions, utils } from "near-api-js";
 import BN from "bn.js";
+import { type Action } from "near-api-js";
 import { toGas } from "src/store-easy-peasy/helpers/toGas";
-import { type Action } from "near-api-js/lib/transaction";
+import { parseNearAmount, transactions } from "~/lib/near/compat";
 
 type FunctionCallAction = {
   type: string;
@@ -13,11 +13,9 @@ type FunctionCallAction = {
 };
 
 const functionCall = (action: FunctionCallAction) => {
-  const gas: any = action.tGas ? toGas(action.tGas) : action.gas;
+  const gas = action.tGas ? toGas(action.tGas) : action.gas;
 
-  const deposit: any = action.deposit
-    ? utils.format.parseNearAmount(action.deposit)
-    : new BN(0);
+  const deposit = action.deposit ? parseNearAmount(action.deposit)! : new BN(0);
 
   return transactions.functionCall(action.method, action.args, gas, deposit);
 };
@@ -30,6 +28,6 @@ export const getActions = (action: Action, actions: Action[]) => {
     if (action.type === "FunctionCall") return functionCall(action);
     return action;
   });
-  console.log("getActions", { l });
+  console.log("getActions", { count: l.length });
   return l;
 };

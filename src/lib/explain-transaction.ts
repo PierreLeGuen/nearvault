@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/require-await */
 import BigNumber from "~/lib/bignumber";
-import type * as naj from "near-api-js";
-import { formatNearAmount } from "near-api-js/lib/utils/format";
 import {
   BURROW_CONTRACT_ID,
   REF_FINANCE_CONTRACT_ID,
@@ -22,6 +20,11 @@ import {
   NEW_MULTISIG_HASH,
   summarizeDeployAction,
 } from "~/lib/multisig/upgrade";
+import {
+  type NearConnection,
+  type ReadOnlyAccount,
+  formatNearAmount,
+} from "~/lib/near/compat";
 
 export type explanation = {
   full_description: string;
@@ -42,7 +45,7 @@ export async function explainAction(
   action: MultiSigAction,
   to: string,
   from: string,
-  getNearConnection: () => Promise<naj.Near>,
+  getNearConnection: () => Promise<NearConnection>,
 ): Promise<explanation> {
   const c = await getNearConnection();
   c.connection;
@@ -294,7 +297,7 @@ const trimFormattedAmount = (amount: string) => {
 };
 
 const formatTokenAmount = async (
-  nearConnection: naj.Account,
+  nearConnection: ReadOnlyAccount,
   tokenId: string,
   amount: string | undefined,
   decimalsOverride?: number,
@@ -315,7 +318,7 @@ const formatTokenAmount = async (
 };
 
 const getBurrowAmountDecimals = async (
-  nearConnection: naj.Account,
+  nearConnection: ReadOnlyAccount,
   tokenId: string,
 ) => {
   const c = initFungibleTokenContract(nearConnection, tokenId);
@@ -339,7 +342,7 @@ const LP_SHARE_DECIMALS = 24;
 const explainRefAddLiquidity = async (
   args: MethodArgs,
   contract: string,
-  near_connection: naj.Account,
+  near_connection: ReadOnlyAccount,
   methodName: "add_liquidity" | "add_stable_liquidity",
 ): Promise<fnCallDetails> => {
   const params = args as RefAddLiquidityParams;
@@ -403,7 +406,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
       action: FunctionCallMultisigAction,
     ) => Promise<fnCallDetails>;
   };
@@ -413,7 +416,7 @@ const methodDescriptions: {
       _args: MethodArgs,
       contract: string,
       from_account: string,
-      _near_connection: naj.Account,
+      _near_connection: ReadOnlyAccount,
       action: FunctionCallMultisigAction,
     ) => {
       if (contract !== "wrap.near") {
@@ -436,7 +439,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) => {
       const executeArgs = args as ExecuteWithPythParams;
       const actions = executeArgs.actions ?? [];
@@ -481,7 +484,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       _from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) =>
       explainRefAddLiquidity(args, contract, near_connection, "add_liquidity"),
   },
@@ -490,7 +493,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       _from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) =>
       explainRefAddLiquidity(
         args,
@@ -522,7 +525,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) => {
       const withdrawParams = args as RefWithdrawParams;
       if (contract !== REF_FINANCE_CONTRACT_ID || !withdrawParams.token_id) {
@@ -549,7 +552,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) => {
       const storageDepositParams = args as StorageDepositParams;
       const accountId = storageDepositParams.account_id ?? from_account;
@@ -683,7 +686,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) => {
       const c = initFungibleTokenContract(near_connection, contract);
       const metadata = await c.ft_metadata();
@@ -703,7 +706,7 @@ const methodDescriptions: {
       args: MethodArgs,
       contract: string,
       from_account: string,
-      near_connection: naj.Account,
+      near_connection: ReadOnlyAccount,
     ) => {
       const c = initFungibleTokenContract(near_connection, contract);
       const metadata = await c.ft_metadata();

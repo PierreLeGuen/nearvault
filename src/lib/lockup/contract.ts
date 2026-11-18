@@ -1,4 +1,4 @@
-import * as nearAPI from "near-api-js";
+import { Contract, type NearConnection } from "~/lib/near/compat";
 import { type Base58PublicKey } from "../multisig/contract";
 import usePersistingStore from "~/store/useStore";
 
@@ -8,7 +8,7 @@ export type TerminationStatus = string; // Define it more precisely if you know 
 export type VestingInformation = string; // Define it more precisely if you know the exact possible values
 export type VestingSchedule = string; // Define it more precisely if you know the exact possible values
 
-export interface LockupContract extends nearAPI.Contract {
+export interface LockupContract extends Contract {
   // View methods
   get_owner_account_id(): Promise<AccountId>;
   get_staking_pool_account_id(): Promise<AccountId | null>;
@@ -71,11 +71,11 @@ export const lockupChangeMethods = new Set(changeMethods);
 export async function initLockupContract(
   accountId: string,
   contractName: string,
-  near: nearAPI.Near,
+  near: NearConnection,
 ): Promise<LockupContract> {
   const account = await near.account(accountId);
 
-  return new nearAPI.Contract(account, contractName, {
+  return new Contract(account, contractName, {
     viewMethods: [
       "get_owner_account_id",
       "get_staking_pool_account_id",

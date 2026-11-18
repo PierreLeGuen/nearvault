@@ -1,4 +1,4 @@
-import { formatNearAmount } from "near-api-js/lib/utils/format";
+import { formatNearAmount } from "~/lib/near/compat";
 import { useEffect, useState } from "react";
 import { getSidebarLayout } from "~/components/Layout";
 import { WalletData } from "~/components/Staking/AllStaked";
