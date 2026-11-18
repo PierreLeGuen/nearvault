@@ -1,10 +1,25 @@
 import { type Wallet } from "@prisma/client";
-import { createColumnHelper } from "@tanstack/react-table";
+import {
+  columnSizingFeature,
+  columnVisibilityFeature,
+  createColumnHelper,
+  rowExpandingFeature,
+  tableFeatures,
+} from "@tanstack/react-table";
 import { RequestColumn } from "~/components/approval/pending/RequestsTable/RequestColumn";
 import { type RequestRow } from "~/lib/explain-transaction";
 import { type ApproveOrReject } from "~/pages/approval/pending";
 
-const columnHelper = createColumnHelper<RequestRow>();
+// Table v9 only exposes the APIs of registered features: column sizes,
+// visible cells and the expandable details row.
+export const requestTableFeatures = tableFeatures({
+  columnSizingFeature,
+  columnVisibilityFeature,
+  rowExpandingFeature,
+});
+export type RequestTableFeatures = typeof requestTableFeatures;
+
+const columnHelper = createColumnHelper<RequestTableFeatures, RequestRow>();
 
 type Props = {
   wallet: Wallet;
