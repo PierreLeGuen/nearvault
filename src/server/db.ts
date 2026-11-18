@@ -4,7 +4,11 @@ import { PrismaClient } from "@prisma/client";
 import { env } from "~/env.mjs";
 import { pgOptionsFromDatabaseUrl } from "~/server/db-url";
 
-const { poolConfig, schema } = pgOptionsFromDatabaseUrl(env.DATABASE_URL);
+// A build with SKIP_ENV_VALIDATION=1 may have no DATABASE_URL. The pool only
+// connects on the first query, so the build does not need one, as with Prisma 6.
+const { poolConfig, schema } = env.DATABASE_URL
+  ? pgOptionsFromDatabaseUrl(env.DATABASE_URL)
+  : { poolConfig: {}, schema: undefined };
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
